@@ -1,0 +1,20 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# competition data - never commit Amazon's dataset
+data/*
+!data/.gitkeep
+*.csv
+
+# artifacts
+out/
+models/
+*.zip
+*.pkl
+*.joblib
+
+# secrets
+.env
+*.pem
