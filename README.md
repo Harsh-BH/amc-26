@@ -49,7 +49,9 @@ torch 2.14.0+cu130 is installed and CUDA works on the local RTX 3050 (6 GB).
 | `baseline.py` | TF-IDF (word + char) → LightGBM, log-space target. Sniffs the schema. |
 | `submit.py` | Packs the code zip and pre-flights the doc page count, NaNs, row count. |
 | `sm_train.py` | SageMaker entry point. You supply `solution.py`; it owns the SM filesystem contract. |
-| `sm_launch.py` | Submits a training job via boto3 (no sagemaker SDK). Spot on by default. |
+| `sm_launch.py` | Submit / wait / fetch SageMaker jobs, or `--local` in the real container. Spot on by default. |
+| `sm_requirements.txt` | Installed in the container at job start — only what the DLC lacks. |
+| `test_sm.py` | 29 offline tests for the framework. `python test_sm.py` |
 | `docs/EMBEDDINGS.md` | Which embedding model to reach for, by problem shape. Bedrock verified for ap-south-1. |
 | `docs/SAGEMAKER.md` | Day-1 order of operations, instance pricing, and the credit traps. |
 

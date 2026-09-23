@@ -1,0 +1,7 @@
+# pip-installed inside the SageMaker container at job start.
+# The DLC already ships torch 2.9, numpy, pandas 3, scikit-learn, scipy, pillow, boto3 -
+# do not list those: re-resolving torch adds a ~2 GB download to every job.
+lightgbm
+transformers
+sentence-transformers
+timm
