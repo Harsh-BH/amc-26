@@ -27,7 +27,7 @@ VIRTUAL_ENV=.venv uv pip install pandas numpy scikit-learn lightgbm pillow pyarr
 ```
 
 System Python here is 3.14 with a broken half-installed pandas — use the venv, not `python3`.
-GPU work: `uv pip install torch --torch-backend=auto` (~2.5 GB, so do it *before* the 25th).
+torch 2.14.0+cu130 is installed and CUDA works on the local RTX 3050 (6 GB).
 
 ## Hour 0 checklist
 
@@ -48,6 +48,10 @@ GPU work: `uv pip install torch --torch-backend=auto` (~2.5 GB, so do it *before
 | `metrics.py` | SMAPE, matching Amazon's stated formula. `python metrics.py` runs the checks. |
 | `baseline.py` | TF-IDF (word + char) → LightGBM, log-space target. Sniffs the schema. |
 | `submit.py` | Packs the code zip and pre-flights the doc page count, NaNs, row count. |
+| `sm_train.py` | SageMaker entry point. You supply `solution.py`; it owns the SM filesystem contract. |
+| `sm_launch.py` | Submits a training job via boto3 (no sagemaker SDK). Spot on by default. |
+| `docs/EMBEDDINGS.md` | Which embedding model to reach for, by problem shape. Bedrock verified for ap-south-1. |
+| `docs/SAGEMAKER.md` | Day-1 order of operations, instance pricing, and the credit traps. |
 
 ## Compute plan
 

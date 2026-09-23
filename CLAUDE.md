@@ -15,10 +15,13 @@ Amazon ML Challenge 2026 — see README.md for dates, rules and the compute plan
 | metric self-check | `.venv/bin/python metrics.py` |
 | baseline self-check | `.venv/bin/python baseline.py --demo` |
 | preflight submission | `.venv/bin/python submit.py --doc approach.pdf --preds submission.csv` |
+| SageMaker payload check | `.venv/bin/python sm_launch.py --dry-run --data-s3 s3://x/` |
 
 ## Rules
 
 - Never commit `data/` — it is Amazon's dataset and it is gitignored. Same for `submission.csv`.
+- Do **not** `pip install sagemaker` — it pulls torch + CUDA and has filled this disk once.
+  `sm_launch.py` is boto3-only on purpose.
 - `metrics.py` assumes SMAPE from 2025. **Confirm against the 2026 problem PDF before trusting any score.**
 - During the 72 hours: smallest change that moves the leaderboard. No refactors, no abstractions.
   Every experiment keeps its holdout SMAPE in the commit message so the approach doc writes itself.
