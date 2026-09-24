@@ -15,7 +15,7 @@ need=$(( $(numfmt --from=iec "$MEM") + 1024**3 + 700*1024**2 ))     # cap + 1G h
 avail=$(( $(awk '/MemAvailable/{print $2}' /proc/meminfo) * 1024 ))
 (( avail > need )) || { echo "RAM: $((avail>>20)) MiB available, $ID needs $((need>>20)) MiB" >&2; exit 1; }
 rm -f "$DIR/DONE" "$DIR/.collected"
-[[ $MODE == resume ]] || uuidgen > "$DIR/session_id"
+if [[ $MODE == resume ]]; then touch "$DIR/session_id"; else uuidgen > "$DIR/session_id"; fi   # mtime = launch time (watch.sh grace)
 tmux has-session -t amc 2>/dev/null || tmux new-session -d -s amc -n master
 tmux kill-window -t "amc:$ID" 2>/dev/null || true
 tmux new-window -d -t amc -n "$ID" -c "$PWD" "probes/run_probe.sh $ID $MEM $MODE; exec bash"
