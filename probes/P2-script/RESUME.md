@@ -1,7 +1,6 @@
-You were killed at 03:49 because your last command (/tmp/p2_addr.py, the cross-script ADDRESS analysis on the
-train world) exceeded your memory cap; the runner then stopped your whole session. The runner is fixed: an
-oversized command now just exits 137 and you continue. Your cap is 2.5 GB INCLUDING ~0.7 GB for this CLI,
-so keep each Python step under ~1.5 GB (use the dev world or a sample of the train world, fewer columns).
-Continue your brief from where you stopped: your earlier finding (cross-script names are token-level
-transliterations, 96.8% positional alignment, ~1,343 Indic token types → a learned token dictionary) is
-the lead to pursue. Write a draft probes/P2-script/RESULT.md now, then continue.
+You were killed again at 04:13 — this time the kernel OOM killer picked the CLI itself while your
+eval_addr.py ran alongside a backgrounded e5 job waiting on the GPU lock (two Python processes + CLI > 2.5 GB).
+The runner now makes every tool command the OOM killer's first choice, so this cannot kill you again, but
+do not run two memory-heavy Python processes at once: run the e5 embedding eval and the address eval one
+after the other, each under ~1.5 GB. Continue from where you stopped (address eval, then e5/LaBSE comparison),
+keep logging to the ledger, and finish RESULT.md with a clear recommendation.

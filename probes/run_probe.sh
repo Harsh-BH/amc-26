@@ -5,6 +5,9 @@
 # systemd's default (stop) tears down the whole scope, i.e. the probe itself (exit 143).
 set -uo pipefail
 ID=$1; MEM=$2; MODE=${3:-new}; DIR=probes/$ID; SID=$(cat "$DIR/session_id")
+# Tool commands run in bash, which sources BASH_ENV: they raise their own oom_score_adj to 1000, so the
+# kernel OOM killer picks them, not the claude CLI (it killed the CLI in P2 at 04:13 when it was the biggest).
+export SHELL=/usr/bin/bash BASH_ENV="$PWD/probes/oom_child.sh"
 if [[ $MODE == resume ]]; then prompt=("$DIR/RESUME.md"); sess=(--resume "$SID")
 else prompt=(probes/_COMMON.md "$DIR/BRIEF.md"); sess=(--session-id "$SID"); fi
 cat "${prompt[@]}" \
