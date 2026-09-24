@@ -8,8 +8,9 @@ data/notes/research_techniques.md, data/notes/research_licences.md, and ledger/e
 Environment: repo root is the cwd. Use .venv/bin/python only. Data: data/work/*.parquet (full) and
 worlds via `sys.path.insert(0, "code/business_entity_resolution/src"); from worlds import load_world`
 -> load_world("dev"|"holdout"|"train") returns (s1_df, sx_df, truth{s1: set}). Metric: `from metric import score`.
-Your process is memory-capped (OOM = killed): work on the dev world first; touch full data only in
-chunks, one source at a time. GPU work must hold the lock: `flock /tmp/amc-gpu.lock <cmd>`. pandas 3 string regex is RE2:
+Your process is memory-capped, and the cap INCLUDES this CLI (~0.7 GB). A command that exits 137 was
+OOM-killed: you survive it — shrink the work (sample, chunk, fewer columns, del + gc) and rerun. Work on
+the dev world first; touch full data only in chunks, one source at a time. GPU work must hold the lock: `flock /tmp/amc-gpu.lock <cmd>`. pandas 3 string regex is RE2:
 `\w` is ASCII-only, so never strip with `[^\w]` — it deletes Indic and accented letters.
 
 Hard rules: any model or library you adopt must be MIT/Apache-2.0/BSD/ISC (see research_licences.md;
