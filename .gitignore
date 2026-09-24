@@ -26,3 +26,4 @@ probes/*/session_id
 probes/*/DONE
 probes/*/.collected
 .claude/settings.local.json
+probes/P1-taxonomy/mined.json
