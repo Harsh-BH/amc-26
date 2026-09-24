@@ -3,6 +3,12 @@
 Written before the problem dropped. Bedrock availability was checked live against
 `ap-south-1`; model rankings are from MTEB v2 / public benchmarks as of Sep 2026.
 
+> **The 2026 problem is text-only entity resolution — see `docs/PROBLEM.md`.** Any model must be
+> MIT/Apache-2.0 and ≤ 8B params, and external services are banned, so the **Bedrock section is
+> off-limits** and the image sections do not apply. The local text models (`bge-m3` MIT,
+> `gte-multilingual-base` / `Qwen3-Embedding-0.6B` / `all-MiniLM-L6-v2` Apache-2.0) are fine —
+> confirm the licence on the model card before shipping.
+
 ## The workflow that wins a 72-hour run
 
 **Freeze the backbone, cache the vectors, iterate on the head.** Embedding 250k images

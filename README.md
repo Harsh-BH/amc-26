@@ -1,58 +1,62 @@
 # Amazon ML Challenge 2026
 
-72-hour team hackathon on an Amazon catalog dataset. Live leaderboard during the run,
-private leaderboard on the full test set afterwards.
+72-hour team hackathon. The problem is **business entity resolution**: match noisy business records
+across 3 sources, scored on macro F0.5. **Read [`docs/PROBLEM.md`](docs/PROBLEM.md) first** — rules,
+output format, metric, data findings, traps and open questions in one place.
 
 ## Dates (IST)
 
 | | |
 |---|---|
-| Registration closes | **20 Sep 2026, 23:59** |
-| Hackathon | **25 Sep 00:00 (midnight) → ~end of 27 Sep** — 72 h; problem + dataset drop at the start. Exact end time unconfirmed |
-| Top 50 announced | 2 Oct 2026 |
+| Hackathon | **25 Sep 00:00:50 → 27 Sep 23:59:49** — max **5 submissions/day** |
+| Top 100 announced | then submit methodology details |
+| Top 50 results | 2 Oct 2026 — PPIs for Applied Scientist Intern |
 | Grand Finale (virtual) | 7 Oct 2026, 10:00–15:00 — top 10 present to Amazon Scientists |
 
-Team of **2–4** (press coverage says 3–4; the Unstop form allows 2). Grad year 2027 or 2028,
-full-time engineering, one team per student, cross-college allowed.
+Team of **2–4**. Grad year 2027 or 2028, full-time engineering, one team per student,
+cross-college allowed. One Unstop login per person at a time — simultaneous logins can end the run.
 
-Deliverables: a zip of code/notebook **plus a 1–2 page approach document**. The document is read
-for finale selection — a good leaderboard score with a thin writeup does not reach the top 10.
+Deliverables: `matching_results.tsv` uploads during the run, then `<team_name>_submission.zip`
+(outputs + runnable code + filled `Documentation_template.md`, no page limit). Layout in `docs/PROBLEM.md`.
 
 ## Setup
 
 ```bash
 uv venv .venv --python 3.12
 VIRTUAL_ENV=.venv uv pip install pandas numpy scikit-learn lightgbm pillow pyarrow
-.venv/bin/python metrics.py     # self-check
 ```
 
 System Python here is 3.14 with a broken half-installed pandas — use the venv, not `python3`.
-torch 2.14.0+cu130 is installed and CUDA works on the local RTX 3050 (6 GB).
+torch 2.14.0+cu130 is installed and CUDA works on the local RTX 3050 (6 GB). RAM is 15 GB and
+the full train split is ~1.3 GB of TSV — load one source at a time.
+
+Data: unzip `student_resource.zip` into `data/` → `data/student_resource/{dataset,utils,README.md}`.
 
 ## Hour 0 checklist
 
-```bash
-.venv/bin/python baseline.py --train data/train.csv --sample 20000   # fast signal check
-.venv/bin/python baseline.py --train data/train.csv --target <col> --test data/test.csv
-.venv/bin/python submit.py --doc approach.pdf --preds submission.csv # preflight before upload
-```
-
-1. Read the problem PDF and **confirm the metric** — `metrics.py` assumes SMAPE (2025's metric).
-2. Run the baseline on a subsample to get a number on the board within the first hour.
-3. Only then start modelling. Keep the median-guess SMAPE as your floor.
+1. Read `docs/PROBLEM.md`. Send the open questions through the Google Form.
+2. Rewrite `metrics.py` to F0.5 and hold out part of train to score against.
+3. Get a simple baseline on the board: block within country on name tokens + address city,
+   accept only confident pairs, give each S2/S3 ID to at most one S1.
+4. Before every upload:
+   ```bash
+   cd data/student_resource && python3 utils/validate_submission.py \
+       --matching output/matching_results.tsv --candidate output/candidate_pairs.tsv --test-dir dataset/test
+   ```
 
 ## Files
 
 | | |
 |---|---|
-| `metrics.py` | SMAPE, matching Amazon's stated formula. `python metrics.py` runs the checks. |
-| `baseline.py` | TF-IDF (word + char) → LightGBM, log-space target. Sniffs the schema. |
-| `submit.py` | Packs the code zip and pre-flights the doc page count, NaNs, row count. |
+| `docs/PROBLEM.md` | The problem, rules, data findings, traps, open questions. |
+| `metrics.py` | **Stale** — SMAPE from the 2025 guess. Rewrite to macro F0.5. |
+| `baseline.py` | **Stale** — TF-IDF → LightGBM regression. Its vectorizer is reusable for pair features. |
+| `submit.py` | **Stale** — packs a CSV + PDF. The real package is the zip in `docs/PROBLEM.md`. |
 | `sm_train.py` | SageMaker entry point. You supply `solution.py`; it owns the SM filesystem contract. |
 | `sm_launch.py` | Submit / wait / fetch SageMaker jobs, or `--local` in the real container. Spot on by default. |
 | `sm_requirements.txt` | Installed in the container at job start — only what the DLC lacks. |
-| `test_sm.py` | 29 offline tests for the framework. `python test_sm.py` |
-| `docs/EMBEDDINGS.md` | Which embedding model to reach for, by problem shape. Bedrock verified for ap-south-1. |
+| `test_sm.py` | 29 offline tests for the framework. `.venv/bin/python test_sm.py` |
+| `docs/EMBEDDINGS.md` | Local embedding models. Its Bedrock section is **banned** for this problem. |
 | `docs/SAGEMAKER.md` | Day-1 order of operations, instance pricing, and the credit traps. |
 
 ## Compute plan
@@ -60,16 +64,7 @@ torch 2.14.0+cu130 is installed and CUDA works on the local RTX 3050 (6 GB).
 $200 AWS credits ($100 signup + $100 as you explore), +$100 for the top 500 at the 48h mark.
 Credits cover SageMaker 250h `ml.t3.medium` notebook + 50h training, and S3 5 GB.
 
-`ml.t3.medium` is **CPU-only** (2 vCPU, 4 GB) — it cannot fine-tune a vision-language model, and
-$200 is roughly 30–50 GPU-hours total. The 2024 top teams trained on Kaggle's free GPUs.
-
-Plan: AWS for the dataset, S3, and orchestration; **Kaggle/Colab for the training loop**; the
-local RTX 3050 (6 GB) for fast iteration on small models only. Decide this before the 25th.
-
-## Prior problem statements
-
-- **2023** — predict product length from tabular catalog features
-- **2024** — extract entity values (weight, volume, dimensions) from ~256k product images
-- **2025** — "Smart Product Pricing": multimodal text + image → price regression, scored on SMAPE
-
-Another multimodal catalog task is the safe bet, which is what `baseline.py` is shaped for.
+The problem is text-only and CPU-friendly: string features + a GBDT on blocked candidates.
+A GPU helps only for embedding-based blocking or a small cross-encoder — the local RTX 3050
+(6 GB) handles MiniLM/BGE-sized models; SageMaker (`sm_launch.py`) for anything bigger.
+Any model must be MIT/Apache-2.0 and ≤ 8B params, run locally — no hosted APIs.
