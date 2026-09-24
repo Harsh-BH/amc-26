@@ -35,7 +35,7 @@ Data: unzip `student_resource.zip` into `data/` → `data/student_resource/{data
 ## Hour 0 checklist
 
 1. Read `docs/PROBLEM.md`. Send the open questions through the Google Form.
-2. Rewrite `metrics.py` to F0.5 and hold out part of train to score against.
+2. Score everything on the test-like `holdout` world with `src/metric.py` (macro F0.5).
 3. Get a simple baseline on the board: block within country on name tokens + address city,
    accept only confident pairs, give each S2/S3 ID to at most one S1.
 4. Before every upload:
@@ -49,9 +49,9 @@ Data: unzip `student_resource.zip` into `data/` → `data/student_resource/{data
 | | |
 |---|---|
 | `docs/PROBLEM.md` | The problem, rules, data findings, traps, open questions. |
-| `metrics.py` | **Stale** — SMAPE from the 2025 guess. Rewrite to macro F0.5. |
-| `baseline.py` | **Stale** — TF-IDF → LightGBM regression. Its vectorizer is reusable for pair features. |
-| `submit.py` | **Stale** — packs a CSV + PDF. The real package is the zip in `docs/PROBLEM.md`. |
+| `code/business_entity_resolution/src/` | The pipeline, where the final zip expects it. `metric.py` = macro F0.5, `io_tsv.py` = TSV → parquet. |
+| `ledger.py`, `ledger/` | Experiment + pipeline ledgers. `.venv/bin/python ledger.py show exp` / `show pipe`. |
+| `probes/` | tmux Opus 5.5 probe runner and each probe's brief + RESULT.md. |
 | `sm_train.py` | SageMaker entry point. You supply `solution.py`; it owns the SM filesystem contract. |
 | `sm_launch.py` | Submit / wait / fetch SageMaker jobs, or `--local` in the real container. Spot on by default. |
 | `sm_requirements.txt` | Installed in the container at job start — only what the DLC lacks. |

@@ -19,8 +19,8 @@ rules, output format, metric, data findings and open questions; read it before t
 | framework tests | `.venv/bin/python test_sm.py` |
 | rehearse a job in the real container | `.venv/bin/python sm_launch.py --data data/train --test-data data/test --local` |
 | account readiness | `.venv/bin/python sm_launch.py --check --instance ml.g4dn.xlarge` |
-
-`metrics.py`, `baseline.py`, `submit.py` are stale (SMAPE-regression guess) until rewritten.
+| metric self-check | `.venv/bin/python code/business_entity_resolution/src/metric.py` |
+| ledgers | `.venv/bin/python ledger.py show exp` · `show pipe` · `selftest` |
 
 ## Rules
 
