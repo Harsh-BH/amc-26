@@ -1,0 +1,1 @@
+{"ts": "2026-09-25T03:41:29+0530", "git": "5396c40", "version": "s0-exact", "world": "holdout", "metrics": {"f05": 0.1775492596207822, "n": 220358, "singleton_acc": 0.9998348745046235, "f05_India": 0.1815048273754141, "f05_US": 0.17491097761919064}, "config": {"key": "country|name|addr_seg0"}}
