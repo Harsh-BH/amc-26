@@ -148,6 +148,45 @@ aws freetier get-account-plan-state --region us-east-1 \
 Then make sure nothing is left running: no RDS databases, no RDS snapshots, no EC2
 instances, no Lambda functions. The budget is the only thing to keep.
 
+## Get GPU quota — do this tonight
+
+New AWS accounts can't run *any* SageMaker training job until AWS raises a limit (a
+*quota*). The request is **free**: a quota is only permission, not compute. You pay per hour, out of
+your credits, only while a job runs. A person at AWS reviews it. On our account it took
+**under 20 hours**, so file it now and use **Kaggle** GPUs until it lands.
+
+**Console:** region **Asia Pacific (Mumbai)** → **Service Quotas** → **Amazon SageMaker**
+→ search each of these → **Request increase at account level** → value **1**:
+
+- `ml.g4dn.xlarge for training job usage`
+- `ml.g4dn.xlarge for spot training job usage`
+
+**Or CLI:**
+
+```bash
+aws service-quotas request-service-quota-increase --service-code sagemaker \
+  --quota-code L-3F53BF0F --desired-value 1 --region ap-south-1   # g4dn.xlarge training
+aws service-quotas request-service-quota-increase --service-code sagemaker \
+  --quota-code L-944F78BB --desired-value 1 --region ap-south-1   # g4dn.xlarge spot training
+```
+
+If it says the value must be *greater than the default*, use the default + 1. Check
+progress under **Service Quotas → Quota request history**. A case can show *closed* before
+the new value appears.
+
+**What happened on ours:** we asked for CPU quota only (`ml.m5.large`). AWS then raised the
+whole account: most CPU types to 15, plus **1 T4 (`g4dn.xlarge`) and 1 A10G (`g5.xlarge`)**.
+Ask for the GPU directly anyway; a newer account may not get the same treatment.
+
+**Why everyone should do it:** each account gets **1 GPU at a time**. Four approved
+accounts means **four GPU jobs in parallel**, each paid from its owner's credits.
+
+| GPU | On-demand | Spot (our test: ~77% off) | 72 h on one GPU |
+|---|---|---|---|
+| T4 `ml.g4dn.xlarge` | $0.81/hr | ~$0.19/hr | ~$13 spot · ~$58 on-demand |
+
+Your credit balance updates hours after you spend, so watch job hours, not the balance.
+
 ## Rules that will bite you
 
 - **On the Free plan, the account closes when credits hit $0**, and you lose access to
@@ -158,12 +197,8 @@ instances, no Lambda functions. The budget is the only thing to keep.
   Free-plan accounts *"are not eligible for other promotional credits"*. You'd probably need to
   upgrade to Paid to redeem it. Upgrading keeps your remaining credits, but anything
   beyond them is then charged to your card.
-- **SageMaker training quota starts at 0 on new accounts**, GPUs included. Request it on
-  day 0; approval is reviewed by a person and can take hours to days:
-  ```bash
-  aws service-quotas request-service-quota-increase --service-code sagemaker \
-    --quota-code L-3F53BF0F --desired-value 1 --region ap-south-1   # ml.g4dn.xlarge training
-  ```
+- **SageMaker training quota starts at 0 on new accounts**, GPUs included. See
+  [Get GPU quota](#get-gpu-quota--do-this-tonight) above.
 
 Sources: [AWS: Choosing a plan](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html) ·
 [AWS: Earning additional credits](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans-activities.html) ·
