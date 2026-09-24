@@ -8,7 +8,7 @@ private leaderboard on the full test set afterwards.
 | | |
 |---|---|
 | Registration closes | **20 Sep 2026, 23:59** |
-| Hackathon | **25 Sep 09:00 → 27 Sep 21:00** — problem + dataset drop day 1 |
+| Hackathon | **25 Sep 00:00 (midnight) → ~end of 27 Sep** — 72 h; problem + dataset drop at the start. Exact end time unconfirmed |
 | Top 50 announced | 2 Oct 2026 |
 | Grand Finale (virtual) | 7 Oct 2026, 10:00–15:00 — top 10 present to Amazon Scientists |
 

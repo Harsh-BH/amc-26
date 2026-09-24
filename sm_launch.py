@@ -420,8 +420,8 @@ def main(argv=None):
         for p in problems:
             print(f'WARN {p}', file=sys.stderr)
         src_s3 = f's3://{bucket}/{a.prefix}/source/{a.name}/sourcedir.tar.gz'
-        train_s3 = a.data_s3 or f's3://{bucket}/{a.prefix}/data/train/'
-        test_s3 = a.test_s3 or (f's3://{bucket}/{a.prefix}/data/test/' if a.test_data else None)
+        train_s3 = a.data_s3 or f's3://{bucket}/{a.prefix}/data/{a.name}/train/'
+        test_s3 = a.test_s3 or (f's3://{bucket}/{a.prefix}/data/{a.name}/test/' if a.test_data else None)
         req = build_request(a, role_arn(sess, dry_run=True), src_s3, train_s3, test_s3, bucket)
         validate(sess, req)
         print(json.dumps(req, indent=2))
@@ -436,8 +436,10 @@ def main(argv=None):
     src_key = f'{a.prefix}/source/{a.name}/sourcedir.tar.gz'
     sess.client('s3').put_object(Bucket=bucket, Key=src_key, Body=blob)
     print(f'  source {members} -> s3://{bucket}/{src_key}')
-    train_s3 = a.data_s3 or upload_dir(sess, a.data, bucket, f'{a.prefix}/data/train')
-    test_s3 = a.test_s3 or (upload_dir(sess, a.test_data, bucket, f'{a.prefix}/data/test') if a.test_data else None)
+    # Per-job prefix: a shared one keeps stale files from earlier uploads inside the next job's
+    # channel. To reuse an upload without re-sending it, pass the printed URI via --data-s3/--test-s3.
+    train_s3 = a.data_s3 or upload_dir(sess, a.data, bucket, f'{a.prefix}/data/{a.name}/train')
+    test_s3 = a.test_s3 or (upload_dir(sess, a.test_data, bucket, f'{a.prefix}/data/{a.name}/test') if a.test_data else None)
 
     req = build_request(a, role, f's3://{bucket}/{src_key}', train_s3, test_s3, bucket)
     validate(sess, req)
