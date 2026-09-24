@@ -21,3 +21,7 @@ models/
 .env
 *.pem
 graphify-out/
+probes/*/stream.jsonl
+probes/*/session_id
+probes/*/DONE
+probes/*/.collected

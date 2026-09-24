@@ -1,0 +1,1 @@
+Run `.venv/bin/python ledger.py show exp`, then log exactly one exp ledger row with probe="P0-smoke", subproblem="smoke", name="hello", world="none", metrics={"ok": 1}, config={}, and write probes/P0-smoke/RESULT.md containing the 7 headings of probes/RESULT_TEMPLATE.md (one line under each). Then stop.
