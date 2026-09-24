@@ -1,27 +1,12 @@
-# P1-taxonomy — RESULT  (DRAFT — work in progress)
+# P1-taxonomy — RESULT  (DRAFT, being updated)
 ## TL;DR
-Draft. Noise catalogue mined from the train world; normalize.py v1 being written. Numbers pending.
-## Recommendation
-Pending.
-## Evidence
-Pending.
-## What failed
-Pending.
-## Interfaces
-probes/P1-taxonomy/normalize.py (in progress).
-## Risks
-Pending.
-## Open questions
-Pending.
+normalize.py v1 lifts exact-name agreement on true pairs from 21.9% (s0) to 59.8% (`name_core`); random pairs stay at 0.00%.
+After normalisation, recall-side F0.5 at stake: cross-script 3.5 pts > partial overlap 1.9 > website 1.6 > typo 1.1 > no-token 0.5.
+Precision risk: 50% of S1 share their name_core with another S1 of the same country. Address separates them (house no. 66.6% vs 0.3%).
 
-### Early findings (train world, 691,882 true pairs)
-- Indic script in S2/S3 **addresses** is only ever a state name (16 distinct strings) — a 16-entry map removes it.
-- US/India addresses carry essentially no postcodes: 5-digit numbers in US S1 are house numbers; India S1 has no 6-digit PINs.
-- Name noise generator: accent injection, case, digit-for-letter (1↔l, 0↔o, 5↔s, 8↔b, 6↔g), I→l ("lnc"),
-  legal-form swaps (Inc↔Incorporated, Pvt Ltd↔Private Limited), dropped last word, appended generic word
-  (Center/Services/Partners/Trading/Labs), honorific prefixes (M/s, Sri, Shri, Smt, Mr, Dr, The), junk prefixes
-  (`...`, `--`, `***`), `(ID: nnnnn)` / `#nnnnn` tails, alias constructs `<fake> [Sys|One|Co] (f/k/a|fka|formerly [known as]|aka|dba|doing business as|trading as) <real>`,
-  websites/handles (`name.com`, `@name`, `#name`, `Name | www.<10-char-prefix>.com`).
-- Address noise: segment shuffle (S1 too), street-type abbreviation, state full↔code, `NULL`/`<NULL>`/`N/A`,
-  added `PO BOX n`/`PMB n`, `CITY`/`CDP`/`TOWNSHIP`/`TWP`/`REGION`/`DIVREPORTINGCIRCLE` appended,
-  alternate municipality names, house-number decoration (`##`, `1810-A`, `A-A-32`, `No`/`Door No`/`H.no` prefixes).
+## Evidence (so far; train-world sample = 30k S1, 103,906 true pairs, 100k random same-country pairs)
+| ledger name | world | key metrics | verdict |
+|---|---|---|---|
+| lift-name-addr-v1.1 | train-sample30k | name exact s0 0.219 → core 0.598 (rand 0); any-token s0 0.855/0.157 → core 0.866/0.009; house no. eq 0.867/0.004; city_freq eq 0.792/0.011 | keep |
+| taxonomy-v1 | train-sample30k | see table below | keep |
+| lookalike-chains-v1 | train S1 2.2M + sample | 49% of exact-core true pairs have a wrong same-core S1; address score picks the true S1 strictly in 89.9%, ties 10.0%, wrong 0.18% | keep |
