@@ -18,4 +18,7 @@ cat "${prompt[@]}" \
         elif .type=="tool_use" then "  -> \(.name) \((.input.command // .input.file_path // "")|tostring|.[0:120])\n"
         else empty end)
     elif .type=="result" then "\n== \(.subtype)  cost $\(.total_cost_usd)\n" else empty end'
-echo "exit=${PIPESTATUS[1]} $(date -Is)" > "$DIR/DONE"
+rc=${PIPESTATUS[1]}
+# exit codes lie when the scope is torn down; only a final result event means the session really finished
+last=$(tail -n1 "$DIR/stream.jsonl" | jq -r 'if .type=="result" then "result:\(.subtype)" else "CRASHED(last=\(.type))" end' 2>/dev/null)
+echo "exit=$rc $last $(date -Is)" > "$DIR/DONE"
