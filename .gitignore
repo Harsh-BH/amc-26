@@ -25,3 +25,4 @@ probes/*/stream.jsonl
 probes/*/session_id
 probes/*/DONE
 probes/*/.collected
+.claude/settings.local.json

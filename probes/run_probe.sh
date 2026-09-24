@@ -8,6 +8,8 @@ ID=$1; MEM=$2; MODE=${3:-new}; DIR=probes/$ID; SID=$(cat "$DIR/session_id")
 # Tool commands run in bash, which sources BASH_ENV: they raise their own oom_score_adj to 1000, so the
 # kernel OOM killer picks them, not the claude CLI (it killed the CLI in P2 at 04:13 when it was the biggest).
 export SHELL=/usr/bin/bash BASH_ENV="$PWD/probes/oom_child.sh"
+# user settings default subagents to Sonnet 5; this project runs every agent on Opus 5.5
+export CLAUDE_CODE_SUBAGENT_MODEL=claude-opus-5-5
 if [[ $MODE == resume ]]; then prompt=("$DIR/RESUME.md"); sess=(--resume "$SID")
 else prompt=(probes/_COMMON.md "$DIR/BRIEF.md"); sess=(--session-id "$SID"); fi
 cat "${prompt[@]}" \
