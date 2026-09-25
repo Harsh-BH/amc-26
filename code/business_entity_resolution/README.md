@@ -37,8 +37,13 @@ matches and writes.
 | output | one row per test S1 (all countries); candidates = blocking ∪ accepted pairs | `run.write_lists` | `output/*.tsv` |
 
 Blocking alone can be run per country: `.venv/bin/python code/business_entity_resolution/src/block.py test France`.
-Measured on a 16-core laptop: text prep 6.5 min for all 11.7M test rows, then blocking of 5 min (France), 18 min
-(India) and 6 min (US), peaking at 2.7 GB. `CFG["shard"]` in `block.py` trades RAM for speed.
+Measured on a shared 16-core laptop:
+- Blocking: text prep 6.5 min for all 11.7M test rows, then 5 min (France), 18 min (India) and 6 min (US), peaking
+  at 2.7 GB. `CFG["shard"]` in `block.py` trades RAM for speed.
+- Record features: 20 min for the 12.5M train rows at `PROCS = 2` workers (`run.py`; ~0.5 GB per worker), so about
+  the same for the 11.7M test rows.
+- Matching and writing, with the caches present: 2.5 min (France), 5 min (India) and 3 min (US), at a 2.3 GB peak.
+- The official validator holds every candidate id in RAM, about 5 GB at test scale.
 
 `--stage model` routes the candidates through `model.score(pairs, f1, fx)`, a pair classifier, and then through the
 decision layer: `decide.decide` if `src/decide.py` exists, otherwise each S2/S3 goes to its best S1 if p ≥ T.

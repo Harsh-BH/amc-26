@@ -179,14 +179,17 @@ def assemble(stage: str, f1: pd.DataFrame, fx: pd.DataFrame, load, keep: np.ndar
         cands, kp = cands.filter(pa.array(m)), kp[m]
     if stage == "rules":
         del cands
-    acc, kc = R.match(f1, fx, by_state=True, keep_cands=stage == "model")
-    ka = key(acc.s1, acc.sx)
-    ka = ka[keep[ka >> 32]]
-    del acc
+    ka, kk = [], []
+    for i in range(0, len(fx), 400_000):              # exact: each S2/S3 is decided on its own key matches
+        acc, kc = R.match(f1, fx.iloc[i:i + 400_000], by_state=True, keep_cands=stage == "model")
+        for out, d in ((ka, acc), (kk, kc)):
+            k = key(d.s1, d.sx) if len(d) else np.zeros(0, np.int64)
+            out.append(k[keep[k >> 32]])                # cut to the scored S1 per chunk: bounded on the full corpus
+    ka, kk = np.concatenate(ka), np.concatenate(kk)
+    del acc, kc
     if stage == "rules":
         return ka, np.union1d(kp, ka), None
-    kk = key(kc.s1, kc.sx) if len(kc) else ka[:0]
-    K = np.unique(np.concatenate([kp, kk[keep[kk >> 32]], ka]))
+    K = np.unique(np.concatenate([kp, kk, ka]))
     o = np.argsort(kp)
     pos = np.minimum(np.searchsorted(kp[o], K), max(len(kp) - 1, 0))
     hit = (kp[o][pos] == K) if len(kp) else np.zeros(len(K), bool)
@@ -289,10 +292,11 @@ def validate(out: Path):
         return
     cmd = [sys.executable, "utils/validate_submission.py", "--matching", str((out / "matching_results.tsv").resolve()),
            "--test-dir", str(DATA.resolve() / "test")]
-    r = subprocess.run(cmd + ["--candidate", str((out / "candidate_pairs.tsv").resolve())], cwd=cwd)
+    victim = lambda: Path("/proc/self/oom_score_adj").write_text("1000")   # the OOM killer takes it, never run.py
+    r = subprocess.run(cmd + ["--candidate", str((out / "candidate_pairs.tsv").resolve())], cwd=cwd, preexec_fn=victim)
     if r.returncode in (-9, 137):
         print("VALIDATOR OOM-KILLED on candidate_pairs.tsv -- rerunning on matching_results.tsv only", flush=True)
-        r = subprocess.run(cmd, cwd=cwd)
+        r = subprocess.run(cmd, cwd=cwd, preexec_fn=victim)
     assert r.returncode == 0, f"official validator failed ({r.returncode})"
 
 
