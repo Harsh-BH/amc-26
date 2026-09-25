@@ -11,9 +11,10 @@ One country at a time, labels taken from the S1 file (an open set: France and un
   3 score   rules: the accept set (v0) | model: M2 LightGBM on 65 features (features.py, model.py) -> p, then for
             the countries the cross-encoder was trained on (India, US) the band 0.02 < p < 0.98 is rescored by
             rerank.py in its own process under the GPU lock and blended into p
-  4 decide  each S2/S3 only at its argmax-p S1, kept if p >= t: T (0.69) for a country with training labels;
-            for any other label (France) P6's label-free rule on M2's p -- the t where its predicted empty-S1 rate
-            equals the labelled countries' rate at M2's own optimum T_M2 (0.69), clipped to [T_M2, T_M2 + 0.2]
+  4 decide  each S2/S3 only at its argmax-p S1, kept if p >= t: T (0.71) for a country with training labels;
+            France (M2's p) T_FRANCE_OVERRIDE = 0.95, fixed from the leaderboard; any other label P6's label-free
+            rule on M2's p -- the t where its predicted empty-S1 rate equals the labelled countries' rate at M2's
+            own optimum T_M2 (0.69), clipped to [T_M2, T_M2 + 0.2]
   5 write   one row per S1, matches ⊆ candidates, only S2-/S3- ids of the split; then the official validator
 Splits:
   test     the submission (all 1,732,544 test S1)
@@ -55,23 +56,31 @@ PROCS = 2           # ponytail: rules.feats workers (~0.5 GB each) sized for a 2
 PIECE = 500_000     # raw rows per rules.feats call when building a feature cache
 N_TEST_S1 = 1_732_544
 CCOLS = ["s1", "sx", "block_score", "block_rank_s1", "block_rank_sx", "via"]
-T = 0.69            # threshold on the CE-blended p (#5: m2_big + refit blend, holdout-tuned)
+T = 0.71            # threshold on the CE-blended p (#7: m2_big + 2-epoch CE, refit on holdout half 0; #5/#6 0.69)
 T_M2 = 0.69         # M2's own holdout optimum (m2_big 0.69): the reference point of the unseen-country rule (P6)
-T_FRANCE_OVERRIDE = None   # France's t; None = P6's label-free rule (0.78 on m2_big). LB: 0.88 scored +0.0010 vs 0.78
+T_FRANCE_OVERRIDE = 0.95   # France's t (#7, LB-validated: D4 0.981142 vs 0.980017 at P6's 0.78); None = P6's rule
 T_COUNTRY = {}             # more per-country t overrides (--t-country C=t); any other unseen label keeps P6's rule
-# submission -> booster, its train folds, blend w, T, T_M2, pruner tau. Module defaults = sub6 (--recipe switches).
-RECIPES = {"sub4": dict(booster="m2_ladder.txt", folds=(2,), w=[0.636, 0.757, 0.355], t=0.70, t_m2=0.71, tau=None),
-           "sub5": dict(booster="m2_big.txt", folds=(2, 3, 4, 5), w=[0.678, 0.715, 0.338], t=0.69, t_m2=0.69, tau=None),
-           "sub6": dict(booster="m2_big.txt", folds=(2, 3, 4, 5), w=[0.678, 0.715, 0.338], t=0.69, t_m2=0.69, tau=0.03)}
+# submission -> booster, its train folds, blend w, T, T_M2, pruner tau, CE (+ its epochs), France t (None = P6 rule).
+# Module defaults = sub7; --recipe switches all of them. Each recipe reproduces its staged files byte for byte.
+_P4B = dict(ce="p4b/ce.pt", ce_epochs=1, t_france=None)
+RECIPES = {"sub4": dict(booster="m2_ladder.txt", folds=(2,), w=[0.636, 0.757, 0.355], t=0.70, t_m2=0.71, tau=None, **_P4B),
+           "sub5": dict(booster="m2_big.txt", folds=(2, 3, 4, 5), w=[0.678, 0.715, 0.338], t=0.69, t_m2=0.69, tau=None,
+                        **_P4B),
+           "sub6": dict(booster="m2_big.txt", folds=(2, 3, 4, 5), w=[0.678, 0.715, 0.338], t=0.69, t_m2=0.69, tau=0.03,
+                        **_P4B),
+           "sub7": dict(booster="m2_big.txt", folds=(2, 3, 4, 5), w=[0.617, 0.666, 0.261], t=0.71, t_m2=0.69, tau=0.03,
+                        ce="p11/ce_s2P.pt", ce_epochs=2, t_france=0.95)}
+RECIPE = "sub7"
 GPU_LOCK = "/tmp/amc-gpu.lock"
 
 
 def use(recipe: str):
-    """Switch booster, blend weights, thresholds and pruner to one submission's recipe (RECIPES)."""
-    global T, T_M2
+    """Switch booster, blend weights, thresholds, pruner, CE and France's t to one submission's recipe (RECIPES)."""
+    global T, T_M2, T_FRANCE_OVERRIDE, RECIPE
     r = RECIPES[recipe]
     M.BOOSTER, M.FOLDS, M.TAU, M._M, RR.CFG["w"] = WORK / "p4" / r["booster"], r["folds"], r["tau"], None, list(r["w"])
-    T, T_M2 = r["t"], r["t_m2"]
+    RR.CE, RR.EPOCHS = WORK / r["ce"], r["ce_epochs"]
+    T, T_M2, T_FRANCE_OVERRIDE, RECIPE = r["t"], r["t_m2"], r["t_france"], recipe
 
 
 def ensure(split: str):
@@ -267,7 +276,7 @@ def rerank(c: str, q1: np.ndarray, qx: np.ndarray, p: np.ndarray, text, cache: P
             del ta, tb
             gc.collect()
             subprocess.run(["flock", GPU_LOCK, sys.executable, str(SRC / "rerank.py"), "score", f"{d}/in.parquet",
-                            f"{d}/out.parquet"], check=True)
+                            f"{d}/out.parquet", str(RR.CE)], check=True)     # the recipe's CE, not the module default
             r[todo] = pd.read_parquet(f"{d}/out.parquet").r.to_numpy(np.float32)
         print(f"{c}: {int(todo.sum()):,} of {len(b):,} band pairs rescored in {time.time() - t0:.0f}s", flush=True)
         if cache is not None:
@@ -278,7 +287,7 @@ def rerank(c: str, q1: np.ndarray, qx: np.ndarray, p: np.ndarray, text, cache: P
 
 
 def ensure_ce():
-    """Train the cross-encoder from the train data when data/work/p4b/ce.pt is absent (~30 min, GPU)."""
+    """Train the recipe's cross-encoder from the train data when rerank.CE is absent (~30 min per epoch, GPU)."""
     if RR.CE.exists():
         return
     import train_matcher
@@ -286,7 +295,8 @@ def ensure_ce():
     for c in RR.CFG["countries"]:
         if not (RR.OUT / f"trainband_{c}.parquet").exists():
             subprocess.run([sys.executable, str(SRC / "rerank.py"), "band", c], check=True)
-    subprocess.run(["flock", GPU_LOCK, sys.executable, str(SRC / "rerank.py"), "train"], check=True)
+    subprocess.run(["flock", GPU_LOCK, sys.executable, str(SRC / "rerank.py"), "train", f"epochs={RR.EPOCHS}",
+                    f"out={RR.CE}"], check=True)
 
 
 def empty_curve(q1: np.ndarray, qx: np.ndarray, p: np.ndarray, n_s1: int, ts) -> pd.Series:
@@ -536,8 +546,7 @@ def run(split: str, stage: str, out: Path, world=None, log=True) -> dict:
             cfg |= {"score": f"M2 {M.BOOSTER.name} ({M.tag(M.BOOSTER)}) + CE {RR.CE.name} ({M.tag(RR.CE)}) "
                              f"band {RR.CFG['band']} w {RR.CFG['w']} on {list(RR.CFG['countries'])}",
                     "decide": f"argmax S1 per SX + t {ts}", "unseen_rule": f"P6 empty-rate match on M2 p at {T_M2}",
-                    "recipe": next((k for k, v in RECIPES.items() if v["booster"] == M.BOOSTER.name
-                                    and v["tau"] == M.TAU), M.BOOSTER.name), "pruner_tau": M.TAU,
+                    "recipe": RECIPE, "pruner_tau": M.TAU,
                     "blend_w_refit_half0": w}
         ledger_log("pipe", version=f"p9-{stage}", world=split + ("-dense" if split.startswith("holdout") else ""),
                    metrics={k: round(float(v), 4) for k, v in m.items()}, config=cfg)
@@ -549,7 +558,7 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
     ap.add_argument("--split", choices=["test", "holdout", "holdout-world", "dev"], required=True)
     ap.add_argument("--stage", choices=["rules", "model"], default="rules")
     ap.add_argument("--out", type=Path, default=Path("output"))
-    ap.add_argument("--recipe", choices=sorted(RECIPES), default="sub6")
+    ap.add_argument("--recipe", choices=sorted(RECIPES), default="sub7")
     ap.add_argument("--t-country", nargs="*", default=[], metavar="C=t",
                     help="fixed thresholds per country, e.g. France=0.88 (default: France and unseen labels by P6's rule)")
     a = ap.parse_args()
