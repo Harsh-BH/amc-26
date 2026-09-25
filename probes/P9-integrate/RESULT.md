@@ -27,7 +27,7 @@
 | `run.py --split holdout --stage model` (pipe p9-model, dcd4df4) | **F0.5 0.9888** (India 0.9899, US 0.9880), half 0 0.9890 / half 1 **0.9885** (P4 improve-big-ce-D3: 0.9885). P 0.9977, R 0.9705, singleton 0.9884. Blend refit on half 0 = [0.678, 0.715, 0.337] (CFG 0.338). 38 min wall, 2.09 GB |
 | `run.py --split test --stage model --recipe sub4` vs `output/sub4` | **byte-identical, both files**; France 0.82, validator PASS; 80 s to both files from caches (no GPU) |
 | `train_matcher.py --folds 2,3,4,5 --frac 0.02 --rounds 50` (smoke) | 252,154 train pairs (2% S1 sample of folds 2–5, 0.240 true), val 793,402 (= P4's), 50 trees, 54 s, 1.28 GB. **Full retrain not run**: its 3.7 GB peak (P4) was too much while other probes' jobs kept memguard pausing at < 1.5 GB free |
-| `test_pipeline.py` | TEST_PIPELINE_RESULT |
+| `test_pipeline.py` (#5 defaults) | **pass**: rules 0.8575, model **0.9970**; unseen Xland gets P6's rule (t 0.89 = T_M2 + 0.2 cap), 95% of its S1 hit; Yland empty rows. It waited 49 min for the GPU lock (P11's CE training), about 1 min of its own work |
 
 **Why #5 is byte-identical despite big.py's shortcut.**
 - big.py recovered #4's CE scores by inverting #4's blend (max \|Δr\| 8.5e-4). My pipeline uses the exact scores
