@@ -7,7 +7,7 @@
     python src/rerank.py check                                            # blend-rule self-check
 
 The blend (CFG): for pairs with 0.02 < p < 0.98 of a country the CE was trained on,
-p' = sigmoid(0.636 logit p + 0.757 logit r + 0.355) (a logistic stack fitted on holdout half-0 band pairs;
+p' = sigmoid(0.678 logit p + 0.715 logit r + 0.338) (a logistic stack fitted on holdout half-0 band pairs;
 run.py --split holdout refits and prints it). Every other pair keeps p: leave-one-country-out LOSES F0.5
 (India -> US -0.0016), so France / any unseen label is not reranked -- it is not filtered either.
 `score` runs in its own process (torch + CUDA = 1.4 GB RSS) under the GPU lock; run.py passes it the texts.
@@ -43,7 +43,8 @@ LO, HI = 0.1, 0.9            # the band the train pairs are drawn from
 MAXLEN = 64                  # pair tokens p50 ~50 / p99 ~75; longest_first truncation drops the address tail
                              # (city/state) and keeps name + house number + street; GPU-bound, 64 vs 96 = ~1.5x
 ID = ["q1", "qx", "is_true", "fold"]
-CFG = {"band": (0.02, 0.98), "w": [0.636, 0.757, 0.355], "countries": ("India", "US")}
+# w: #5 = the stack refit on m2_big's holdout half-0 band (P4 improve_eval.json); #4 (m2_ladder) = [0.636, 0.757, 0.355]
+CFG = {"band": (0.02, 0.98), "w": [0.678, 0.715, 0.338], "countries": ("India", "US")}
 peak = lambda: resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6
 
 

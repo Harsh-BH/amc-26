@@ -1,5 +1,5 @@
-"""Line-by-line comparison of a run.py test output with submission #4 (both files), per country, plus why lines
-differ: the p of the differing pairs next to their thresholds.
+"""Line-by-line comparison of a run.py test output with a staged submission (#4, #5), both files, plus the
+differing S1 with the ids only one side has.
 
     .venv/bin/python probes/P9-integrate/diff_sub4.py output/p9 /home/harsh1/github-repos/amc-26/output/sub4
 """
@@ -34,11 +34,11 @@ for name in ("matching_results.tsv", "candidate_pairs.tsv"):
     if name == "matching_results.tsv":
         diffs = [(s, sorted(x - y), sorted(y - x)) for s, (x, y) in bad.items()]
 for s, only_mine, only_ref in diffs[:20]:
-    print(f"  {country[s]}: +{len(only_mine)} only in mine, +{len(only_ref)} only in sub4")
+    print(f"  {s} {country[s]}: only in mine {only_mine}, only in {ref.name} {only_ref}")
 if len(sys.argv) > 3:
     from ledger import log
-    log("exp", probe="P9-integrate", subproblem="integration", name="test-model-vs-sub4", world="test",
+    log("exp", probe="P9-integrate", subproblem="integration", name=f"test-model-vs-{ref.name}", world="test",
         metrics={f"{k.split('_')[0]}_{m}": v for k, r in res.items() for m, v in r.items() if m != "differ_by_country"}
         | {f"match_differ_{c}": v for c, v in res["matching_results.tsv"]["differ_by_country"].items()},
-        config={"mine": str(mine), "ref": str(ref)}, hypothesis="run.py --split test --stage model reproduces sub4",
+        config={"mine": str(mine), "ref": str(ref)}, hypothesis=f"run.py --split test --stage model reproduces {ref.name}",
         verdict="keep" if res["matching_results.tsv"]["share"] >= 0.9999 else "drop", runtime_s=0, peak_gb=0)

@@ -1,6 +1,6 @@
 """End-to-end pipeline: raw TSVs -> matching_results.tsv + candidate_pairs.tsv. Run from the repo root.
 
-    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # the submission (#4)
+    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # submission #5 (--recipe sub4: #4)
     python code/business_entity_resolution/src/run.py --split holdout --stage model   # dense holdout F0.5 -> pipe ledger
     python code/business_entity_resolution/src/run.py --split dev --stage model       # the small dev world
     python code/business_entity_resolution/src/run.py --split test --stage rules      # submission #2 (rules only)
@@ -11,9 +11,9 @@ One country at a time, labels taken from the S1 file (an open set: France and un
   3 score   rules: the accept set (v0) | model: M2 LightGBM on 65 features (features.py, model.py) -> p, then for
             the countries the cross-encoder was trained on (India, US) the band 0.02 < p < 0.98 is rescored by
             rerank.py in its own process under the GPU lock and blended into p
-  4 decide  each S2/S3 only at its argmax-p S1, kept if p >= t: T (0.70) for a country with training labels;
+  4 decide  each S2/S3 only at its argmax-p S1, kept if p >= t: T (0.69) for a country with training labels;
             for any other label (France) P6's label-free rule on M2's p -- the t where its predicted empty-S1 rate
-            equals the labelled countries' rate at M2's own optimum T_M2 (0.71), clipped to [T_M2, T_M2 + 0.2]
+            equals the labelled countries' rate at M2's own optimum T_M2 (0.69), clipped to [T_M2, T_M2 + 0.2]
   5 write   one row per S1, matches ⊆ candidates, only S2-/S3- ids of the split; then the official validator
 Splits:
   test     the submission (all 1,732,544 test S1)
@@ -55,9 +55,19 @@ PROCS = 2           # ponytail: rules.feats workers (~0.5 GB each) sized for a 2
 PIECE = 500_000     # raw rows per rules.feats call when building a feature cache
 N_TEST_S1 = 1_732_544
 CCOLS = ["s1", "sx", "block_score", "block_rank_s1", "block_rank_sx", "via"]
-T = 0.70            # threshold on the CE-blended p (P4b's retune of M2's 0.71; P5 blend-a-t0.70 = 0.9881)
-T_M2 = 0.71         # M2's own holdout optimum: the reference point of the unseen-country rule (P6)
+T = 0.69            # threshold on the CE-blended p (#5: m2_big + refit blend, holdout-tuned)
+T_M2 = 0.69         # M2's own holdout optimum (m2_big 0.69): the reference point of the unseen-country rule (P6)
+# submission -> (booster, its train folds, blend w, T, T_M2). Module defaults = sub5; --recipe sub4 reproduces #4.
+RECIPES = {"sub4": ("m2_ladder.txt", (2,), [0.636, 0.757, 0.355], 0.70, 0.71),
+           "sub5": ("m2_big.txt", (2, 3, 4, 5), [0.678, 0.715, 0.338], 0.69, 0.69)}
 GPU_LOCK = "/tmp/amc-gpu.lock"
+
+
+def use(recipe: str):
+    """Switch booster, blend weights and thresholds to one submission's recipe (RECIPES)."""
+    global T, T_M2
+    b, M.FOLDS, w, T, T_M2 = RECIPES[recipe]
+    M.BOOSTER, M._M, RR.CFG["w"] = WORK / "p4" / b, None, list(w)
 
 
 def ensure(split: str):
@@ -514,6 +524,7 @@ def run(split: str, stage: str, out: Path, world=None, log=True) -> dict:
             cfg |= {"score": f"M2 {M.BOOSTER.name} ({M.tag(M.BOOSTER)}) + CE {RR.CE.name} ({M.tag(RR.CE)}) "
                              f"band {RR.CFG['band']} w {RR.CFG['w']} on {list(RR.CFG['countries'])}",
                     "decide": f"argmax S1 per SX + t {ts}", "unseen_rule": f"P6 empty-rate match on M2 p at {T_M2}",
+                    "recipe": next((k for k, v in RECIPES.items() if v[0] == M.BOOSTER.name), M.BOOSTER.name),
                     "blend_w_refit_half0": w}
         ledger_log("pipe", version=f"p9-{stage}", world=split + ("-dense" if split.startswith("holdout") else ""),
                    metrics={k: round(float(v), 4) for k, v in m.items()}, config=cfg)
@@ -525,6 +536,8 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
     ap.add_argument("--split", choices=["test", "holdout", "holdout-world", "dev"], required=True)
     ap.add_argument("--stage", choices=["rules", "model"], default="rules")
     ap.add_argument("--out", type=Path, default=Path("output"))
+    ap.add_argument("--recipe", choices=sorted(RECIPES), default="sub5")
     a = ap.parse_args()
+    use(a.recipe)
     assert not (a.stage == "model" and a.split == "holdout-world"), "holdout-world is the rules-only regression link"
     run(a.split, a.stage, a.out)

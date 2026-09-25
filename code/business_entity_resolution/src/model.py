@@ -1,5 +1,6 @@
-"""M2 pair matcher (P4-match): LightGBM on the 65 features of features.py, booster data/work/p4/m2_ladder.txt
-(train_matcher.py rebuilds it from the train data when absent).
+"""M2 pair matcher (P4-match): LightGBM on the 65 features of features.py. Submission #5: booster
+data/work/p4/m2_big.txt, trained on train folds 2-5 (#4: m2_ladder.txt, fold 2 only; run.py --recipe switches).
+train_matcher.py rebuilds it from the train data when absent.
 
     score(pairs, f1, fx) -> p       in memory (dev world, injected frames): pairs = run.assemble's P3 ∪ rule-accepted
                                     pairs, f1 / fx = features.rec tables of the S1 pool and the S2/S3 records
@@ -18,7 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import features as F
 from worlds import WORK
 
-BOOSTER = WORK / "p4" / "m2_ladder.txt"
+BOOSTER = WORK / "p4" / "m2_big.txt"      # #5; #4 = m2_ladder.txt
+FOLDS = (2, 3, 4, 5)                       # the train folds BOOSTER is fitted on; #4 = (2,)
 CACHE = WORK / "p9"                     # M2 p per split / country, keyed by the booster's hash
 DROP = {"s1", "sx", "q1", "qx", "y", "is_true", "fold", "country"}
 PARAMS = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=100, feature_fraction=0.8,
@@ -28,17 +30,6 @@ _M = None
 
 def feats(X: pd.DataFrame) -> list:
     return [c for c in X.columns if c not in DROP]
-
-
-def fit(X, y, Xv=None, yv=None, rounds: int = 2000, params: dict | None = None, cols=None):
-    """LightGBM. X / Xv: float32 arrays with `cols` = their feature names; early-stopped on (Xv, yv) when given."""
-    import lightgbm as lgb
-    d = lgb.Dataset(X, np.asarray(y, np.float32), feature_name=list(cols), free_raw_data=True)
-    kw = {}
-    if Xv is not None:
-        kw = dict(valid_sets=[lgb.Dataset(Xv, np.asarray(yv, np.float32), reference=d)],
-                  callbacks=[lgb.early_stopping(100, verbose=False), lgb.log_evaluation(0)])
-    return lgb.train({**PARAMS, **(params or {})}, d, rounds, **kw)
 
 
 def predict(model, X: pd.DataFrame) -> np.ndarray:
@@ -53,7 +44,7 @@ def load():
         import lightgbm as lgb
         if not BOOSTER.exists():
             import train_matcher
-            train_matcher.main(BOOSTER)
+            train_matcher.main(BOOSTER, FOLDS)
         _M = lgb.Booster(model_file=str(BOOSTER))
     return _M
 
