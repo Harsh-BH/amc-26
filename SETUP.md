@@ -32,7 +32,8 @@ amc26-offload/
 ├── data/student_resource/dataset/   the challenge data (train + test TSVs)          ~5 GB
 ├── models/                          our trained models (step 5)                    ~110 MB
 │   ├── p4/m2_big.txt                  LightGBM matcher (the "main judge")
-│   ├── p4b/ce.pt                      fine-tuned e5-small cross-encoder (the "second opinion")
+│   ├── p4b/ce.pt                      fine-tuned e5-small cross-encoder, 1 epoch (#4-#6; the "second opinion")
+│   ├── p11/ce_s2P.pt                  the same cross-encoder trained 2 epochs (#7, the default)
 │   └── p10/pruner.txt                 candidate pruner (shrinks shortlists 15.9 → 4.8 per business)
 └── work/                            cached test-side intermediate files (step 6)    ~4.6 GB
 ```
@@ -90,10 +91,11 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `models/p4/m2_big.txt` | `data/work/p4/m2_big.txt` | 67 MB | `598e51c859cf85bf7d59f75135959fcc47e4c71e05ebe6ae3a2414695e485f03` |
 | `models/p4b/ce.pt` | `data/work/p4b/ce.pt` | 42 MB | `16013613bbef1c9548a7d91b73978e0be6f833a6007ab45f2460644e1b55c789` |
 | `models/p10/pruner.txt` | `data/work/p10/pruner.txt` | 1 MB | `02ab27da2fca67220fc8377eb881c858aa4871c0eaeacd9efa75bed4eb885a52` |
+| `models/p11/ce_s2P.pt` (#7; upload pending) | `data/work/p11/ce_s2P.pt` | 43 MB | `4dc0d8826a9efb3a3d1d956130b5c9af139af6941b77596fc1a5719196c3b9af` |
 
 ```bash
 rclone copy gdrive:amc26-offload/models data/work/     # or copy the three files by hand into those paths
-sha256sum data/work/p4/m2_big.txt data/work/p4b/ce.pt data/work/p10/pruner.txt   # must match the table
+sha256sum data/work/p4/m2_big.txt data/work/p4b/ce.pt data/work/p10/pruner.txt data/work/p11/ce_s2P.pt   # must match
 ```
 
 ## 6. Cached test features — path A only (the run takes minutes)
@@ -141,7 +143,8 @@ training pairs). With them a retrain skips ~1 h 45 min of candidate search + fea
 | **Pruner** (threshold τ or its features) | τ only: **yes**, no retrain (`model.TAU`). New features: retrain (74 s) |
 | **Only thresholds / France cut-off** | **Yes** — no training at all; `--t-country France=<t>` and the cached scores make it seconds |
 
-Always compare on the **full-corpus holdout** (`run.py --split holdout --stage model`, #5 = 0.9888, #6 = 0.9885)
+Always compare on the **full-corpus holdout** (`run.py --split holdout --stage model`, #5 = 0.9888, #6 = 0.9885,
+#7 = 0.9888)
 and log it (`ledger.py`). A change is worth keeping at ≥ +0.0005.
 
 ## 7. Run
@@ -211,5 +214,8 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
-- The command now produces **submission #6** byte for byte (pruner, 4.83 candidates per business; holdout 0.9885). `--recipe sub5` gives #5 (leaderboard 0.980017); `--t-country France=0.88` gives #6b.
-- Best leaderboard so far: **0.981024** (France threshold raised to 0.88).
+- The command now produces **submission #7**: the pruner (4.83 candidates per business), m2_big, the 2-epoch
+  cross-encoder (India / US t 0.71) and France fixed at t 0.95. Holdout 0.9888 (#6: 0.9885).
+- `--recipe sub6` gives #6 byte for byte, and `--recipe sub6 --t-country France=0.95` gives #6c (leaderboard
+  0.980954). `--recipe sub5` gives #5 (leaderboard 0.980017).
+- Best leaderboard so far: **0.981142** (D4: #5 with France t 0.95; France 0.88 scored 0.981024).
