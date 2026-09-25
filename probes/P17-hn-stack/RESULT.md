@@ -1,133 +1,146 @@
 # P17-hn-stack — RESULT
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
-- **Brief A passes on the #7 yardstick.** P15's residual stacker (hn class, signed delta, eq, n_same, p_same, n_s1hn)
-  sits on #7's blended p over #7's pruned list, plus lambda_l2 = 1 as a leaf guard. Report half **+0.00067 ± 0.00007
-  (9.6 SE)**: India +0.00008 ± 0.00008, US +0.00107 ± 0.00011. Half-swap: +0.00082 ± 0.00008.
-- The yardstick is exact: the base arm reproduces run.py's half-1 0.98869, and the #7 test rebuild matches
-  output/sub7 pair for pair. #8 is staged in `data/work/p17/sub8/` and the **validator PASSES**: 19,715 S1 change
-  (India 5,375, US 14,340, France 0), and the candidates are byte-identical to #7's.
-- **Recommendation: upload #8** (India/US t 0.71 unchanged, France = #7's). Expected LB ≈ 0.85 × (0.55 × 0.00008 +
-  0.45 × 0.00107) ≈ **+0.00045**. Brief C's branch words add nothing (drop).
+- **Round 2 (bge base, #8c):**
+  - Stacking both countries on P13's bge blend does **not** pass: +0.00028 ± 0.00006, and India is
+    **−0.00013 ± 0.00006**. On the stronger CE, India has nothing left to gain (half-swap India +0.00002).
+  - **US-only passes**: India+US **+0.00033 ± 0.00005** on half 1 and +0.00046 ± 0.00005 on the swap. US alone:
+    +0.00055 ± 0.00009 / +0.00076 ± 0.00009. Over #7 that is ≈ +0.00088.
+- **#8c is staged and the validator passes**: `data/work/p17/sub8c/`.
+  - US = bge + stack; India and France = #8a's.
+  - It differs from sub8a on 11,230 US S1 only, and the candidates are byte-identical.
+  - Expected LB over #8a ≈ 0.85 × 0.45 × 0.00055…0.00076 ≈ **+0.0002–0.0003**.
+- **France: do not stack it now.**
+  - Leave-one-country-out (LOCO) in France's no-CE regime transfers (US→India +0.00073 ± 0.00021, India→US
+    +0.00203 ± 0.00015).
+  - On France test, though, it reshuffles 4.7–8.1% of S1 and barely filters siblings.
+  - Round 1 (#7 base, e5 CE): +0.00067 ± 0.00007, merged as #8p.
 
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
-**#8 (LB slot).** The already-built dry run is in `data/work/p17/sub8/` (matching_results.tsv + candidate_pairs.tsv,
-official validator PASS). To rebuild it:
+**#8c = bge + US stack.** It is already built in `data/work/p17/sub8c/` (validator PASS). To rebuild it:
 ```
-.venv/bin/python code/business_entity_resolution/src/submit_probs.py --probs 'data/work/p17/prob_test_{country}.parquet' \
-    --out output/sub8 --t 0.71 --t-country France=0.95
+.venv/bin/python code/business_entity_resolution/src/submit_probs.py --probs 'data/work/p17/prob_test_{country}_bge.parquet' \
+    --out output/sub8c --t 0.71 --t-country France=0.95
 ```
-- `data/work/p17/prob_test_France.parquet` is a symlink to `../p10/prob_test_France.parquet` (#7's France: 776,184
-  matches at 0.95, the same as sub7).
-- The India/US files are s1, sx, p = stacked p over #7's pruned rows, in the same row order.
-- **code.zip** must also carry the stage: `probes/P17-hn-stack/stack.py` plus the P15 helpers it imports
-  (`hn_check.py`, `hn_stack.py`), and the two boosters. Alternatively, promote it into src first (below).
+The three input files:
+- `prob_test_US_bge.parquet`: s1, sx, p = the stacked p over #8a's US p. Same pruned rows as #7 / #8a, in #7's
+  m2-cache order.
+- `prob_test_India_bge.parquet` → `../p13/prob_test_India_blend.parquet`: #8a's India, **unstacked**.
+- `prob_test_France_bge.parquet` → `../p10/prob_test_France.parquet`: #8a's France, #6c / #7 at 0.95.
 
-**run.py integration (proposal; src/ is P9's).** Add a stage between `rerank()` and the decision in `run()` /
-`model_parts`, for countries in `RR.CFG["countries"]` only:
-```python
-# src/hnstack.py  <- stack.frame's hn lookup + X_of + stacked (~60 lines) + P15 hn_check.hn_cls, hn_stack.support
-def apply(c, q1, qx, p, h1, hx) -> np.ndarray:        # h1/hx = rf_<split>_{s1,sx}_<c>.hn at q1 / qx ("" = none)
-    X = X_of({"q1": q1, "p": p, "h1": h1, "hx": hx}, "sup")          # support on THIS (pruned) list
-    return stacked(lgb.Booster(model_file=WORK / f"p17/stack_sup-l21.0_{c}.txt"), X)
-```
-- Recipe key: `stack="p17/stack_sup-l21.0_{c}.txt"`. T stays 0.71, and France / unseen labels are untouched.
-- Booster: LightGBM 200 trees × 31 leaves, lr 0.05, min_data_in_leaf 200, **lambda_l2 1**, init_score = logit p,
-  categorical `cls`. Fit on the holdout S1 of `run.half == 0`, labels = truth pairs.
-- Rebuild: `stack.py holdout sup t=0.71 l2=1`, 5 min CPU, deterministic (seed 0).
+Stacker details:
+- Booster: `data/work/p17/stack_sup-bge-l21.0_US.txt`. Same recipe as round 1: 200 × 31, lr 0.05,
+  min_data_in_leaf 200, lambda_l2 1, init_score = logit p, fit on US holdout S1 of `run.half == 0`.
+- Rebuild: `stack.py holdout sup base=bge t=0.71 l2=1`, then `stack.py test sup base=bge l2=1 t=0.71 only=US`.
+- t stays 0.71. On the report half the US curve is flat from 0.61 to 0.81 (+0.00050 to +0.00057).
 
-**Config choices, each measured (Evidence):**
-- **t kept at 0.71, not retuned.** The US tune-half curve is flat from 0.61 to 0.79 (within 0.00006 of its best).
-  Brief A's own half-0 retune picked US 0.77: +0.00057 ± 0.00008 on the report half, which also passes. But 0.77 is
-  a noisy point on the plateau; #7's t sits inside the plateau and adds no constant.
-- **lambda_l2 = 1**, one guard on top of the brief's params. Without it, residual boosting from saturated logits
-  (tiny hessians at p ≈ 0/1) makes Newton-step blow-ups: max |leaf| 31 in the brief-exact US model, **48,320** in the
-  India swap model. With it, max |leaf| ≤ 0.94 per tree, and the gain is equal or better (India +0.00003 → +0.00008).
-- **Per-country boosters**, the brief's default. Pooled was not run (see open questions).
+**Why US only.** India's stack on the bge base is −0.00013 ± 0.00006 on the report half and +0.00002 ± 0.00005 on the
+swap half. Neither half gains, and the report half fails the brief's India ≥ −0.0001 bar.
+- This choice uses both halves. The US numbers are unaffected, because India contributes exactly 0 whether or not it
+  is stacked. So +0.00033 is the report-half value of the shipped config.
+
+**Upload order.** #8c should follow #8a, since it is #8a plus one US-only change: the LB delta #8c − #8a measures the
+stack directly. If #8b (bge France) wins its A/B, rebuild #8c with `--probs` France pointed at P13's France blend at
+0.98: the stack does not touch France.
+
+**run.py integration (unchanged proposal from round 1).** Add a stage after `rerank()` for the countries listed in
+the recipe's `stack` key, which is now `{"US": "p17/stack_sup-bge-l21.0_US.txt"}` with the bge CE. Support columns are
+computed on the shipped (pruned) list.
 
 ## Evidence         (table: ledger name | world | key metrics | verdict)
-**Yardstick.** `stack.frame` rebuilds #7's p from run.py's own caches:
-- M2 p on the τ 0.03 pruned list: `p9/m2_holdout_{c}_d2b6569f_6a23c2ec_0.03.parquet`;
-- CE r: `p9/r_holdout_{c}_bb0c29f0.parquet`;
-- sub7 w via `RR.blend`.
+**Round-2 yardstick.** `stack.frame` with `base=bge` starts from #7's frame (m2 p on the τ 0.03 pruned list; #7's p for
+every row), then:
+- **Holdout-S1 band pairs** are re-blended with P13's bge r (`r_bge_poolck_holdout`, w [0.5901, 0.6319, 0.2973]).
+  All of them are covered: India 59,094 of 59,094, US 95,494 of 95,494.
+- **Competing train-S1 band pairs** (India 218,740, US 351,325) keep #7's e5 p, because P13 did not score them.
+  On test every band pair is bge.
+- Same scoring as round 1: per-S1 F0.5 over all holdout S1, `run.half`, paired SE, t 0.71.
 
-The decision is `M.argmax_sx` over every row (competing train S1 included), then p ≥ t. The score is per-S1 F0.5 over
-**all** holdout S1 (blocking misses count), halves by `run.half`, with paired per-S1 SE vs #7 at t 0.71. **Base =
-0.98869 on half 1, identical to #7's pipe row.** Support columns are computed on the pruned list the model sees.
-France has no labels and is not touched.
+The bge base gains over #7 **+0.00055 ± 0.00007** on half 1 (P13's own yardstick: +0.00059). check7 confirms the test
+bge base reproduces sub8a exactly (India 2,733,906 / US 2,241,658 matches).
 
 | ledger name (`P17-hn-stack/…`) | world | key metrics | verdict |
 |---|---|---|---|
-| hn-stack-sup-on7 | holdout half 1, brief A exactly (t tuned on half 0) | 0.98869 → 0.98925, **+0.00057 ± 0.00008**; India +0.00003 ± 0.00008 (t .72), US +0.00092 ± 0.00012 (t .77). Control (#7 p, t retuned on half 0): −0.00001 | pass |
-| hn-stack-sup-on7-swap | fit + tune on half 1, report half 0 | +0.00078 ± 0.00008; India +0.00009, US +0.00124 (t .66) | confirms |
-| hn-stack-hn-on7 | half 1, hn-only (no support columns) | +0.00051 ± 0.00008; India +0.00013 ± 0.00006, US +0.00076 ± 0.00013 | fallback (no list dependence) |
-| hn-stack-brc-on7 | half 1, + brief C add1 / add_in_list (P12's train-mined orphan-sibling list, count ≥ 100: US 27 tokens, India 12) | +0.00070 ± 0.00008, but the extra comes from the US t landing at 0.64. At equal t 0.70 it matches sup (US +0.00112 both; India +0.00005 vs 0.0). Split gain of the two columns 84–229, vs ~20k for p_same | drop |
-| hn-stack-tcurve | both halves, t 0.55–0.90 | sup US tune half: +0.00155 at .70 vs +0.00161 best (.77). Report half: +0.00112 at .70 vs +0.00123 best (.63). India report half: 0.0 at .70, +0.00012 best (.65) | keep t 0.71 |
-| hn-stack-sup-on7-t0.71 | half 1, t 0.71 | +0.00067 ± 0.00007; India +0.00003, US +0.00109 ± 0.00011 | keep |
-| hn-stack-sup-on7-swap-t0.71 | half 0, t 0.71 | +0.00080 ± 0.00008; India +0.00010, US +0.00127 | confirms |
-| **hn-stack-sup-on7-l21.0-t0.71** | half 1, t 0.71, lambda_l2 1 (**shipped model**) | **+0.00067 ± 0.00007**; India +0.00008 ± 0.00008; US +0.00107 ± 0.00011. S1 up / down: India 174 / 93, US 934 / 249. US d is +0.0006…+0.0012 at every t from .61 to .85 | **ship** |
-| hn-stack-sup-on7-l21.0-swap-t0.71 | half 0, t 0.71, lambda_l2 1 | +0.00082 ± 0.00008; India +0.00013 ± 0.00009; US +0.00128 ± 0.00011 | confirms |
-| hn-stack-l2-resid-shift | holdout-S1 rows vs test | Decision flips / #7's accepted: US 0.57% holdout vs 0.70% test; India 0.19% vs 0.20%. n_same 2.25 / 2.15, n_s1hn 2.64 / 2.69 (US). **+SIB share of candidate rows: US 9.8% → 17.4%, India 2.9% → 4.7%**. Holdout: newly accepted pairs 82–95% true, newly rejected 24–53% true | in range |
-| (check7.py) | test, #7 rebuild at t 0.71 | India 2,733,366 / US 2,239,291 matches, identical to output/sub7/matching_results.tsv | yardstick valid |
-| hn-stack-sub8-dryrun | test, submit_probs + official validator | India 2,733,366 → 2,734,936, US 2,239,291 → 2,245,127, France 776,184 (unchanged). S1 changed: India 5,375 (0.66%), US 14,340 (2.2%), France 0. candidate_pairs.tsv byte-identical to sub7. **Validator PASS** | stage as #8 |
+| hn-stack-sup-on8a-bge-l21.0-t0.71 | half 1, base bge, both countries | vs bge base **+0.00028 ± 0.00006**; **India −0.00013 ± 0.00006** (148 up / 87 down S1; negative at every t 0.61–0.85); US +0.00055 ± 0.00009 (726 / 258). vs #7: base +0.00055 ± 0.00007, stack +0.00082 ± 0.00009 | fail (both) |
+| hn-stack-sup-on8a-bge-l21.0-swap-t0.71 | half 0 (fit half 1), base bge | vs bge base +0.00046 ± 0.00006; India +0.00002 ± 0.00005; US +0.00076 ± 0.00009. vs #7: base +0.00068, stack +0.00115 ± 0.00009 | India ≈ 0 |
+| **hn-stack-sup-on8a-bge-USonly** | both halves, US stacked, India = bge base | **half 1 +0.00033 ± 0.00005; half 0 +0.00046 ± 0.00005**; India 0 by construction. Test: 11,230 US S1 change vs sub8a (US accepted 2,241,658 → 2,245,739). sub8c validator PASS, candidates = sub8a's | **ship as #8c** |
+| (check7.py base=bge) | test | bge base rebuild = output/sub8a matching_results, India and US identical | yardstick valid |
+| hn-stack-loco-m2base | holdout half 1, m2 base (France's no-CE regime), target t = its own base optimum, kept | India→India +0.00148 ± 0.00019, **US→India +0.00073 ± 0.00021**; US→US +0.00273 ± 0.00016, **India→US +0.00203 ± 0.00015** | transfers |
+| hn-stack-loco-m2base (France test) | France test, #7's France p (m2), label-free | India model at t .95: accepted 776,184 → 779,896, **13,790 S1 (5.3%) change**; +SIB 2,788 in / 3,176 out. US model at .95: → 787,996, **21,015 S1 (8.1%)**, +SIB 3,785 / 3,806, none/eq +10,369 / −2,441. Count-matched t (keeps #7's 776,184 accepts): India model t .9557, 12,288 S1 (4.7%), +SIB net −806; US model t .9641, 16,927 S1 (6.5%), +SIB net −881, far +1,481 / −17 | not for #8c |
+
+**Round 1 (#7 base, e5 CE; merged as #8p):**
+
+| ledger name (`P17-hn-stack/…`) | world | key metrics | verdict |
+|---|---|---|---|
+| hn-stack-sup-on7 | half 1, brief A exactly (t tuned on half 0) | +0.00057 ± 0.00008; India +0.00003, US +0.00092 (t .77) | pass |
+| hn-stack-sup-on7-swap | half 0 | +0.00078 ± 0.00008 | confirms |
+| hn-stack-hn-on7 | half 1, hn-only | +0.00051 ± 0.00008; India +0.00013, US +0.00076 | fallback |
+| hn-stack-brc-on7 | half 1, + brief C branch words (P12 train list) | at equal t ≈ sup; column gain ~1% | drop |
+| hn-stack-tcurve | both halves | US tune-half curve flat 0.61–0.79 | t 0.71 kept |
+| hn-stack-sup-on7-l21.0-t0.71 | half 1, t .71, lambda_l2 1 | **+0.00067 ± 0.00007**; India +0.00008, US +0.00107 | shipped (#8p) |
+| hn-stack-sup-on7-l21.0-swap-t0.71 | half 0 | +0.00082 ± 0.00008 | confirms |
+| hn-stack-l2-resid-shift | holdout-S1 rows vs test | flip rate 0.57% / 0.70% (US); +SIB share 9.8% → 17.4% | in range |
+| hn-stack-sub8-dryrun | test | 19,715 S1 vs #7, validator PASS (→ output/sub8p) | staged |
 
 ## What failed      (approaches tried and dropped, with the number that killed them)
-- **Brief C branch words** (add1, add_in_list on P12's train list): no gain at equal t, and the two columns carry
-  about 1% of the split gain. The CE already reads the words, as P15 guessed. France's list (groupe / développement)
-  was not built, because it needs test text (open question 4).
-- **Brief A's half-0 t retune** (US 0.77): costs 0.00015–0.0003 vs t 0.71 on the report half. On a flat plateau the
-  argmax is noise.
-- **Unregularised residual boosting** (the brief's exact params): max |leaf| 31–48,320 from tiny hessians at p ≈ 0/1.
-  The holdout gain is the same, but the risk sits in the test tail. Fixed by lambda_l2 = 1.
+- **India stack on the bge base:** −0.00013 ± 0.00006 (half 1), +0.00002 (half 0). bge's India band AUC is 0.971 (#5's
+  e5: 0.955, P13), so the hn/support residual has nothing left to fix. Even on e5, India was only +0.00003…+0.00013.
+- **The stack on France, as a drop-in at t 0.95:**
+  - It *loosens* France: +3.7k (India model) / +11.8k (US model) accepts. The LB showed France already over-matches
+    (D2/D4: stricter is better).
+  - Its +SIB effect is near zero: new accepts ≈ new rejects.
+  - Count-matched, it still reorders 4.7–6.5% of France S1, 3–4× the in-domain US churn (1.7% of S1 on #8c).
+- **Round 1:**
+  - Brief C branch words: no signal.
+  - The half-0 t retune: a noisy pick on a plateau.
+  - Unregularised residual boosting: max |leaf| up to 48,320 → lambda_l2 = 1.
 
 ## Interfaces       (functions in probes/<id>/*.py, inputs/outputs, runtime + RAM at full scale)
-- **`stack.py holdout [sup|hn|brc] [swap] [t=0.71] [l2=1]`**
-  - Fits the per-country stacker on half 0 (or half 1 with `swap`) and reports the other half vs #7 at 0.71.
-  - Writes `data/work/p17/holdout_<tag>.json` (per country: t, d, se, up/down, `curve_h1`, gains), the booster
-    `stack_<model tag>_<c>.txt`, and one ledger row.
-  - 5–7 min under load 17–35, peak 2.0 GB (US).
-- **`stack.py test sup l2=1 t=0.71`**
-  - Writes `data/work/p17/prob_test_{India,US}.parquet` (s1, sx, p; #7's pruned rows and order: India 3,969,085 /
-    US 3,069,192 rows).
-  - 5 min per country under load, peak 1.7 GB.
-- **Functions:**
-  - `frame(split, c) -> dict`: #7's q1, qx, p, h1, hx, id1, idx.
-  - `X_of(d, arm) -> DataFrame`.
-  - `stacked(booster, X) -> p'`.
-  - `labels(d, c, s1, t) -> (pos, y, ntrue, half)`.
-  - `f05(am, s, t, pos, y, ntrue)`: per-S1 F0.5.
-  - Reused unchanged from P15: `hn_check.hn_cls`, `hn_stack.support`, `hn_stack.f05_per_s1`, `branch_words.extra` / `cores`.
-- **Helpers:**
-  - `branch.py`: `cols(d)` (brief C columns), `vocab(c)`; self-check in `__main__`.
-  - `tcurve.py <model tags…>`: d by t on both halves.
-  - `resid.py <arm> <json tag> [holdout,test]`: residual quantiles, flip bins, feature shift.
-  - `check7.py <sub dir>`: #7 rebuild vs a staged matching_results.
-- **Scratch:** `data/work/p17/` is 368 MB (150 MB prob files + the 227 MB sub8 dry run). Delete `sub8/` once it is
-  copied to output/.
+- `stack.py holdout <arm> [base=bge] [swap] [t=0.71] [l2=1]`
+  - Writes `holdout_<tag>.json`, where `<tag>` = arm[-bge][-l2…][-swap][-t…]. With `base=bge` the json adds
+    `<c>_vs7` / `all_vs7` (the bge base and the stack vs #7).
+  - Writes the booster `stack_<model tag>_<c>.txt` and a ledger row.
+  - 3–7 min, peak 2.1 GB.
+- `stack.py test <arm> [base=bge] [l2=1] [t=0.71] [only=US]`
+  - Writes `prob_test_<c>[_bge].parquet`. 5 min per country, peak 1.6 GB.
+- `stack.frame(split, c)`:
+  - `BASE` = `e5` (#7), `bge` (#8a; adds `p7`, `has_bge`, `band`), or `m2` (no CE, France's regime).
+  - A country without a CE cache (France) gets p = m2 p.
+- `loco.py`:
+  - LOCO in the m2 regime plus the France test diagnostic (at t 0.95 and count-matched).
+  - Saves the no-CE boosters `stack_sup-m2-l21.0_{India,US}.txt`, which are the France candidates.
+  - Writes `loco.json`. 6 min, peak 2.1 GB.
+- `check7.py <sub dir> [base=bge]`: rebuild vs a staged matching_results.
+- Unchanged from round 1: `tcurve.py`, `resid.py`, `branch.py`.
+- Scratch in `data/work/p17/`: prob files (85 + 65 + 65 MB), `sub8c/` (227 MB; delete after copying to output/), and boosters.
 
 ## Risks            (licence, external-data, France/unseen-country, scale, anything you assumed)
-- **Rules:** LightGBM (MIT) and pandas / numpy (BSD) only, with no new dependency and no external data. The dropped
-  branch list came from P12's train-label statistics.
-- **Holdout spend:** the boosters are fit on holdout half 0, like the CE blend w, so half 1 stays the clean report.
-  Any later stage stacked on #8 has no fresh half left; the swap direction is the only second opinion.
-- **Competitor rows are truncated.** Train S1 outside fold 0 keep only the SX a holdout S1 competes for, so their
-  support columns are undercounted.
-  - Training uses holdout-S1 rows only (complete lists), i.e. the test regime.
-  - Only the argmax competition in evaluation sees the truncation.
-- **Test shift:** test has about 1.8× more +SIB candidate rows (US 17.4% vs 9.8% on holdout S1).
-  - This is exactly the pattern the stacker acts on, so the US LB effect may exceed the holdout's.
-  - The other diagnostics are in range: flip rates within 1.2× of the holdout's, and support-column means within 5–10%.
-- **France is not stacked.** P15 brief B (the France sibling rule, one LB slot) is still the way to learn France's regime.
-- **Assumed:** #7 = the caches `d2b6569f` (m2_big), `6a23c2ec` (pruner) and `bb0c29f0` (ce_s2P) plus `run.half`.
-  check7 and the byte-identical candidate file confirm this on test.
-- **float32 ties:** stacked p is stored as float32. Ties at p → 1 break by row order in both `M.argmax_sx` and
-  submit_probs, so holdout and test decide the same way.
+- **Competing rows are mixed in the bge holdout.** Competing train-S1 band rows carry e5 p while holdout-S1 rows carry
+  bge p. The argmax competition therefore mixes two CEs. Test is all-bge.
+  - The effect is the same in both arms, and P13's yardstick (no competitors at all) gives the same base delta
+    (+0.00059 vs my +0.00055). So the mixing is not moving the comparison.
+- **Holdout spend:** the US booster is fit on half 0; India was gated using both halves (see Recommendation).
+- **Rules:** LightGBM (MIT) only, with no new dependency and no external data. bge-reranker-v2-m3 is Apache-2.0 and
+  568M, P13's.
+- **France:** the transfer evidence (LOCO) is at the target's own base-optimal t near 0.70. France's t 0.95 sits where
+  the stack shifts calibration (round-1 US median residual +1.4 to +2.0 logits). France is also further out of domain than the LOCO pairs
+  (P13: CE–GBDT disagreement 31% vs 20–26%).
 
 ## Open questions   (for the master; each with your best guess)
-- **Per-country or pooled stacker?** Best guess: per country. India's model barely moves anything (+0.00008), and
-  pooling would import the US sibling rejection into India, where P15's hard rule cost −0.0017.
-- **Does it compose with the France levers (P13 CE, P14 IDF, P15 brief B)?** Yes. It touches India/US p only, and
-  submit_probs takes France from whichever file the master points `prob_test_France.parquet` at.
-- **Ship the hn-only arm instead?** Only if the candidate list changes before #8 (a new pruner or τ). The support
-  columns must be recomputed on the shipped list, while hn-only has no list dependence (+0.00051, India +0.00013).
-- **Retune the India/US t on the LB after #8?** No. The holdout plateau is flat, and an LB sweep spends slots for
-  ≤ 0.0001.
+- **Could the stack be applied to France?** Label-free argument: not now, and at most one late LB slot after #7s.
+  - *For:* in France's no-CE regime the stack transfers across countries at a kept, base-optimal t (US→India
+    +0.00073 ± 0.00021, India→US +0.00203 ± 0.00015). The India-trained model generalises better (74% of in-domain
+    vs 49%) and is the gentler one on France.
+  - *Against:*
+    - At France's t 0.95 it loosens France, which the LB says over-matches.
+    - Count-matched, it still reorders 4.7–6.5% of France S1, with a net +SIB effect of only −0.8k pairs. P15's rule
+      removes 4.4k. So it is not the sibling filter France may need, and its large reordering is unvalidated.
+  - *Decision rule once #7s (P15's France sibling rule) is scored:*
+    - **#7s gains** → France's siblings are FPs and the rule captures that. The stack does not: keep the rule, no
+      stack.
+    - **#7s loses** → France is India-like. The only defensible variant is the India-trained no-CE booster
+      (`stack_sup-m2-l21.0_India.txt`) at the count-matched t 0.9557, one LB slot, expected ±0.0002 LB.
+      `loco.py` + `stack.stacked` build it in 5 min.
+- **Stack India again if a later India CE changes?** Only if it is re-measured. The India gain went from about +0.0001
+  (e5) to ≤ 0 (bge), so it is CE-dependent.
+- **Combine with #8b (bge France)?** Yes. #8c touches only US p, so pointing its France at P13's France blend at 0.98
+  gives #8b + US stack.

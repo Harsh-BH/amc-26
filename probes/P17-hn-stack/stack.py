@@ -8,7 +8,10 @@ one model per labelled country, fit on the holdout S1 of P5's half 0 (run.half).
 Report = half 1, all holdout S1 (blocking misses count: the run.py yardstick), paired per-S1 SE vs #7 at t 0.71.
 
     .venv/bin/python probes/P17-hn-stack/stack.py holdout [arm] [swap] [t=0.71] [l2=1]   # l2: lambda_l2; swap: fit half 1, report half 0; t=: no t tuning; arm: sup (brief A, default) | hn | brc (+ brief C)
-    .venv/bin/python probes/P17-hn-stack/stack.py test [arm] [t=0.71]   # -> data/work/p17/prob_test_{India,US}.parquet
+    .venv/bin/python probes/P17-hn-stack/stack.py test [arm] [t=0.71] [only=US]   # -> data/work/p17/prob_test_{India,US}.parquet
+    base=bge (either mode): stack on P13's bge-reranker blend (#8a) instead of #7's e5 CE; files get a _bge suffix.
+    Holdout bge r exists for the holdout S1's own band pairs only (r_bge_poolck_holdout); a competing train S1's band
+    pair keeps #7's e5-blended p (the closest proxy; on test every band pair is bge-blended).
 """
 import json
 import resource
@@ -36,6 +39,8 @@ OUT = WORK / "p17"
 W7, T7 = [0.617, 0.666, 0.261], 0.71                      # sub7 blend w and India/US t
 M2 = "m2_{split}_{c}_d2b6569f_6a23c2ec_0.03.parquet"      # m2_big p on the pruned list (run.py's cache)
 RC = "r_{split}_{c}_bb0c29f0.parquet"                     # ce_s2P r cache (run.py's)
+WB = [0.5901, 0.6319, 0.2973]                             # P13 bge blend w (India/US, fit on holdout half 0)
+BASE = "e5"                                               # e5 = #7's CE; bge = P13's (#8a); m2 = no CE (France)
 PRM = dict(objective="binary", learning_rate=0.05, num_leaves=31, min_data_in_leaf=200, verbose=-1, num_threads=4,
            seed=0, deterministic=True)
 TS = np.round(np.arange(0.50, 0.96, 0.01), 2)
@@ -47,7 +52,8 @@ def frame(split: str, c: str) -> dict:
     """#7's scored rows of one country: q1, qx, p (blended), h1 / hx (house numbers), id1 / idx."""
     d = pd.read_parquet(WORK / "p9" / M2.format(split=split, c=c))
     q1, qx, pm = d.q1.to_numpy(np.int64), d.qx.to_numpy(np.int64), d.p.to_numpy(np.float32)
-    r = pd.read_parquet(WORK / "p9" / RC.format(split=split, c=c))
+    rp = WORK / "p9" / RC.format(split=split, c=c)                        # absent for a country without a CE
+    r = pd.read_parquet(rp) if rp.exists() else pd.DataFrame({"k": np.zeros(0, np.int64), "r": np.zeros(0, np.float32)})
     rr = pd.Series(r.r.to_numpy(np.float32), index=r.k.to_numpy(np.int64)).reindex((q1 << 32) | qx).to_numpy(np.float32)
     p = RR.blend(pm, rr, W7, *RR.CFG["band"])
     xs = "train" if split == "holdout" else split
@@ -58,8 +64,37 @@ def frame(split: str, c: str) -> dict:
         pos = pc.index_in(ids, value_set=pa.array(rf.id.to_numpy())).to_numpy(zero_copy_only=False)
         return rf.hn.fillna("").to_numpy(object)[pos.astype(np.int64)][q]
 
-    return {"q1": q1, "qx": qx, "p": p, "h1": hn(id1, q1, "s1"), "hx": hn(idx, qx, "sx"), "id1": id1, "idx": idx,
-            "xs": xs, "c": c}
+    out = {"q1": q1, "qx": qx, "p": p, "h1": hn(id1, q1, "s1"), "hx": hn(idx, qx, "sx"), "id1": id1, "idx": idx,
+           "xs": xs, "c": c}
+    if BASE == "bge":
+        out["p7"], (out["p"], out["has_bge"]) = p, bge_p(split, c, q1, qx, pm, p, id1, idx)
+        out["band"] = (pm > RR.CFG["band"][0]) & (pm < RR.CFG["band"][1])
+    if BASE == "m2":                                      # France's regime: no CE
+        out["p"] = pm
+    return out
+
+
+def bge_p(split, c, q1, qx, pm, p7, id1, idx) -> tuple:
+    """#8a's p on these rows. test: P13's staged prob_test_<c>_blend (#6's pruned rows, keyed by s1/sx). holdout:
+    P13's blend rule on the restored checkpoint's r; band pairs without a bge r (competing train S1) keep p7."""
+    if split == "test":
+        b = pd.read_parquet(WORK / f"p13/prob_test_{c}_blend.parquet", columns=["s1", "sx", "p"])
+    else:
+        b = pd.read_parquet(WORK / "p13/r/r_bge_poolck_holdout.parquet")
+    k1 = pc.index_in(pa.array(b.s1.to_numpy()), value_set=id1).to_numpy(zero_copy_only=False)
+    kx = pc.index_in(pa.array(b.sx.to_numpy()), value_set=idx).to_numpy(zero_copy_only=False)
+    ok = ~(pd.isna(k1) | pd.isna(kx))
+    col = "p" if split == "test" else "r"
+    v = pd.Series(b[col].to_numpy(np.float32)[ok], index=(k1[ok].astype(np.int64) << 32) | kx[ok].astype(np.int64))
+    v = v.reindex((q1 << 32) | qx).to_numpy(np.float32)
+    if split == "test":
+        assert len(b) == len(q1) and not np.isnan(v).any(), (c, len(b), len(q1), int(np.isnan(v).sum()))
+        return v, np.ones(len(v), bool)
+    lo, hi = RR.CFG["band"]
+    band = (pm > lo) & (pm < hi)
+    print(f"{c}: bge r on {int((band & ~np.isnan(v)).sum()):,} of {int(band.sum()):,} band rows "
+          f"(the rest: competing train S1, e5 p)", flush=True)
+    return np.where(np.isnan(v), p7, RR.blend(pm, v, WB, lo, hi)).astype(np.float32), ~np.isnan(v)
 
 
 def X_of(d: dict, arm: str) -> pd.DataFrame:
@@ -120,12 +155,18 @@ def holdout(arm: str, fh: int = 0, fixt: float | None = None):
     """Fit + tune t on half fh (0 = the shipped model), report the other half against #7 at T7. fixt: no t tuning."""
     t0 = time.time()
     s1, t = holdout_s1()
-    base, new, ctrl, res = [], [], [], {}
-    mt = arm + (f"-l2{PRM['lambda_l2']}" if "lambda_l2" in PRM else "") + ("-swap" if fh else "")   # model tag
+    base, new, ctrl, res, v7 = [], [], [], {}, []
+    mt = arm + ("-bge" if BASE == "bge" else "") + (f"-l2{PRM['lambda_l2']}" if "lambda_l2" in PRM else "") \
+        + ("-swap" if fh else "")                                                     # model tag
     tag = mt + (f"-t{fixt}" if fixt else "")
     for c in ("India", "US"):
         d = frame("holdout", c)
         pos, y, ntrue, hv = labels(d, c, s1, t)
+        if "p7" in d:                                     # every holdout-S1 band row must carry a bge r
+            hb = (pos >= 0) & d["band"]
+            print(f"{c}: holdout-S1 band rows {int(hb.sum()):,}, with bge r {int((hb & d['has_bge']).sum()):,}; "
+                  f"competitor band rows {int((d['band'] & (pos < 0)).sum()):,} keep e5 p", flush=True)
+            assert (hb & d["has_bge"]).sum() >= 0.999 * hb.sum()
         X = X_of(d, arm)
         del d["h1"], d["hx"]
         tr = (pos >= 0) & (hv[np.maximum(pos, 0)] == fh)
@@ -138,6 +179,14 @@ def holdout(arm: str, fh: int = 0, fixt: float | None = None):
         ts = fixt or max(TS, key=lambda t_: f05(am, s, t_, pos, y, ntrue)[h0].mean())
         fb, fn, fc = (f05(a7, p, T7, pos, y, ntrue), f05(am, s, ts, pos, y, ntrue), f05(a7, p, tb, pos, y, ntrue))
         dl = (fn - fb)[h1_]
+        if "p7" in d:                                     # vs #7 (e5 base at T7): the bge base's own gain, and the stack's
+            f7 = f05(M.argmax_sx(qx, d["p7"]), d["p7"], T7, pos, y, ntrue)
+            vb, vs = (fb - f7)[h1_], (fn - f7)[h1_]
+            res[c + "_vs7"] = {"f05_7_h1": round(f7[h1_].mean(), 5), "d_base": round(vb.mean(), 5),
+                               "se_base": round(vb.std() / np.sqrt(len(vb)), 5), "d_stack": round(vs.mean(), 5),
+                               "se_stack": round(vs.std() / np.sqrt(len(vs)), 5)}
+            print(c, "vs #7", res[c + "_vs7"], flush=True)
+            v7.append(f7[h1_])
         curve = {f"{t_:.2f}": round((f05(am, s, t_, pos, y, ntrue) - fb)[h1_].mean(), 5)
                  for t_ in np.round(np.arange(0.61, 0.86, 0.02), 2)}                  # report-half d by t (stability)
         res[c] = {"t": float(ts), "t_ctrl": float(tb), "f05_7_h1": round(fb[h1_].mean(), 5),
@@ -155,15 +204,21 @@ def holdout(arm: str, fh: int = 0, fixt: float | None = None):
     dl = fn - fb
     res["all"] = {"f05_7_h1": round(fb.mean(), 5), "f05_stack_h1": round(fn.mean(), 5), "d": round(dl.mean(), 5),
                   "se": round(dl.std() / np.sqrt(len(dl)), 5), "d_ctrl": round((fc - fb).mean(), 5), "n_h1": len(dl)}
+    if v7:
+        f7 = np.concatenate(v7)
+        res["all_vs7"] = {"f05_7_h1": round(f7.mean(), 5), "d_base": round((fb - f7).mean(), 5),
+                          "se_base": round((fb - f7).std() / np.sqrt(len(f7)), 5), "d_stack": round((fn - f7).mean(), 5),
+                          "se_stack": round((fn - f7).std() / np.sqrt(len(f7)), 5)}
+        print("India+US vs #7", res["all_vs7"], flush=True)
     print("India+US", res["all"], f"{time.time() - t0:.0f}s", flush=True)
     (OUT / f"holdout_{tag}.json").write_text(json.dumps(res, indent=1))
     return res, time.time() - t0
 
 
-def test(arm: str, tag: str):
-    """Stacked p over #7's pruned test rows, t from holdout_<tag>.json -> data/work/p17/prob_test_<c>.parquet."""
+def test(arm: str, tag: str, countries=("India", "US")):
+    """Stacked p over #7's pruned test rows, t from holdout_<tag>.json -> data/work/p17/prob_test_<c>[_bge].parquet."""
     res = json.loads((OUT / f"holdout_{tag}.json").read_text())
-    for c in ("India", "US"):
+    for c in countries:
         d = frame("test", c)
         X = X_of(d, arm)
         s = stacked(lgb.Booster(model_file=str(OUT / f"stack_{tag.split('-t')[0]}_{c}.txt")), X)
@@ -171,10 +226,10 @@ def test(arm: str, tag: str):
                             "sx": d["idx"].take(pa.array(d["qx"])).to_numpy(zero_copy_only=False), "p": s})
         am7, am = M.argmax_sx(d["qx"], d["p"]), M.argmax_sx(d["qx"], s)
         a7, a = am7 & (d["p"] >= T7), am & (s >= res[c]["t"])
-        print(f"{c}: {len(s):,} rows; accepted #7 {int(a7.sum()):,} -> {int(a.sum()):,} at t {res[c]['t']}; "
+        print(f"{c}: {len(s):,} rows; accepted base ({BASE}) {int(a7.sum()):,} -> {int(a.sum()):,} at t {res[c]['t']}; "
               f"pairs changed {int((a7 != a).sum()):,}; S1 changed {len(np.unique(d['q1'][a7 != a])):,}; "
               f"peak {peak():.2f} GB", flush=True)
-        out.to_parquet(OUT / f"prob_test_{c}.parquet", index=False)
+        out.to_parquet(OUT / f"prob_test_{c}{'_bge' if BASE == 'bge' else ''}.parquet", index=False)
         del d, X, s, out
 
 
@@ -182,9 +237,11 @@ if __name__ == "__main__":
     assert list(f05_per_s1(None, np.array([1, 0, 0]), np.array([1, 0, 1]), np.array([2, 0, 0]))) == \
         [1.25 * 0.5 / (0.25 + 0.5), 1.0, 0.0]
     mode, arm = sys.argv[1], (sys.argv[2] if len(sys.argv) > 2 else "sup")
+    BASE = "bge" if "base=bge" in sys.argv[3:] else "e5"
     if mode == "test":
-        test(arm, arm + "".join(f"-l2{float(a[3:])}" for a in sys.argv[3:] if a.startswith("l2="))
-             + "".join(f"-t{a[2:]}" for a in sys.argv[3:] if a.startswith("t=")))
+        test(arm, arm + ("-bge" if BASE == "bge" else "") + "".join(f"-l2{float(a[3:])}" for a in sys.argv[3:] if a.startswith("l2="))
+             + "".join(f"-t{a[2:]}" for a in sys.argv[3:] if a.startswith("t=")),
+             next((a[5:].split(",") for a in sys.argv[3:] if a.startswith("only=")), ("India", "US")))
         sys.exit()
     fh = int("swap" in sys.argv[3:])
     fixt = next((float(a[2:]) for a in sys.argv[3:] if a.startswith("t=")), None)
@@ -192,14 +249,16 @@ if __name__ == "__main__":
     r, rt = holdout(arm, fh, fixt)
     from ledger import log
     a = r["all"]
-    log("exp", probe="P17-hn-stack", subproblem="decide", name=f"hn-stack-{arm}-on7" + (f"-l2{PRM['lambda_l2']}" if "lambda_l2" in PRM else "") + ("-swap" if fh else "") + (f"-t{fixt}" if fixt else ""),
-        world=f"holdout-dense half{1 - fh} (#7 pruned list, run.py yardstick)",
+    log("exp", probe="P17-hn-stack", subproblem="decide", name=f"hn-stack-{arm}-on{'8a-bge' if BASE == 'bge' else '7'}" + (f"-l2{PRM['lambda_l2']}" if "lambda_l2" in PRM else "") + ("-swap" if fh else "") + (f"-t{fixt}" if fixt else ""),
+        world=f"holdout-dense half{1 - fh} (#7 pruned list, run.py yardstick; base {BASE})",
         metrics={"f05_7_h1": a["f05_7_h1"], "f05_stack_h1": a["f05_stack_h1"], "d": a["d"], "se": a["se"],
                  "d_ctrl_t_retuned": a["d_ctrl"], "d_India": r["India"]["d"], "se_India": r["India"]["se"],
-                 "d_US": r["US"]["d"], "se_US": r["US"]["se"], "t_India": r["India"]["t"], "t_US": r["US"]["t"]},
+                 "d_US": r["US"]["d"], "se_US": r["US"]["se"], "t_India": r["India"]["t"], "t_US": r["US"]["t"]}
+        | ({f"vs7_{k}": v for k, v in r["all_vs7"].items()} if "all_vs7" in r else {}),
         config={"stacker": "lgb 200x31 lr .05 mdl 200 residual init_score=logit p, per country", "lambda_l2": PRM.get("lambda_l2", 0),
                 "X": {"hn": "lp cls d eq", "sup": "lp cls d eq n_same p_same n_s1hn",
-                      "brc": "sup + add1 add_in_list"}[arm], "list": "#7 pruned (tau .03)", "p": "#7 blend",
+                      "brc": "sup + add1 add_in_list"}[arm], "list": "#7 pruned (tau .03)",
+                "p": "P13 bge blend w [0.5901, 0.6319, 0.2973] (competitor band rows: #7 e5 blend)" if BASE == "bge" else "#7 blend",
                 "train": f"holdout S1 half {fh} (run.half)", "t": f"fixed {fixt}" if fixt else f"per country, tuned on half {fh}"},
         hypothesis="P15 brief A: generator hn offsets + same-hn support fix US siblings on top of the CE",
         verdict="keep" if a["d"] >= 0.0003 and a["d"] >= 3 * a["se"] and r["India"]["d"] >= -0.0001 else "drop",
