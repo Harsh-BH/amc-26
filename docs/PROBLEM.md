@@ -187,3 +187,10 @@ Test-only:
 - Explainer video (6 slides, nothing beyond the PDF): https://d8it4huxumps7.cloudfront.net/files/6ab509c5b7036_ml_challenge_2026_video.mp4
 - Prep blog (credits + SageMaker notes): https://builder.aws.com/content/3HiM6zDmFrF98fRzOUETnGFDoqz/amazon-ml-challenge-2026-your-complete-prep-guide-with-live-demo
 - Dataset zip: https://cdn.unstop.com/files/6ab10eb3b23ba_student_resource.zip (1.1 GB → 2.4 GB)
+
+## Update (25 Sep, organisers) — candidate set size counts toward the final ranking
+"Candidate generation counts toward the final ranking... The approach that generates a smaller candidate set per
+Source 1 entity will be ranked higher in the final evaluation beyond the public/private leaderboard." They review
+`candidate_pairs.tsv` and the code that produces it. By definition that file is the exact set the final model scores,
+so a learned pruning stage (meta-blocking) before the matcher legitimately shrinks it. Full text:
+`data/notes/unstop_play_page_v2.txt`.
