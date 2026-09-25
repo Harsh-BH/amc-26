@@ -35,7 +35,7 @@ order (training included). With the caches present it only scores, decides and w
 - P11's 2-epoch cross-encoder on India / US;
 - t 0.71 for India / US, and France fixed at t 0.95.
 
-From the cached X files and pruned m2_big scores, with the new CE's band scored fresh, that took TEST7_TIME.
+From the cached X files and pruned m2_big scores, with the new CE's band scored fresh, that took 11 min (validator included), with 10 min of it on the GPU, at a 1.5 GB peak.
 
 **France's threshold** is fixed at **0.95** in #7 (`run.T_FRANCE_OVERRIDE`). The leaderboard showed France
 over-matching under P6's label-free rule (0.78): 0.88 scored +0.0010, and 0.95 (D4) scored 0.981142.
@@ -96,7 +96,7 @@ Runtimes and memory (measured, 3 GB cap):
 | cross-encoder: `band` ×2 + `train epochs=2` (GPU) | 5 + ~50 min (P11: 40 min with pre-tokenised batches; 1 epoch 25 min) | 2.6 GB, 2.4 GB VRAM |
 | pruner + M2 scores, test (the pruner reads all 27.5M pairs; m2_big scores the kept 8.37M) | 3 / 18 / 5 min (France / India / US; India under load) | 1.8 GB |
 | M2 scores without the pruner (`--recipe sub5`, all 27.5M pairs) | 5 / 18 / 43 min (loaded machine) | 2.0 GB |
-| CE rescoring, test (847k India + 702k US band pairs without the pruner; −20% with it, GPU) | 11 + 7 min cold; 0 with the r cache | 2.0 GB (own process), 3.4 GB VRAM |
+| CE rescoring, test (656k India + 583k US kept band pairs; 847k + 702k without the pruner; GPU) | 5 + 5 min cold (#7); 0 with the r cache | 2.1 GB (own process), 3.4 GB VRAM |
 | decision + writing + validator | 2.5 min | 2.3 GB |
 
 ## 3. Validate on the training data
