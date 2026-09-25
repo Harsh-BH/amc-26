@@ -34,7 +34,7 @@ main() {
       elif .type=="result" then "\n== \(.subtype)  cost $\(.total_cost_usd)\n" else empty end'
   local rc=${PIPESTATUS[1]}
   # exit codes lie when the scope is torn down; only a final result event means the session really finished
-  local last; last=$(tail -n1 "$DIR/stream.jsonl" | jq -r 'if .type=="result" then "result:\(.subtype)" else "CRASHED(last=\(.type))" end' 2>/dev/null)
+  local last; last=$(tail -n 40 "$DIR/stream.jsonl" | jq -rs '(map(select(.type=="result")) | last) as $r | if $r then "result:\($r.subtype)" else "CRASHED(last=\(.[-1].type))" end' 2>/dev/null)   # system events can follow the result (background tasks torn down)
   echo "exit=$rc $last $(date -Is)" > "$DIR/DONE"
 }
 main "$@"; exit
