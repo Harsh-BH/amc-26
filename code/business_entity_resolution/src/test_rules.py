@@ -8,7 +8,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from rules import evaluate
 
-m = evaluate("holdout", dense=True)
-assert m["f05"] >= 0.7831, m
-assert m["pair_precision"] >= 0.98, m
-print(f"rules test ok  holdout f05={m['f05']:.4f}  pair_precision={m['pair_precision']:.4f}")
+if __name__ == "__main__":          # rules.feats uses forkserver workers, which re-import this file
+    m = evaluate("holdout", dense=True)
+    assert m["f05"] >= 0.7831, m
+    assert m["pair_precision"] >= 0.98, m
+    print(f"rules test ok  holdout f05={m['f05']:.4f}  pair_precision={m['pair_precision']:.4f}")

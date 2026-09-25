@@ -7,7 +7,7 @@ Submission #2, and the high-precision first stage the v1 pipeline adds recall on
     python src/rules.py test              # write output/sub2/{matching_results,candidate_pairs}.tsv
 """
 import json, sys, time
-from multiprocessing import Pool
+from multiprocessing import get_context
 from pathlib import Path
 
 import numpy as np
@@ -49,13 +49,15 @@ def _feats(d: pd.DataFrame) -> pd.DataFrame:
                          "places": a.places.map("|".join).to_numpy()})
 
 
-def feats(df: pd.DataFrame, chunk: int = 150_000, procs: int = 5) -> pd.DataFrame:
-    freq(); T.table()                                    # build both caches before forking
+def feats(df: pd.DataFrame, chunk: int = 150_000, procs: int = 4) -> pd.DataFrame:
+    freq(); T.table()                                    # build both caches once, on disk, before workers start
     parts = [df.iloc[i:i + chunk] for i in range(0, len(df), chunk)]
     if len(parts) == 1:
         return _feats(parts[0])
-    with Pool(procs) as p:                               # ~150 us/row/core; ~0.5 GB per worker
-        return pd.concat(p.map(_feats, parts), ignore_index=True)
+    # forkserver, not fork: forked workers inherited the parent's 10M-row frame and each grew to ~2.5 GB as
+    # refcounting copied its pages (05:20 memory spike); forkserver workers start clean and get one chunk each.
+    with get_context("forkserver").Pool(procs, maxtasksperchild=8) as p:   # ~150 us/row/core, ~0.5 GB/worker
+        return pd.concat(p.imap(_feats, parts), ignore_index=True)
 
 
 def addr_score(x: pd.DataFrame, y: pd.DataFrame) -> np.ndarray:
@@ -129,9 +131,9 @@ def evaluate(world: str = "holdout", dense: bool = False) -> dict:
 
 def run_test(out: Path = Path("output/sub2")):
     s1 = pd.read_parquet(WORK / "test_source1.parquet")
-    sx = pd.concat([pd.read_parquet(WORK / f"test_source{i}.parquet") for i in (2, 3)], ignore_index=True)
-    f1, fx = feats(s1), feats(sx)
-    del sx
+    f1 = feats(s1)
+    fx = pd.concat([feats(pd.read_parquet(WORK / f"test_source{i}.parquet")) for i in (2, 3)],
+                   ignore_index=True)                    # one raw source in memory at a time
     acc, cands = match(f1, fx)
     ids = s1.entity_id.tolist()
     pred, cs = to_sets(acc, ids), to_sets(cands, ids)

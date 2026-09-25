@@ -11,3 +11,15 @@
 4. Unsupervised France diagnostics on test outputs: score distribution, predicted matches per S1, predicted
    singleton rate vs US/India. Treat the train singleton rate (5.6%) as a prior, not a target.
 Deliverable: probes/P6-france/france.py plus a France policy (features, thresholds, fallback) with the LOCO numbers.
+
+## UPDATE from MERGE-1 (read probes/MERGE-1.md first)
+- **Scoring is dense / full-density.** Normalisation code lives in `code/business_entity_resolution/src/normalize.py`:
+  French legal forms and street types are already there as unvalidated domain knowledge. Extend or verify them rather than
+  duplicating. The P3 test candidates for France are in `data/work/p3/cands_test_France.parquet`:
+  4.33M pairs, S1 top-1 cosine median 0.90, "looks like US".
+- **P4-match runs in parallel.** Poll `probes/P4-match/` for its features.py/model.py. Until they exist, build your own
+  minimal feature set to start the leave-one-country-out and Splink experiments.
+- **France policy deliverable:**
+  - whether to predict France with the US+India model as-is, or with a country-agnostic feature set
+  - the threshold to use
+  - the expected France singleton / match-count profile to sanity-check the test output against
