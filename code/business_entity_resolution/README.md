@@ -64,7 +64,7 @@ Runtimes and memory (measured, 3 GB cap):
 | record features, test (`PROCS = 2`) | ~20 min | 1.5 GB |
 | pair features, test (`features.build`) | 3 / 20 / 9 min (France / India / US) | 2.8 GB |
 | TRAIN side for the models: blocking for all 2.2M train S1, record + pair features | ~35 + 20 + 50 min | 2.9 GB |
-| M2 training (`train_matcher.py`) | TBD | TBD |
+| M2 training (`train_matcher.py`: 3.14M fold-2 pairs, 793k fold-1 validation pairs) | 18 min | 2.7 GB |
 | cross-encoder: `band` ×2 + `train` (GPU) | 5 + 25 min | 2.6 GB, 2.4 GB VRAM |
 | M2 scores, test (27.5M pairs from the X files) | 2.3 / 7 / 6 min (France / India / US) | 1.8 GB |
 | CE rescoring, test (886k India + 697k US band pairs, GPU) | 11 + 7 min | 2.0 GB (own process), 3.4 GB VRAM |
@@ -79,9 +79,19 @@ Runtimes and memory (measured, 3 GB cap):
 ```
 
 `holdout` is the test-shaped proxy. The fold-0 S1 (220,358) are scored while every train S1 and every train S2/S3
-of the country compete (2.2M S1, 10.3M S2/S3). Each S2/S3's argmax sees all its train S1. The metric is macro F0.5
-per S1, singletons included (`metric.py`). The run also refits the blend weights on holdout half 0, as a check.
+of the country compete (2.2M S1, 10.3M S2/S3). Each S2/S3's argmax sees all its train S1: 11.5M pairs are
+scored, and 979k band pairs go to the cross-encoder. The metric is macro F0.5 per S1, singletons included
+(`metric.py`). The run also refits the blend weights on holdout half 0, as a check.
 `dev` runs the same stages in memory (blocking, features, M2, CE) on the 30k-S1 dev world.
+
+| run | F0.5 | time (cold / cached) | peak RAM |
+|---|---|---|---|
+| `--split holdout --stage model` | **0.9884** (India 0.9894, US 0.9876; half 0 0.9885, half 1 0.9882; P 0.9975, R 0.9697) | 22 min / 1 min | 2.2 GB |
+| `--split dev --stage model` | 0.9949 (plain world) | 1.7 min | 0.8 GB |
+| `train_matcher.py eval` M2 alone, fold argmax | 0.9813 (`m2_ladder.txt`) = 0.9813 (retrained) | 7.5 min for both | 2.5 GB |
+| `--split holdout --stage rules` | 0.7708 | 21 min cold | 2.1 GB |
+
+The blend refit on holdout half 0 returns [0.636, 0.757, 0.355], which is `rerank.CFG["w"]`.
 
 ## 4. Tests
 
