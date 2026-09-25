@@ -3,6 +3,7 @@ holdout S1, report on half 1. Every holdout S1 counts -- one with no candidates 
 
     .venv/bin/python probes/P5-decide/bench.py proxy      # data/work/p5/prob_proxy.parquet
     .venv/bin/python probes/P5-decide/bench.py p4         # data/work/p4/prob_holdout.parquet
+    .venv/bin/python probes/P5-decide/bench.py blend      # data/work/p4b/prob_holdout_blend.parquet
 """
 import json, sys, time
 from pathlib import Path
@@ -17,7 +18,8 @@ from decide import select, decide
 from proxy import half, peak
 from worlds import WORK
 
-SRC = {"proxy": WORK / "p5/prob_proxy.parquet", "p4": WORK / "p4/prob_holdout.parquet"}
+SRC = {"proxy": WORK / "p5/prob_proxy.parquet", "p4": WORK / "p4/prob_holdout.parquet",
+       "blend": WORK / "p4b/prob_holdout_blend.parquet"}      # MERGE-2: P4 M2 + P4b cross-encoder blend
 
 
 def load(src: str):

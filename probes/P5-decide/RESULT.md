@@ -1,6 +1,11 @@
 # P5-decide — RESULT
 ## TL;DR
-On P4's M2 holdout probabilities, the best decision layer scores dense F0.5 **0.9824**, against 0.9814 for P4's
+**MERGE-2 (blended p from P4 M2 + the P4b cross-encoder): keep the threshold, do not adopt the stack.** On the blended
+p, the D7 stack refit scores 0.9882 against 0.9881 for the threshold fallback. That is +0.0001 ± 0.0001, below the
+0.001 bar. Use `{"excl": True, "t": 0.70}` for India/US; `decide.FALLBACK` gives the same F0.5 to 4 decimals. France
+stays on P6's threshold of 0.82. See "Blend refit" below.
+
+The earlier result, on P4's M2 holdout probabilities: the best decision layer scores dense F0.5 **0.9824**, against 0.9814 for P4's
 argmax + global threshold 0.71 (+0.0010 ± 0.0001 paired SE, report half, 110k S1). It chains four steps: a small
 learned second stage on each pair's standing among its S1's candidates, exclusivity on P4's all-S1 argmax, then an
 expected-F0.5 top-k (k ≥ 1) behind an empty-answer gate.
@@ -9,6 +14,10 @@ expansion (D6) both hurt. Adopt `decide.CFG`, and fall back to `decide.FALLBACK`
 and the stack has not been refitted yet.
 
 ## Recommendation
+**Current matcher (MERGE-2 blend):** answer = exclusivity on `am` + global threshold 0.70 on the blended p, i.e.
+`decide(pairs, {"excl": True, "t": 0.70})`, or `decide.FALLBACK`, which scores the same. Nothing new needs to be
+promoted. The refit stack is kept as `stack_blend_s1only.txt` / `cfg_blend_s1only.json` but is not adopted.
+The stack recommendation below applies only if the matcher reverts to M2 alone:
 ```python
 sys.path.insert(0, "probes/P5-decide"); from decide import decide, CFG, FALLBACK
 sets = decide(pairs, CFG)    # pairs: DataFrame[s1, sx, p, am] -> {s1: set(sx)}; S1 absent from pairs -> empty
@@ -36,7 +45,34 @@ Setup for every row:
 - F0.5 comes from `bench.py`'s vectorised scorer. `metric.score` on `decide()` output matches it exactly
   (checked for the proxy's 0.9229 and for P4's 0.9824 and 0.9815).
 
-### P4 M2 probabilities (`data/work/p4/prob_holdout.parquet`, 13:47) — the recommendation rests on these
+### Blend refit (MERGE-2, `data/work/p4b/prob_holdout_blend.parquet`, 15:05)
+Same protocol as below: tune on half 0, report on half 1 (110,362 S1), exclusivity on `am`. Paired SE is taken
+against the best threshold rule on the tune half (the strictest baseline). Script: `blend.py`; the stack was refit
+with `bench_stack.py blend D7-stack-s1only`.
+| ledger name | report F0.5 | vs (a) retuned | singleton acc | pair P / R | India / US |
+|---|---|---|---|---|---|
+| blend-a-t0.70 (P4b's threshold) | 0.9881 | +0.0000 ± 0.0000 | 0.9876 | 0.9975 / 0.9695 | 0.9888 / 0.9877 |
+| blend-a-FALLBACK (t 0.71, t0 0.72) | 0.9881 | −0.0000 ± 0.0001 | 0.9877 | 0.9976 / 0.9693 | 0.9888 / 0.9876 |
+| blend-a-retuned (t 0.68, t0 0.65) | 0.9881 | — | 0.9851 | 0.9974 / 0.9699 | 0.9888 / 0.9877 |
+| **blend-b-CFG-refit** (stack + excl + EF + gate t0 0.40) | 0.9882 | **+0.0001 ± 0.0001** | 0.9814 | 0.9978 / 0.9692 | 0.9887 / 0.9879 |
+| blend-b-M2-stack-unrefit (for contrast) | 0.9882 | +0.0001 ± 0.0001 | 0.9879 | 0.9980 / 0.9686 | 0.9888 / 0.9878 |
+| (bench_stack) D7-stack-s1only + threshold | 0.9883 | | 0.9831 | 0.9978 / 0.9696 | 0.9888 / 0.9879 |
+| blend-verdict | | b − a = +0.0001 < 0.001 bar | | | drop the stack, keep the threshold |
+
+The stack's gain shrinks from +0.0010 on M2's p to +0.0001 on the blend. My reading, untested: the cross-encoder
+already fixes the uncertain band where the stack helped.
+Where the remaining loss sits (t 0.70, report half):
+
+| source of loss | F0.5 lost |
+|---|---|
+| partial answers (93% of these S1s miss a true pair; 7% carry a wrong one) | 0.0089 |
+| empty answers on non-singletons | 0.0023 |
+| answered singletons | 0.0007 |
+
+So the headroom is matcher recall, not the decision rule. The blended file's `am` differs from P4's on 1.7% of pairs,
+i.e. it was recomputed on the blended p, and it was used as given.
+
+### P4 M2 probabilities (`data/work/p4/prob_holdout.parquet`, 13:47) — the M2-only stack recommendation rests on these
 | ledger name | report F0.5 | singleton acc | pair P / R | India / US | notes |
 |---|---|---|---|---|---|
 | p4-D0-global-t | 0.9814 | 0.9747 | 0.9939 / 0.9589 | 0.9802 / 0.9822 | t 0.71 (= P4's own result) |
@@ -112,6 +148,8 @@ the holdout S1 halves. AUC 0.9914, AP 0.9770.
   holdout S1.
 
 ## Interfaces
+- `blend.py`: the MERGE-2 comparison, (a) threshold fallbacks vs (b) the refit CFG, with paired SE (~4 min, 1.1 GB).
+  `bench.py` / `bench_stack.py` accept `blend` as the source.
 - `decide.py`:
   - `decide(pairs, cfg) -> {s1: set}` and `select(pairs, cfg) -> row mask`.
   - `ctx(p, g, x) -> float32 [n, 18]` builds the context columns.
@@ -154,7 +192,7 @@ the holdout S1 halves. AUC 0.9914, AP 0.9770.
   put every row in one bucket (caught in `test_diag.py`). Use a shift for any new hash split.
 
 ## Open questions
-1. **Refit the stack for P4's stage-2 model?** Best guess: yes, if its `prob_holdout` lands. It costs about 25 min
+1. **Refit the stack for P4's stage-2 model?** Superseded by MERGE-2: on the blend it gains only +0.0001, so don't. Original answer: Best guess: yes, if its `prob_holdout` lands. It costs about 25 min
    and the expected gain is again about +0.001. Until the refit, use FALLBACK.
 2. **Retrain the stack on the whole holdout for the final submission?** Best guess: no. The gain is small and t0
    would lose its out-of-fold check.
