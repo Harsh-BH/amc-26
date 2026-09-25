@@ -20,10 +20,13 @@ overstated precision (0.994 vs 0.912 for the rules).
 | D1 | **uploaded 21:43 — LB 0.849163 ⇒ France ≈ 0.93, India+US ≈ 0.989** | `output/d1/matching_results.tsv` + `output/d1/code.zip` | — (diagnostic) | #5 with **France emptied**, US/India identical. France's F0.5 = (0.980017 − LB_D1) / 0.1497 + France singleton share (~0.055). Tells whether France is the LB gap |
 | D2 | **uploaded 21:46 — LB 0.981024 (+0.0010 vs #5) ⇒ France ≈ 0.937; stricter is better** | `output/d2/matching_results.tsv` + `output/d2/code.zip` | — (diagnostic) | #5 with France t 0.88 (stricter): 6.2% empty, 3.13 per S1. LB up vs #5 ⇒ France over-matches |
 | D3 | skipped (D2 settled the direction) | `output/d3/matching_results.tsv` + `output/d3/code.zip` | — (diagnostic) | #5 with France t 0.70 (looser): 5.4% empty, 3.31 per S1. LB up vs #5 ⇒ France under-matches |
-| D4 | **staged, validator PASS — upload next** | `output/d4/matching_results.tsv` + `output/d4/code.zip` | — (diagnostic) | #5 with France t 0.95: 6.85% empty, 2.99 per S1. Above 0.981024 ⇒ stricter still helps |
+| D4 | **uploaded 23:02 — LB 0.981142 (+0.00012 vs D2, best) ⇒ curve flattening near 0.95** | `output/d4/matching_results.tsv` + `output/d4/code.zip` | — (diagnostic) | #5 with France t 0.95: 6.85% empty, 2.99 per S1. Above 0.981024 ⇒ stricter still helps |
 | 6b | staged, validator PASS | `output/sub6b/…` | 0.98825 (India/US) | #6 (pruner, 4.83 cands/S1) + France t 0.88 (D2's winner) |
-| 6c | staged, validator PASS | `output/sub6c/…` | 0.98825 (India/US) | #6 + France t 0.95 |
+| 6c | **uploaded 23:36 — LB 0.980954** (D4 − 0.00019 = pruner cost, as the holdout predicted) | `output/sub6c/…` | 0.98825 (India/US) | #6 + France t 0.95 |
 
-**Upload next (25 Sep, 2 slots):** D4, then 6c if D4 > 0.981024 else 6b — a real submission goes last.
+| 7 | **staged, validator PASS — upload first on 26 Sep** | `output/sub7/matching_results.tsv` + `output/sub7/code.zip` | **0.98881 full-corpus** (+0.0003 vs #6 on the same pipeline; report half +0.00038) | #6c + P11's 2-epoch e5-small CE (w [0.617, 0.666, 0.261], India/US t 0.71); pruner 4.83 cands/S1; France t 0.95 (unchanged vs #6c). 12,791 S1 differ from #6c (India 0.91%, US 0.81%, France 0). Expected LB ≈ 0.98120 |
+| 7s | staged, validator PASS — upload after #7 | `output/sub7s/matching_results.tsv` + `output/sub7s/code.zip` | — (France-only LB test) | #7 with P15's France sibling rule: France pairs with hx − h1 ∈ {3,4,5,7,9,11,13,21} dropped (4,367 matches, 4,160 France S1 changed). India/US identical to #7. ≥ +0.0002 vs #7 ⇒ keep rule (then try France t 0.88 + rule); ≤ −0.0002 ⇒ drop |
+
+**Upload next (26 Sep, 5 slots):** #7 first; then France variants from P13 (bge second opinion) / P14 (France fixes) as they land.
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.

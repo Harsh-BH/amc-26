@@ -2,12 +2,13 @@
 "name | addr" of both records, rescoring M2's uncertain band; blended back into p before the decision.
 
     python src/rerank.py band <country>                                   # train-side band (LightGBM, fold 2 fit)
-    flock /tmp/amc-gpu.lock python src/rerank.py train [countries=India,US tag= n=]  # -> data/work/p4b/ce<tag>.pt, 25 min
-    flock /tmp/amc-gpu.lock python src/rerank.py score in.parquet out.parquet      # PIPELINE STEP: [ta, tb] -> [r]
+    flock /tmp/amc-gpu.lock python src/rerank.py train [epochs=2 out=data/work/p11/ce_s2P.pt countries= tag= n=]
+                                            # #7's CE: 2 epochs, 40 min (#4-#6: epochs=1 -> data/work/p4b/ce.pt, 25 min)
+    flock /tmp/amc-gpu.lock python src/rerank.py score in.parquet out.parquet [ce.pt]   # PIPELINE STEP: [ta, tb] -> [r]
     python src/rerank.py check                                            # blend-rule self-check
 
 The blend (CFG): for pairs with 0.02 < p < 0.98 of a country the CE was trained on,
-p' = sigmoid(0.678 logit p + 0.715 logit r + 0.338) (a logistic stack fitted on holdout half-0 band pairs;
+p' = sigmoid(0.617 logit p + 0.666 logit r + 0.261) (#7; a logistic stack fitted on holdout half-0 band pairs;
 run.py --split holdout refits and prints it). Every other pair keeps p: leave-one-country-out LOSES F0.5
 (India -> US -0.0016), so France / any unseen label is not reranked -- it is not filtered either.
 `score` runs in its own process (torch + CUDA = 1.4 GB RSS) under the GPU lock; run.py passes it the texts.
@@ -36,15 +37,17 @@ sys.path.insert(0, str(SRC))
 from block import TXT
 from worlds import WORK
 
-OUT = WORK / "p4b"
-CE = OUT / "ce.pt"
+OUT = WORK / "p4b"                     # the train bands (trainband_<c>) and #4-#6's CE
+CE = WORK / "p11" / "ce_s2P.pt"        # #7: the same recipe trained 2 epochs (P11); #4-#6 = p4b/ce.pt (1 epoch)
+EPOCHS = 2                             # the epochs CE is trained for (train() when it is absent)
 BASE = "intfloat/multilingual-e5-small"
 LO, HI = 0.1, 0.9            # the band the train pairs are drawn from
 MAXLEN = 64                  # pair tokens p50 ~50 / p99 ~75; longest_first truncation drops the address tail
                              # (city/state) and keeps name + house number + street; GPU-bound, 64 vs 96 = ~1.5x
 ID = ["q1", "qx", "is_true", "fold"]
-# w: #5 = the stack refit on m2_big's holdout half-0 band (P4 improve_eval.json); #4 (m2_ladder) = [0.636, 0.757, 0.355]
-CFG = {"band": (0.02, 0.98), "w": [0.678, 0.715, 0.338], "countries": ("India", "US")}
+# w = the stack refit on holdout half 0. #7 (m2_big + 2-epoch CE, P11) = below; #5 / #6 (m2_big + p4b CE) =
+# [0.678, 0.715, 0.338]; #4 (m2_ladder + p4b CE) = [0.636, 0.757, 0.355]. run.RECIPES switches them.
+CFG = {"band": (0.02, 0.98), "w": [0.617, 0.666, 0.261], "countries": ("India", "US")}
 peak = lambda: resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6
 
 
@@ -135,11 +138,13 @@ def score_file(inp: str, outp: str, model: str = str(CE)):
           f"peak {peak():.2f} GB", flush=True)
 
 
-def train(epochs: int = 1, bs: int = 128, lr: float = 6e-5, oob: float = 0.5, seed: int = 0,
-          countries=("India", "US"), tag: str = "", n: int = 0):
-    """Band pairs of folds 4-9 (+ oob x as many out-of-band pairs) -> ce<tag>.pt; fold 3 band = validation.
-    n > 0: at most n train pairs per country (a smoke test of this entry point, not a model)."""
+def train(epochs: int = EPOCHS, bs: int = 128, lr: float = 6e-5, oob: float = 0.5, seed: int = 0,
+          countries=("India", "US"), tag: str = "", n: int = 0, out=None):
+    """Band pairs of folds 4-9 (+ oob x as many out-of-band pairs) -> out (default data/work/p4b/ce<tag>.pt);
+    fold 3 band = validation. n > 0: at most n train pairs per country (a smoke test of this entry point)."""
     import torch
+    epochs = int(epochs)
+    out = Path(out) if out else OUT / f"ce{tag}.pt"
     from sklearn.metrics import roc_auc_score
     t0 = time.time()
     rng = np.random.default_rng(seed)
@@ -195,8 +200,9 @@ def train(epochs: int = 1, bs: int = 128, lr: float = 6e-5, oob: float = 0.5, se
         vr = score(va, vb, tok, m)
         print(f"ep {ep}: val band AUC gbdt {roc_auc_score(vy, vp):.4f} ce {roc_auc_score(vy, vr):.4f} "
               f"mean {roc_auc_score(vy, vp + vr):.4f}; score {len(vy) / (time.time() - t1):.0f} pairs/s", flush=True)
-    torch.save({k: v.half() for k, v in m.state_dict().items() if "word_embeddings" not in k}, OUT / f"ce{tag}.pt")
-    np.save(OUT / f"val_scores{tag}.npy", np.stack([vy, vp, vr]))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    torch.save({k: v.half() for k, v in m.state_dict().items() if "word_embeddings" not in k}, out)
+    np.save(out.with_name(out.stem + "_val_scores.npy"), np.stack([vy, vp, vr]))
     print(f"train done {time.time() - t0:.0f}s, peak {peak():.2f} GB", flush=True)
 
 
