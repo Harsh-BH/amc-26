@@ -123,6 +123,27 @@ the pipeline silently reuses stale features. Check out the same commit Harsh use
 (`git checkout <commit>`), or delete the affected files so they rebuild. Score caches are safe: their file names
 contain the model's id, so a new model always re-scores.
 
+### 6b. Training-side caches — for experimenting with retraining
+
+`amc26-offload/work/` also holds the **train-side** files (~3.1 GB, same `rclone copy` as above brings them):
+`train_source*.parquet`, `train_ground_truth.parquet`, `gt_pairs.parquet`, `s1_folds*` (the 10 folds: 0 = holdout,
+1 = early stopping, 2–9 = training), `rf_train_*` (record features), `p4/cands_train_full_*` (train candidate
+lists), `p4/X/train_*` (the 65 signals for every train candidate pair) and `p4b/trainband_*` (cross-encoder
+training pairs). With them a retrain skips ~1 h 45 min of candidate search + features.
+
+**Do the old model weights help when experimenting?**
+
+| You change | Keep the old weights? |
+|---|---|
+| **LightGBM settings** (leaves, learning rate, folds, sampling) | **No** — train a new model from `p4/X/train_*` (~45 min) and compare it with the old one on the holdout. Save it under a new name; the old `m2_big.txt` stays the baseline to beat. LightGBM does not fine-tune from old weights in any useful way here |
+| **Features** (add / change a signal) | **No** — the old model expects exactly the old 65 columns. Rebuild the X files (delete `p4/X/*`), retrain |
+| **Cross-encoder** (more data, epochs, another model) | **Partly** — you can continue training from `p4b/ce.pt`, but a clean run from the base e5-small (~25 min GPU) is the fair comparison |
+| **Pruner** (threshold τ or its features) | τ only: **yes**, no retrain (`model.TAU`). New features: retrain (74 s) |
+| **Only thresholds / France cut-off** | **Yes** — no training at all; `--t-country France=<t>` and the cached scores make it seconds |
+
+Always compare on the **full-corpus holdout** (`run.py --split holdout --stage model`, #5 = 0.9888, #6 = 0.9885)
+and log it (`ledger.py`). A change is worth keeping at ≥ +0.0005.
+
 ## 7. Run
 
 ```bash
@@ -190,7 +211,5 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
-- The command reproduces **submission #5** byte for byte (holdout 0.9888, leaderboard 0.980017).
+- The command now produces **submission #6** byte for byte (pruner, 4.83 candidates per business; holdout 0.9885). `--recipe sub5` gives #5 (leaderboard 0.980017); `--t-country France=0.88` gives #6b.
 - Best leaderboard so far: **0.981024** (France threshold raised to 0.88).
-- Being added now: the **candidate pruner** (#6: 4.83 candidates per business instead of 15.9) and a **France
-  threshold setting**. Pull the repo again once they are merged.
