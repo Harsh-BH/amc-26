@@ -13,13 +13,16 @@ main() {
   # worktree probes log to the MAIN checkout's ledger (one ledger, no merge conflicts on it)
   local MAIN; MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
   export AMC_LEDGER_DIR="$MAIN/ledger"
+  # swap: MemoryHigh (90% of the cap) makes the kernel reclaim/swap before the hard cap, and up to 6G of swap
+  # lets a probe spill instead of being OOM-killed (13.7G swap free; verified: 500MB in a 200M cap survives)
+  local HIGH=$(( $(numfmt --from=iec "$MEM") * 9 / 10 ))
   local prompt sess
   if [[ $MODE == resume ]]; then prompt=("$DIR/RESUME.md"); sess=(--resume "$SID")
   else prompt=(probes/_COMMON.md "$DIR/BRIEF.md"); sess=(--session-id "$SID"); fi
   # OOMPolicy=continue: an oversized command is OOM-killed (exit 137) but the session survives and adapts;
   # systemd's default (stop) tears down the whole scope, i.e. the probe itself (exit 143).
   cat "${prompt[@]}" \
-  | systemd-run --user --scope -q -p MemoryMax="$MEM" -p MemorySwapMax=0 -p OOMPolicy=continue \
+  | systemd-run --user --scope -q -p MemoryMax="$MEM" -p MemoryHigh="$HIGH" -p MemorySwapMax=6G -p OOMPolicy=continue \
       claude -p --model claude-opus-5-5 --effort xhigh --dangerously-skip-permissions \
              "${sess[@]}" -n "$ID" --output-format stream-json --verbose \
   | tee -a "$DIR/stream.jsonl" \
