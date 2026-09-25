@@ -19,7 +19,6 @@ import normalize as N
 import translit as T
 from worlds import WORK, load_world
 from metric import score
-from s0_exact import write
 
 ADDR = ["hn", "city", "places", "state"]
 FREQ_PATH = WORK / "place_freq_train.json"
@@ -51,9 +50,9 @@ def _feats(d: pd.DataFrame) -> pd.DataFrame:
 
 def feats(df: pd.DataFrame, chunk: int = 150_000, procs: int = 4) -> pd.DataFrame:
     freq(); T.table()                                    # build both caches once, on disk, before workers start
+    if len(df) <= chunk:                                 # incl. an empty frame (a country with no S2/S3)
+        return _feats(df)
     parts = [df.iloc[i:i + chunk] for i in range(0, len(df), chunk)]
-    if len(parts) == 1:
-        return _feats(parts[0])
     # forkserver, not fork: forked workers inherited the parent's 10M-row frame and each grew to ~2.5 GB as
     # refcounting copied its pages (05:20 memory spike); forkserver workers start clean and get one chunk each.
     with get_context("forkserver").Pool(procs, maxtasksperchild=8) as p:   # ~150 us/row/core, ~0.5 GB/worker
