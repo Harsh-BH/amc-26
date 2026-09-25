@@ -1,5 +1,5 @@
 # P12-synth: does synthetic training data, made ONLY from the provided train data, help an unseen country?
-Read first: probes/P6-france/RESULT.md (LOCO numbers, and why self-training on pseudo-labels failed), probes/P1-eda/
+Read first: probes/P6-france/RESULT.md (LOCO numbers, and why self-training on pseudo-labels failed), probes/P1-taxonomy/
 (noise generator findings), probes/MERGE-2.md, Documentation_template.md §2.1 (noise list). Own worktree; code only under
 probes/P12-synth/.
 
