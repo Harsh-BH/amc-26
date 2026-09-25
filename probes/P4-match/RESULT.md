@@ -147,3 +147,64 @@ Adopt `features.py` + `model.py` + `featrun.py` + `train.py` with boosters `m2fa
 - **Train stage 1 on more folds?** It used fold 2 only (3.1M pairs); stage 2 used fold 3. Best guess: ≤ +0.05 pt, and RAM-bound here (3.1M pairs is already 3 GB at load). Not worth it before P5.
 - **Per-country thresholds?** Best guess: no. India and US peak within 0.02 of each other, and France needs the global default anyway.
 - **May IDF / place_freq be fitted on test text** (PROBLEM.md open question 4)? Best guess: no, so keep the train fit. France would benefit most if allowed.
+
+## Improvement round (MERGE-2: more training folds for the shipped single-stage M2)
+**Verdict: ADOPTED by master ruling** (the gain is certain at 6.7 SE and the change adds no complexity). My own call had been
+"not adopted" (below the 0.001 bar). The same M2 recipe on 4× the training data, CE-blended exactly like #4, scores **0.9885**
+against #4's **0.9881** on P5's report half. That is **+0.00040 ± 0.00006** (1 paired SE; 716 S1 up, 325 down).
+It is real (6.7 SE) but below the ≥ 0.001 bar. Test files: see "Adoption" below. Every shipped prob file is untouched.
+
+| ledger name | world | key metrics | verdict |
+|---|---|---|---|
+| M2-big-train | train | folds 2–5 = 12,595,232 pairs; same PARAMS (lr 0.05, 127 leaves); early stop on the same fold-1 25% sample → 4,930 trees, fit 2,371 s, peak 3.70 GB (float16 `lgb.Sequence`, ~0.4 GB swap) | — |
+| M2-big-vs-M2-no-ce | fold-1 val sample / full holdout | Pair level: val logloss 0.02555 → **0.02285**, AUC 0.99932 → 0.99944, AP 0.99807 → 0.99842. Fixed rule (argmax + swept t), no CE: **0.9814 → 0.9834** (t 0.71 → 0.69; recall 0.9588 → 0.9624, precision 0.9940 → 0.9949; India 0.9830, US 0.9837) | keep (as a matcher) |
+| improve-control-M2-ce-D3 | holdout half 1 | #4 reproduced on the same code: **0.9881** (t 0.70, t0 0.73, w [0.636, 0.757, 0.355], 193,768 band pairs; 0.9815 without the CE) | control |
+| improve-big-ce-D3 | holdout half 1 | **0.9885** (India 0.9894, US 0.9879), t 0.69, t0 0.76, w refit [0.678, 0.715, 0.338]. Precision 0.9977, recall 0.9703, singleton acc 0.9882. Without the CE: 0.9834. Gain vs control +0.00040 ± 0.00006 | drop (< 0.001) |
+
+- **Why the gain shrinks from +0.0019 to +0.0004:** the extra data mostly fixes pairs in the uncertain 0.02–0.98 band. That band is exactly what the cross-encoder already rescores, so the two overlap.
+- **Band pairs:** 193,751 for the big model vs 193,768; only 11,078 needed new CE scores (`data/work/p4/r_holdout_big.parquet`).
+- **How it was run:** `probes/P4-match/big.py`, in this order: `train` → `holdout` → `ce` (under `flock /tmp/amc-gpu.lock`) → `eval`.
+  - P4b's `rerank.fit_blend` / `blend` / `d3` and P5's `bench.load` / `select` / `metrics` are imported read-only from the main checkout (d8e7e11).
+  - Blend weights and (t, t0) are fit on half 0 only.
+- **Outputs:** `m2_big.txt`, `prob_holdout_big.parquet` (prob_holdout schema; argmax over ALL train S1), `improve_eval.json`.
+  - If the master changes the bar, `big.py test` + `flock … big.py blendtest India|US` writes `prob_test_<c>_big[_blend].parquet`. Prediction is ~7.7k pairs/s, so ~60 min for the 27.5M test pairs.
+- **Not tried:**
+  - More than 4 folds. Folds 2–5 already peak at 3.7 GB, and going from 1 to 4 folds bought +0.0004 after the CE, so 6 folds would add less.
+  - Changing hyper-parameters. The brief said keep them; no evidence argued otherwise.
+
+### Adoption: test files for m2_big (MERGE-2 ruling)
+All files are in `data/work/p4/`. The shipped `prob_test_*.parquet`, `*_m2.parquet` and P4b's files are untouched.
+
+| file | what | rows |
+|---|---|---|
+| `prob_test_{France,India,US}_big.parquet` | m2_big p for every test pair. The same schema as the shipped files: s1, sx, p, am (argmax over ALL S1 of the country), sx_best_p, blocked | 4,348,797 / 12,720,874 / 10,424,924 |
+| `prob_test_{India,US}_big_blend.parquet` | the #4 CE blend with w = [0.678, 0.715, 0.338] on 0.02 < p < 0.98; p = blended, p_gbdt = m2_big p | 12,720,874 / 10,424,924 |
+
+- **CE reuse:**
+  - #4 kept only the blended p, so r was recovered by inverting #4's blend on M2's band pairs.
+  - Against a fresh CE score of 5,000 of those pairs per country: p99 |Δ logit r| 4e-5, max |Δr| 8.5e-4 (India) / 3e-7 (US).
+  - Reused: India 718,594 of 847,265 band pairs, US 599,133 of 702,137. Only 128,671 / 103,004 new pairs went to the GPU (≈ 1.5 min each).
+- **France threshold:** P6's rule (`fr_threshold.py 'data/work/p4/prob_test_{c}_big.parquet' 0.69`) gives **t_France = 0.78**.
+  - The assigned-share cross-check gives 0.80.
+  - At t* 0.69 the US+India reference is 5.69% empty and France 5.33%.
+  - #4's M2 had 0.82.
+- **Test answer profile** (P5 `select`: excl via `am`, t / t0; France t0 = t). Ledger rows `test-profile-big` / `test-profile-sub4`:
+
+  | | India | US | France |
+  |---|---|---|---|
+  | big: matches/S1, S1 empty | 3.377, 5.77% (t .69, t0 .76) | 3.379, 5.75% | 3.239, 5.69% (t .78) |
+  | #4 (reproduced): matches/S1, S1 empty | 3.375, 5.75% (t .70, t0 .73) | 3.378, 5.74% | 3.232, 5.68% (t .82) |
+
+- **Answer churn vs #4** (`test-churn-big-vs-sub4`):
+  - India: 1.1% of S1 change (5,176 pairs added, 4,040 dropped). US: 0.95%.
+  - **France: 10.4% of S1 change.** 10.3 pts of that comes from the model alone at a fixed t 0.82; the threshold move alone accounts for 3.9 pts.
+  - On the labelled holdout, the same model swap (no CE) changes 2.9% of S1, and it is strongly net-positive: pairs only big answers are 85.7% true, pairs only M2 answered 43.8% true.
+- **Risk:** France churns 3.5× more than the labelled analogue and there are no France labels to say which way.
+  - Best guess: net-positive like the holdout, because the same features and more data give better-calibrated pair evidence.
+  - A leave-one-country-out check on m2_big (train folds 2–5 of one country, score the other) would settle it. I have not run it.
+  - A risk-averse master can ship big for India/US and keep #4's France (M2, t 0.82).
+- **Reproduce:**
+  - `big.py test`
+  - `flock /tmp/amc-gpu.lock big.py blendtest India` (then `US`)
+  - `fr_threshold.py … 0.69`
+  - `big.py profile 0.78 0.82`
