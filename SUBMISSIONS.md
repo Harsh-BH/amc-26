@@ -19,8 +19,11 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 6 | **staged, validator PASS — upload after D1** | `output/sub6/matching_results.tsv` + `output/sub6/code.zip` | **0.98825 full-corpus** (−0.00024 ± 0.00003 vs #5) | #5 + P10's learned pruner (30-feature LightGBM, keep q ≥ 0.03 or rule-accepted) between blocking and the matcher: **candidates 15.87 → 4.83 per S1** (France 5.14, India 4.90, US 4.63), `candidate_pairs.tsv` 377 → 130 MB. Same p, same thresholds; 3,860 S1 (0.22%) answers differ from #5. Profiles unchanged (France 5.69% empty / 3.24 per S1). For the organisers' new smaller-candidate-set criterion |
 | D1 | **uploaded 21:43 — LB 0.849163 ⇒ France ≈ 0.93, India+US ≈ 0.989** | `output/d1/matching_results.tsv` + `output/d1/code.zip` | — (diagnostic) | #5 with **France emptied**, US/India identical. France's F0.5 = (0.980017 − LB_D1) / 0.1497 + France singleton share (~0.055). Tells whether France is the LB gap |
 | D2 | **uploaded 21:46 — LB 0.981024 (+0.0010 vs #5) ⇒ France ≈ 0.937; stricter is better** | `output/d2/matching_results.tsv` + `output/d2/code.zip` | — (diagnostic) | #5 with France t 0.88 (stricter): 6.2% empty, 3.13 per S1. LB up vs #5 ⇒ France over-matches |
-| D3 | staged, validator PASS | `output/d3/matching_results.tsv` + `output/d3/code.zip` | — (diagnostic) | #5 with France t 0.70 (looser): 5.4% empty, 3.31 per S1. LB up vs #5 ⇒ France under-matches |
+| D3 | skipped (D2 settled the direction) | `output/d3/matching_results.tsv` + `output/d3/code.zip` | — (diagnostic) | #5 with France t 0.70 (looser): 5.4% empty, 3.31 per S1. LB up vs #5 ⇒ France under-matches |
+| D4 | **staged, validator PASS — upload next** | `output/d4/matching_results.tsv` + `output/d4/code.zip` | — (diagnostic) | #5 with France t 0.95: 6.85% empty, 2.99 per S1. Above 0.981024 ⇒ stricter still helps |
+| 6b | staged, validator PASS | `output/sub6b/…` | 0.98825 (India/US) | #6 (pruner, 4.83 cands/S1) + France t 0.88 (D2's winner) |
+| 6c | staged, validator PASS | `output/sub6c/…` | 0.98825 (India/US) | #6 + France t 0.95 |
 
-**Upload next:** D1, then #6, then D2 and D3 (all fit in today's remaining 4 slots). D1–D3 are diagnostics only — never the final pick.
+**Upload next (25 Sep, 2 slots):** D4, then 6c if D4 > 0.981024 else 6b — a real submission goes last.
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.
