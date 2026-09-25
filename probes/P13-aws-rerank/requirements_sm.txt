@@ -1,0 +1,7 @@
+# pip-installed by the SageMaker PyTorch DLC (pytorch-training:2.9.0-gpu-py312, torch 2.9.0 + cu130) at job start.
+# torch, numpy, pandas, scikit-learn, huggingface-hub, safetensors, boto3 ship with the image, so they are not listed
+# (pip never re-resolves torch). pyarrow is not in the image's build history, hence pinned. Versions = the laptop's
+# .venv, and the ones pip resolved in this DLC for an earlier job (amc26-cloudtest-cpu).
+transformers==5.17.0
+tokenizers==0.23.2
+pyarrow==25.0.1
