@@ -14,6 +14,8 @@ Splits:
   test     the submission (all 1,732,544 test S1)
   holdout  DENSE: the holdout S1 (fold 0) are scored while every train S1 and every train S2/S3 of the country
            compete -- the test-shaped proxy
+  holdout-world  every train S1 competes, but only the holdout world's S2/S3 (its S1's records + a 5.8/S1 random
+           sample) -- how rules.evaluate(dense=True) measured 0.8201 / 0.8215; it hides ~95% of the look-alike records
   dev      the dev world (fold 1, 30k S1, plain), also the stub model's training set
 Every artifact is rebuilt from the training data when absent: parquet copies, folds and worlds (ensure), the P2
 transliteration table (translit.table), place_freq (rules.freq), the TF-IDF vectorizers (block.vecs), the blocking
@@ -61,8 +63,9 @@ def ensure(split: str):
         io_tsv.convert()
     if not ((WORK / "gt_pairs.parquet").exists() and (WORK / "s1_folds.parquet").exists()):
         worlds.build_base()            # translit.table() learns from these, the worlds sample from them
-    if split in worlds.WORLDS and not (WORK / "worlds" / split / "truth.parquet").exists():
-        worlds.build_world(split, *worlds.WORLDS[split])
+    w = split.split("-")[0]
+    if w in worlds.WORLDS and not (WORK / "worlds" / w / "truth.parquet").exists():
+        worlds.build_world(w, *worlds.WORLDS[w])
 
 
 def arr(x) -> pa.Array:
@@ -103,7 +106,7 @@ def feats(split: str, side: str, country: str) -> pd.DataFrame:
     return pd.read_parquet(path)
 
 
-def p3_cands(split: str, country: str, scored=None) -> pa.Table:
+def p3_cands(split: str, country: str, scored=None, cols=CCOLS) -> pa.Table:
     """P3 blocking pairs of one country (s1, sx ids + block features), from data/work/p3 or rebuilt by block.py.
     holdout = the holdout S1's pairs out of the all-train-S1 run: the same rule P3 exported as cands_holdout_full_*."""
     if split == "test":
@@ -115,27 +118,35 @@ def p3_cands(split: str, country: str, scored=None) -> pa.Table:
         if not p.exists():
             t = pq.read_table(B.split_cands("train", country), columns=CCOLS)
             pq.write_table(t.filter(pc.is_in(t["s1"], value_set=arr(scored))), p)
-    return pq.read_table(p, columns=CCOLS)
+    return pq.read_table(p, columns=cols)
 
 
 def inputs(split: str, world=None):
-    """Yield (country, f1, fx, cands, scored S1 ids, truth | None) per S1 country label.
-    f1 = the S1 pool that competes (holdout: every train S1 of the country), fx = every S2/S3 of the country."""
+    """Yield (country, f1, fx, cands, scored S1 ids, truth | None) per S1 country label. f1 = the S1 pool that
+    competes (holdout: every train S1 of the country), fx = every S2/S3 of the country, cands(cols) loads the P3 pairs."""
     if split == "test":
         for c in sorted(pq.read_table(WORK / "test_source1.parquet", columns=["country"]).column(0).unique().to_pylist()):
             f1 = feats("test", "s1", c)
-            yield c, f1, feats("test", "sx", c), p3_cands("test", c), f1.id, None
+            yield c, f1, feats("test", "sx", c), lambda cols, c=c: p3_cands("test", c, cols=cols), f1.id, None
         return
-    if split == "holdout":
+    if split.startswith("holdout"):
         s1 = pd.read_parquet(WORK / "worlds/holdout/s1.parquet", columns=["entity_id", "country"])
         t = pd.read_parquet(WORK / "worlds/holdout/truth.parquet")
+        wx = arr(pq.read_table(WORK / "worlds/holdout/sx.parquet", columns=["entity_id"]).column(0)) \
+            if split == "holdout-world" else None
         for c in sorted(s1.country.unique()):
             ids = s1.entity_id[s1.country == c]
             truth = {s: set() for s in ids}
             for a, b in zip(t.s1, t.sx):
                 if a in truth:
                     truth[a].add(b)
-            yield c, feats("train", "s1", c), feats("train", "sx", c), p3_cands("holdout", c, ids), ids, truth
+            fx = feats("train", "sx", c)
+            if wx is not None:
+                fx = fx[pc.is_in(arr(fx.id), value_set=wx).to_numpy(zero_copy_only=False)].reset_index(drop=True)
+            load = lambda cols, c=c, ids=ids: p3_cands("holdout", c, ids, cols)
+            if wx is not None:
+                load = lambda cols, l=load: (lambda t: t.filter(pc.is_in(t["sx"], value_set=wx)))(l(cols))
+            yield c, feats("train", "s1", c), fx, load, ids, truth
         return
     if world is None:                                   # dev
         from worlds import load_world
@@ -150,22 +161,28 @@ def inputs(split: str, world=None):
     for c in sorted(s1.country.unique()):
         a, b = s1[s1.country == c], sx[sx.country == c]
         cc = cands[cands.s1.isin(set(a.entity_id))]
-        yield (c, R.feats(a), R.feats(b) if len(b) else None, pa.Table.from_pandas(cc[CCOLS], preserve_index=False),
+        yield (c, R.feats(a), R.feats(b) if len(b) else None,
+               lambda cols, cc=cc: pa.Table.from_pandas(cc[cols], preserve_index=False),
                a.entity_id, {s: truth[s] for s in a.entity_id})
 
 
-def assemble(stage: str, f1: pd.DataFrame, fx: pd.DataFrame, cands: pa.Table, keep: np.ndarray):
+def assemble(stage: str, f1: pd.DataFrame, fx: pd.DataFrame, load, keep: np.ndarray):
     """-> (accepted keys, candidate keys, pairs | None). A key is int64 q1 << 32 | qx over f1 / fx rows; everything is
     cut to the scored S1 (keep). rules: candidates = P3 ∪ accepted. model: candidates = P3 ∪ every rule-key pair,
     and `pairs` carries them with their block features and the accept flag, ready for model.score."""
     id1, idx = arr(f1.id), arr(fx.id)
     key = lambda s1, sx: (codes(id1, s1) << 32) | codes(idx, sx)
+    cands = load(["s1", "sx"] if stage == "rules" else CCOLS)   # rules: ids only, freed before the join
+    kp = key(cands["s1"], cands["sx"])                  # asserts: P3 ids are S1 / S2 / S3 of this split + country
+    m = keep[kp >> 32]
+    if not m.all():
+        cands, kp = cands.filter(pa.array(m)), kp[m]
+    if stage == "rules":
+        del cands
     acc, kc = R.match(f1, fx, by_state=True, keep_cands=stage == "model")
     ka = key(acc.s1, acc.sx)
     ka = ka[keep[ka >> 32]]
-    kp = key(cands["s1"], cands["sx"])                  # asserts: P3 ids are S1 / S2 / S3 of this split + country
-    cands = cands.filter(pa.array(keep[kp >> 32]))
-    kp = kp[keep[kp >> 32]]
+    del acc
     if stage == "rules":
         return ka, np.union1d(kp, ka), None
     kk = key(kc.s1, kc.sx) if len(kc) else ka[:0]
@@ -329,6 +346,8 @@ def run(split: str, stage: str, out: Path, world=None, log=True) -> dict:
     fc.close()
     if split == "test" and world is None:
         assert rows == N_TEST_S1 == pq.ParquetFile(WORK / "test_source1.parquet").metadata.num_rows, rows
+        ids = pq.read_table(WORK / "test_source1.parquet", columns=["entity_id"]).column(0)
+        assert pc.count_distinct(ids).as_py() == len(ids), "S1 ids unique across countries: no row written twice"
         validate(out)
     if not truth:
         return {}
@@ -344,18 +363,18 @@ def run(split: str, stage: str, out: Path, world=None, log=True) -> dict:
             from ledger import log as ledger_log       # the team ledger lives at the repo root, not in the package
         except ImportError:
             return m
-        ledger_log("pipe", version=f"p8-{stage}", world=split + ("-dense" if split == "holdout" else ""),
+        ledger_log("pipe", version=f"p8-{stage}", world=split + ("-dense" if split.startswith("holdout") else ""),
                    metrics={k: round(float(v), 4) for k, v in m.items()},
                    config={"feats": "rules.feats (P2 to_latin + P1)", "cands": "P3 block.CFG ∪ rule keys (by_state)",
                            "score": "rules.match accept set" if stage == "rules" else "model.score (stub LR)",
                            "decide": "none" if stage == "rules" else ("P5 decide" if D else "argmax S1 per SX + T"),
-                           "sx": "full train corpus" if split == "holdout" else split})
+                           "sx": {"holdout": "full train corpus", "holdout-world": "holdout world sx"}.get(split, split)})
     return m
 
 
 if __name__ == "__main__":        # forkserver workers (rules.feats) re-import this file: keep the run under main
     ap = argparse.ArgumentParser()
-    ap.add_argument("--split", choices=["test", "holdout", "dev"], required=True)
+    ap.add_argument("--split", choices=["test", "holdout", "holdout-world", "dev"], required=True)
     ap.add_argument("--stage", choices=["rules", "model"], default="rules")
     ap.add_argument("--out", type=Path, default=Path("output"))
     a = ap.parse_args()
