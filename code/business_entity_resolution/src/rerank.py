@@ -2,7 +2,7 @@
 "name | addr" of both records, rescoring M2's uncertain band; blended back into p before the decision.
 
     python src/rerank.py band <country>                                   # train-side band (LightGBM, fold 2 fit)
-    flock /tmp/amc-gpu.lock python src/rerank.py train [countries=India,US tag=]   # -> data/work/p4b/ce<tag>.pt, 25 min
+    flock /tmp/amc-gpu.lock python src/rerank.py train [countries=India,US tag= n=]  # -> data/work/p4b/ce<tag>.pt, 25 min
     flock /tmp/amc-gpu.lock python src/rerank.py score in.parquet out.parquet      # PIPELINE STEP: [ta, tb] -> [r]
     python src/rerank.py check                                            # blend-rule self-check
 
@@ -135,8 +135,9 @@ def score_file(inp: str, outp: str, model: str = str(CE)):
 
 
 def train(epochs: int = 1, bs: int = 128, lr: float = 6e-5, oob: float = 0.5, seed: int = 0,
-          countries=("India", "US"), tag: str = ""):
-    """Band pairs of folds 4-9 (+ oob x as many out-of-band pairs) -> ce<tag>.pt; fold 3 band = validation."""
+          countries=("India", "US"), tag: str = "", n: int = 0):
+    """Band pairs of folds 4-9 (+ oob x as many out-of-band pairs) -> ce<tag>.pt; fold 3 band = validation.
+    n > 0: at most n train pairs per country (a smoke test of this entry point, not a model)."""
     import torch
     from sklearn.metrics import roc_auc_score
     t0 = time.time()
@@ -148,6 +149,7 @@ def train(epochs: int = 1, bs: int = 128, lr: float = 6e-5, oob: float = 0.5, se
         b = b[b.fold >= 4]
         ib, ob = b[b.inband], b[~b.inband]
         b = pd.concat([ib, ob.sample(min(len(ob), int(oob * len(ib))), random_state=seed)])
+        b = b.sample(min(len(b), int(n)), random_state=seed) if int(n) else b
         v = v.sample(min(len(v), 20_000), random_state=seed)
         for d, acc in ((b, parts), (v, val)):
             ta, tb = texts("train", c, d.q1.to_numpy(), d.qx.to_numpy())
@@ -163,7 +165,7 @@ def train(epochs: int = 1, bs: int = 128, lr: float = 6e-5, oob: float = 0.5, se
     tok, m = load_model()
     m.bert.embeddings.word_embeddings.weight.requires_grad_(False)     # 96M of the 118M params; saves VRAM + disk
     opt = torch.optim.AdamW([p for p in m.parameters() if p.requires_grad], lr=lr, weight_decay=0.01)
-    steps = epochs * (len(y) // bs)
+    steps = max(epochs * (len(y) // bs), 1)
     sch = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1, s / 500) * max(0.0, 1 - s / steps))
     lossf, step = torch.nn.BCEWithLogitsLoss(), 0
     for ep in range(epochs):

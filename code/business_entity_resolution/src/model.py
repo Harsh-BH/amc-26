@@ -83,6 +83,7 @@ def split_probs(split: str, c: str) -> pd.DataFrame:
     X files (features.build writes the missing ones first). holdout = the train X files cut to every pair of the
     S2/S3 that a holdout (fold 0) S1 competes for, so each SX's argmax still sees all its train S1.
     Cached as data/work/p9/m2_<split>_<c>_<booster hash>.parquet."""
+    # ponytail: keyed by the booster only -- delete data/work/p9/m2_* (and p4/X) whenever the features change
     path = CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}.parquet"
     if path.exists():
         return pd.read_parquet(path)

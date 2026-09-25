@@ -231,8 +231,9 @@ def assemble(stage: str, f1: pd.DataFrame, fx: pd.DataFrame, load, keep: np.ndar
 
 
 def rerank(c: str, q1: np.ndarray, qx: np.ndarray, p: np.ndarray, text, cache: Path | None = None) -> tuple:
-    """(p', r): p with the band of a CE-trained country blended with the cross-encoder's r (rerank.CFG); any other country's
-    p unchanged; r = the CE score of the band pairs (NaN elsewhere). The CE runs in its own process under the GPU lock; text(q1, qx) -> ("name | addr" S1, same SX).
+    """(p', r): p with the band of a CE-trained country blended with the cross-encoder's r (rerank.CFG), any other
+    country's p unchanged; r = the CE score of the band pairs (NaN elsewhere). The CE runs in its own process under
+    the GPU lock; text(q1, qx) -> ("name | addr" of the S1, same of the SX).
     cache: parquet of already scored pairs (int64 key q1 << 32 | qx, r), so a rerun only scores new band pairs."""
     lo, hi = RR.CFG["band"]
     full = np.full(len(p), np.nan, np.float32)
