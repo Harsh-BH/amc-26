@@ -4,8 +4,7 @@
 **Team Members:** [members]
 **Submission Date:** 27 September 2026
 
-> DRAFT — written from the experiment ledgers (`ledger/*.jsonl`) and merge memos (`probes/MERGE-*.md`) as the work
-> progresses. Final numbers are filled in after the v1 pipeline run.
+> Every number below is traceable to a row in `ledger/*.jsonl` and to the merge memos `probes/MERGE-*.md`.
 
 ---
 
@@ -21,7 +20,7 @@ The pipeline has four stages:
 
 Decisions exploit the data's one-to-many structure: each Source 2/3 record goes to at most one Source 1 entity, its argmax,
 above a threshold tuned for F0.5. On a holdout scored at full corpus density (every train Source 1 and every train
-Source 2/3 competing), F0.5 is **[v1 number]**, against 0.771 for an exact-key rule baseline.
+Source 2/3 competing), F0.5 is **0.9885**, against 0.771 for an exact-key rule baseline.
 
 ## 2. Methodology
 
@@ -76,7 +75,8 @@ Source 2/3 competing), F0.5 is **[v1 number]**, against 0.771 for an exact-key r
   name-chain size within the country, the rule stage's decision, and source (S2/S3).
 - Country is **not** used as a raw category (France is unseen).
 
-**Model type:** LightGBM, trained on train fold 2 and early-stopped on fold 1.
+**Model type:** LightGBM (lr 0.05, 127 leaves, 4,930 trees). The final model is trained on train folds 2–5 (12.6M
+candidate pairs) and early-stopped on fold 1. The fold-2-only model scored 0.9814; four folds give 0.9834 before reranking.
 Ladder at full density:
 
 | Model | F0.5 |
@@ -87,8 +87,9 @@ Ladder at full density:
 | **LightGBM** | **0.9814** |
 
 **Reranker:** multilingual-e5-small (MIT, 118M) fine-tuned as a cross-encoder on the LightGBM uncertain band of train
-fold 3. On that band its AUC is 0.926, against 0.809 for the tree model. Blended with LightGBM it gives
-**0.988** [final blend weight].
+fold 3. On that band its AUC is 0.926, against 0.809 for the tree model. Blend: p′ = σ(0.678·logit p + 0.715·logit r
++ 0.338), fitted on one half of the holdout and evaluated on the other. It is applied to India and the US only:
+trained on one country, it does not transfer to the other (−0.0016), so France keeps the tree model's p.
 
 **Threshold selection:** the Source 2/3 record goes to its argmax Source 1; keep it if p ≥ t, with t swept for F0.5 on
 held-out folds. The F0.5 curve is flat within 0.001 for t ∈ [0.57, 0.83]. France uses a label-free threshold: the one
@@ -96,8 +97,19 @@ whose predicted matches per Source 1 fit the expected profile. In leave-one-coun
 oracle threshold.
 
 ## 5. Results & Error Analysis
-- **F0.5 (macro, full-density holdout):** [v1], precision [..], recall [..]. Two independent audits found no label leakage,
-  and the threshold-tuning optimism is at most 0.00003.
+- **F0.5 (macro, full-density holdout, report half):** **0.9885**, precision 0.9977, recall 0.9703, singleton accuracy 0.988
+  (India 0.9894, US 0.9879). Two independent audits found no label leakage, and the threshold-tuning optimism is at most
+  0.00003.
+- **Ablation (same yardstick):**
+
+  | System | F0.5 |
+  |---|---|
+  | Exact-key rules | 0.771 |
+  | Logistic regression | 0.933 |
+  | LightGBM, fold 2 | 0.9814 |
+  | + cross-encoder | 0.9881 |
+  | **LightGBM, folds 2–5 + cross-encoder** | **0.9885** |
+  | P5's stacked decision layer on top | +0.0001 (not adopted) |
 - **Common false positives:** 87% are orphan Source 2/3 records (no true parent among their candidates) that look like a
   real Source 1: same name core and city, a different street or house number.
 - **Common false negatives:** pairs whose true Source 1 is not among the candidates (0.8%), heavy word-subset or DBA name
@@ -107,7 +119,11 @@ oracle threshold.
   the model choice.
 
 ## 6. Conclusion
-[2–3 sentences after v1.]
+The data's one-to-many structure (one parent per Source 2/3 record) shaped every stage: reverse blocking, per-record
+exclusive decoding, and competition features. Most of the gain over exact-key rules came from learning when a same-name
+look-alike at a different street is not the same business, and from the cross-encoder on the uncertain band.
+Measuring on the full corpus rather than a sample kept every decision honest: sampled evaluations overstated precision
+by 8 points.
 
 ---
 
