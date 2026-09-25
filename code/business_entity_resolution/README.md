@@ -1,73 +1,98 @@
 # Business entity resolution — Amazon ML Challenge 2026
 
-This code rebuilds both submission files from the raw TSVs. It runs on CPU from the repository root, with no network
-access, no external data and no pretrained models. Every intermediate artifact is rebuilt from the training data
-when it is absent.
+This code rebuilds both submission files from the raw TSVs, from the repository root. It uses no external data and
+no API. The one pretrained model is `intfloat/multilingual-e5-small` (MIT, 118M parameters). Its base weights are
+downloaded once from Hugging Face, then fine-tuned on the train data. Every other artefact is fitted on the train
+data and rebuilt when absent.
 
 ## 1. Setup
 
 ```bash
 python3.12 -m venv .venv && .venv/bin/pip install -r code/business_entity_resolution/requirements.txt
+HF_HUB_OFFLINE=0 .venv/bin/python -c "from transformers import AutoModel, AutoTokenizer as T; \
+  AutoModel.from_pretrained('intfloat/multilingual-e5-small'); T.from_pretrained('intfloat/multilingual-e5-small')"
 ```
+
+After that download, `rerank.py` sets `HF_HUB_OFFLINE=1`, so the pipeline never touches the network.
 
 Unzip `student_resource.zip` so the data sits at `data/student_resource/dataset/{train,test}/*.tsv`, with the official
 validator at `data/student_resource/utils/validate_submission.py`. Two environment variables override the paths:
 `ER_DATA` (the `dataset/` directory) and `ER_WORK` (intermediate files, default `data/work`).
 
+Hardware: the measurements below are from a shared 16-core laptop, 15 GB RAM, one RTX 3050 6 GB. Every step fits
+a 3 GB memory cap. The cross-encoder steps need the GPU; they take the lock `/tmp/amc-gpu.lock` (`flock`).
+
 ## 2. Reproduce the submission
 
 ```bash
-.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage rules --out output/
+.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --out output/
 ```
 
 It writes `output/matching_results.tsv` and `output/candidate_pairs.tsv`, asserts the format rules, then runs the
-official validator. On a cold `data/work` it rebuilds everything below in order; with the caches present it only
-matches and writes.
+official validator. Nothing else has to run first: on a cold `data/work` the command rebuilds every step below in
+order (training included). With the caches present it only scores, decides and writes.
 
-| step | what | module / function | output (in `data/work`) |
+| step | what | module / function | cached at (`data/work/…`) |
 |---|---|---|---|
 | data | TSV → parquet, read with `QUOTE_NONE` and `keep_default_na=False` | `io_tsv.convert` | `{train,test}_source{1,2,3}.parquet` |
-| folds | ground-truth pairs; 10 hashed folds of train S1 (0 = holdout, 1 = dev, 2–9 = fitting) | `worlds.build_base` | `gt_pairs`, `s1_folds` |
-| transliteration | Indic → Latin word table, learned from train folds 2–9 true pairs | `translit.table` (+ `pairs.build`) | `p2_xlit_table.parquet` |
-| place counts | place frequencies over train S1 addresses (city choice) | `rules.freq` | `place_freq_train.json` |
-| record features | `to_latin` → `name_core`, `website_core`, `address_fields` (state, city, house number, places) | `rules.feats` | `rf_test_{s1,sx}_<country>.parquet` |
+| folds | ground-truth pairs; 10 hashed folds of train S1 (0 = holdout, 1 = dev / early stopping, 2–9 = fitting) | `worlds.build_base` | `gt_pairs`, `s1_folds` |
+| transliteration | Indic → Latin word table, learned from train folds 2–9 true pairs | `translit.table` | `p2_xlit_table.parquet` |
+| record features | `to_latin` → `name_core`, `website_core`, `address_fields` (state, city, house number, places) | `run.feats` → `rules.feats` | `rf_<split>_{s1,sx}_<country>.parquet` |
 | vectorizers | hashed TF-IDF (name char-3-grams, address words) on a seeded 1M-row sample of train S2/S3 | `block.vecs` | `p3/vecs_hash.pkl` |
-| blocking | per country, within state group: each S2/S3 → its top-2 S1 (top-10 if it has no address) ∪ each S1's top-10 S2/S3 | `block.split_cands` | `p3/cands_test_<country>.parquet` |
-| matching | exact (country, name core) or website key + address evidence ≥ 2 → the unique best S1; each S2/S3 to ≤ 1 S1 | `rules.match` | — |
-| output | one row per test S1 (all countries); candidates = blocking ∪ accepted pairs | `run.write_lists` | `output/*.tsv` |
+| blocking | per country, within state group: each S2/S3 → its top-2 S1 (top-10 if it has no address) ∪ each S1's top-10 S2/S3 | `block.split_cands` | `p3/txt*/`, `p3/cands_<split>_<country>.parquet` |
+| rule pairs | exact (country, name core) or website key + address evidence ≥ 2 → the unique best S1 | `rules.match` | — (inside the features) |
+| pair features | 65 label-free features per candidate pair (P3 ∪ rule-accepted): name / address similarities, house number / city / state agreement, website, chain size, and each pair's rank and margin among its S1's and its S2/S3's candidates | `features.build` | `p4/X/<split>_<country>_sx_NNN.parquet` |
+| M2 | LightGBM on the fold-2 S1 pairs, early-stopped on fold 1 | `train_matcher.main` | `p4/m2_ladder.txt` |
+| M2 scores | p for every candidate pair | `model.split_probs` | `p9/m2_<split>_<country>_<booster hash>.parquet` |
+| cross-encoder | e5-small fine-tuned on "name \| addr" pairs from M2-like uncertain bands of train folds 4–9 (India, US) | `rerank.py band`, `rerank.py train` | `p4b/trainband_*.parquet`, `p4b/ce.pt` |
+| rerank | India / US pairs with 0.02 < p < 0.98: p′ = σ(0.636 logit p + 0.757 logit r + 0.355) | `run.rerank` → `rerank.py score` | `p9/r_<split>_<country>_<ce hash>.parquet` |
+| decision | each S2/S3 to its argmax-p S1, kept if p ≥ t. India / US: t = 0.70 on p′. France or any label without training data: M2's p, t from P6's label-free rule (below) | `run.thresholds` | — |
+| output | one row per test S1 (all countries); candidates = every scored pair | `run.write_lists` | `output/*.tsv` |
 
-Blocking alone can be run per country: `.venv/bin/python code/business_entity_resolution/src/block.py test France`.
-Measured on a shared 16-core laptop:
-- Blocking: text prep 6.5 min for all 11.7M test rows, then 5 min (France), 18 min (India) and 6 min (US), peaking
-  at 2.7 GB. `CFG["shard"]` in `block.py` trades RAM for speed.
-- Record features: 20 min for the 12.5M train rows at `PROCS = 2` workers (`run.py`; ~0.5 GB per worker), so about
-  the same for the 11.7M test rows.
-- Matching and writing, with the caches present: 2.5 min (France), 5 min (India) and 3 min (US), at a 2.3 GB peak.
-- The official validator holds every candidate id in RAM, about 5 GB at test scale.
+**France threshold, label-free.** France has no labels, and a model applied to an unseen country is over-confident
+(leave-one-country-out: US→India loses 4 pts at the source threshold). So the threshold is where France's predicted
+empty-S1 rate equals the labelled countries' S1-weighted rate under M2 at M2's own optimum `T_M2` = 0.71. It is
+clipped to [0.71, 0.91], and computed from the test probabilities on every run. For the submission it gives 0.82.
 
-`--stage model` routes the candidates through `model.score(pairs, f1, fx)`, a pair classifier, and then through the
-decision layer: `decide.decide` if `src/decide.py` exists, otherwise each S2/S3 goes to its best S1 if p ≥ T.
-The classifier and T are fitted on the dev world when `data/work/p8/model_stub.pkl` is absent.
+Runtimes and memory (measured, 3 GB cap):
+
+| step | cold | peak RAM |
+|---|---|---|
+| text prep + blocking, test | 6.5 min + 5 / 18 / 6 min (France / India / US) | 2.7 GB |
+| record features, test (`PROCS = 2`) | ~20 min | 1.5 GB |
+| pair features, test (`features.build`) | 3 / 20 / 9 min (France / India / US) | 2.8 GB |
+| TRAIN side for the models: blocking for all 2.2M train S1, record + pair features | ~35 + 20 + 50 min | 2.9 GB |
+| M2 training (`train_matcher.py`) | TBD | TBD |
+| cross-encoder: `band` ×2 + `train` (GPU) | 5 + 25 min | 2.6 GB, 2.4 GB VRAM |
+| M2 scores, test | TBD | TBD |
+| CE rescoring, test (1.58M band pairs, GPU) | TBD | TBD |
+| decision + writing + validator | TBD | TBD |
 
 ## 3. Validate on the training data
 
 ```bash
-.venv/bin/python code/business_entity_resolution/src/run.py --split holdout --stage rules   # dense holdout F0.5
+.venv/bin/python code/business_entity_resolution/src/run.py --split holdout --stage model   # dense holdout F0.5
 .venv/bin/python code/business_entity_resolution/src/run.py --split dev --stage model       # small dev world
+.venv/bin/python code/business_entity_resolution/src/train_matcher.py eval data/work/p4/m2_ladder.txt   # M2 alone
 ```
 
-`holdout` is the test-shaped proxy. The fold-0 S1 are scored while every train S1 and every train S2/S3 of the country
-compete (2.2M S1, 10.3M S2/S3). The metric is macro F0.5 per S1, singletons included (`metric.py`).
+`holdout` is the test-shaped proxy. The fold-0 S1 (220,358) are scored while every train S1 and every train S2/S3
+of the country compete (2.2M S1, 10.3M S2/S3). Each S2/S3's argmax sees all its train S1. The metric is macro F0.5
+per S1, singletons included (`metric.py`). The run also refits the blend weights on holdout half 0, as a check.
+`dev` runs the same stages in memory (blocking, features, M2, CE) on the 30k-S1 dev world.
 
 ## 4. Tests
 
 ```bash
 .venv/bin/python code/business_entity_resolution/src/test_pipeline.py      # end to end: every label incl. an unseen one
+.venv/bin/python code/business_entity_resolution/src/features.py           # feature self-check
+.venv/bin/python code/business_entity_resolution/src/rerank.py check       # blend-rule self-check
 .venv/bin/python code/business_entity_resolution/src/block.py              # blocking self-check
 .venv/bin/python code/business_entity_resolution/src/metric.py             # metric self-check (PDF example)
-.venv/bin/python code/business_entity_resolution/src/test_rules_cands.py   # rules guard, dense holdout
 .venv/bin/python code/business_entity_resolution/src/package.py --selftest
 ```
+
+`--stage rules` reproduces submission #2, the rules-only baseline, byte for byte.
 
 ## 5. Package
 
@@ -77,3 +102,5 @@ compete (2.2M S1, 10.3M S2/S3). The metric is macro F0.5 per S1, singletons incl
 
 The zip holds `output/`, `code/business_entity_resolution/` (src, this README, requirements) and the filled
 `Documentation_template.md`. The script checks its structure and that both TSVs have one row per test S1.
+The fine-tuned weights (`data/work/p4b/ce.pt`, 43 MB) and the booster (`data/work/p4/m2_ladder.txt`, 32 MB) are
+artefacts, not source. Both are rebuilt from the train data by the commands above.

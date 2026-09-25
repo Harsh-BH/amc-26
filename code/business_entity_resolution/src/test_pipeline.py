@@ -1,7 +1,8 @@
 """End-to-end guard on both output files, for both stages, on a slice of the dev world plus two injected labels:
 "Xland" (an unseen country with S1 and S2/S3: copies of 200 US S1 and their records under fresh ids) and "Yland"
 (S1 only, no S2/S3 at all). Every S1 of every label gets exactly one row, matches ⊆ candidates, lists hold only
-S2-/S3- ids of the input, of the S1's own country, without duplicates, spaces or quotes. ~2 min.
+S2-/S3- ids of the input, of the S1's own country, without duplicates, spaces or quotes. The model stage runs the
+real M2 + cross-encoder (GPU, under the lock) and gives Xland P6's unseen-country threshold. ~4 min.
 
     python code/business_entity_resolution/src/test_pipeline.py
 """

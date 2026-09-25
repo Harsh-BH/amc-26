@@ -1,66 +1,104 @@
-"""Pair matcher behind ONE interface: score(pairs, f1, fx) -> np.ndarray of match probabilities, one per pair.
+"""M2 pair matcher (P4-match): LightGBM on the 65 features of features.py, booster data/work/p4/m2_ladder.txt
+(train_matcher.py rebuilds it from the train data when absent).
 
-    pairs  DataFrame: q1, qx = row positions into f1 / fx; block_score, block_rank_s1, block_rank_sx, via from P3
-           blocking (NaN / -1 / "" for a pair that only the rule keys proposed); acc = in the rules.match accept set
-    f1, fx rules.feats frames of the S1 pool and of the S2/S3 records (id, core, web, is_web, state, city, hn, places)
-
-STUB until P4's matcher lands (probes/P4-match): logistic regression on the block features + rule flags. run.py
-fits it on the dev world (train fold 1) whenever data/work/p8/model_stub.pkl is absent, and stores the global
-threshold of the fallback decision rule next to it (T).
+    score(pairs, f1, fx) -> p       in memory (dev world, injected frames): pairs = run.assemble's P3 ∪ rule-accepted
+                                    pairs, f1 / fx = features.rec tables of the S1 pool and the S2/S3 records
+    split_probs(split, c) -> (q1, qx, p)   full scale: every candidate pair of a country, from the X files
+    argmax_sx(qx, p)                the decision's exclusivity: each S2/S3 only at its best S1
 """
-import pickle
+import hashlib
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import rules as R
+import features as F
 from worlds import WORK
 
-ARTIFACT = WORK / "p8" / "model_stub.pkl"
-FEATS = ["in_p3", "block_score", "log_rank_s1", "log_rank_sx", "via_r", "via_f", "key", "web", "addr_sc",
-         "addr_ok", "acc"]
+BOOSTER = WORK / "p4" / "m2_ladder.txt"
+CACHE = WORK / "p9"                     # M2 p per split / country, keyed by the booster's hash
+DROP = {"s1", "sx", "q1", "qx", "y", "is_true", "fold", "country"}
+PARAMS = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=100, feature_fraction=0.8,
+              bagging_fraction=0.8, bagging_freq=1, lambda_l2=1.0, max_bin=255, verbose=-1, num_threads=12)
 _M = None
 
 
-def pair_feats(pairs: pd.DataFrame, f1: pd.DataFrame, fx: pd.DataFrame, chunk: int = 1_000_000) -> np.ndarray:
-    """(n, len(FEATS)) float32. Rule flags are recomputed per pair on aligned rows, 1M pairs at a time."""
-    out = np.zeros((len(pairs), len(FEATS)), np.float32)
-    for i in range(0, len(pairs), chunk):
-        p = pairs.iloc[i:i + chunk]
-        a, b = f1.iloc[p.q1.to_numpy()].reset_index(drop=True), fx.iloc[p.qx.to_numpy()].reset_index(drop=True)
-        core, web = a.core.to_numpy(), b.web.to_numpy()
-        sc = R.addr_score(a, b)
-        via = p.via.astype(object)
-        rank = lambda r: np.log1p(np.where(r.to_numpy() >= 0, r.to_numpy(), 30))
-        out[i:i + chunk] = np.column_stack([
-            p.block_score.notna(), p.block_score.fillna(0), rank(p.block_rank_s1), rank(p.block_rank_sx),
-            via.isin(["r", "r+f"]), via.isin(["f", "r+f"]),
-            (core == b.core.to_numpy()) & (core != ""),
-            b.is_web.to_numpy() & (web == a.core.str.replace(" ", "", regex=False).to_numpy()) & (b.web.str.len() >= 4).to_numpy(),
-            sc, sc >= 2, p.acc.to_numpy()]).astype(np.float32)
-    return out
+def feats(X: pd.DataFrame) -> list:
+    return [c for c in X.columns if c not in DROP]
 
 
-def fit(X: np.ndarray, y: np.ndarray):
-    """X = pair_feats rows, y = is-true-pair."""
-    from sklearn.linear_model import LogisticRegression
-    return LogisticRegression(max_iter=2000).fit(X, y)
+def fit(X, y, Xv=None, yv=None, rounds: int = 2000, params: dict | None = None, cols=None):
+    """LightGBM. X / Xv: float32 arrays with `cols` = their feature names; early-stopped on (Xv, yv) when given."""
+    import lightgbm as lgb
+    d = lgb.Dataset(X, np.asarray(y, np.float32), feature_name=list(cols), free_raw_data=True)
+    kw = {}
+    if Xv is not None:
+        kw = dict(valid_sets=[lgb.Dataset(Xv, np.asarray(yv, np.float32), reference=d)],
+                  callbacks=[lgb.early_stopping(100, verbose=False), lgb.log_evaluation(0)])
+    return lgb.train({**PARAMS, **(params or {})}, d, rounds, **kw)
 
 
-def save(lr, t: float):
-    ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
-    ARTIFACT.write_bytes(pickle.dumps({"lr": lr, "t": t, "feats": FEATS}))
+def predict(model, X: pd.DataFrame) -> np.ndarray:
+    if not len(X):
+        return np.zeros(0, np.float32)
+    return model.predict(X[model.feature_name()], num_threads=PARAMS["num_threads"]).astype(np.float32)
 
 
-def load() -> dict:
+def load():
     global _M
     if _M is None:
-        _M = pickle.loads(ARTIFACT.read_bytes())
+        import lightgbm as lgb
+        if not BOOSTER.exists():
+            import train_matcher
+            train_matcher.main(BOOSTER)
+        _M = lgb.Booster(model_file=str(BOOSTER))
     return _M
 
 
+def tag(path: Path) -> str:
+    return hashlib.sha1(path.read_bytes()).hexdigest()[:8]
+
+
+def argmax_sx(qx: np.ndarray, p: np.ndarray) -> np.ndarray:
+    """Bool mask: the pair is its SX's highest-p candidate (ties -> the first row; one S1 per SX)."""
+    o = np.lexsort((-p, qx))
+    m = np.zeros(len(p), bool)
+    m[o[np.r_[True, qx[o][1:] != qx[o][:-1]]] if len(o) else o] = True
+    return m
+
+
 def score(pairs: pd.DataFrame, f1: pd.DataFrame, fx: pd.DataFrame) -> np.ndarray:
-    return load()["lr"].predict_proba(pair_feats(pairs, f1, fx))[:, 1].astype(np.float32)
+    """M2 p for the complete candidate list of an in-memory pool (pairs: q1, qx, block columns, acc)."""
+    if not len(pairs):
+        return np.zeros(0, np.float32)
+    X = F.featurize(pairs, f1, fx, pairs.q1.to_numpy(), pairs.qx.to_numpy(), pairs.acc.to_numpy())
+    return predict(load(), X)
+
+
+def split_probs(split: str, c: str) -> pd.DataFrame:
+    """q1, qx, p for every candidate pair of one country (P3 ∪ rule-accepted, P3 text rows), predicted from the
+    X files (features.build writes the missing ones first). holdout = the train X files cut to every pair of the
+    S2/S3 that a holdout (fold 0) S1 competes for, so each SX's argmax still sees all its train S1.
+    Cached as data/work/p9/m2_<split>_<c>_<booster hash>.parquet."""
+    path = CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}.parquet"
+    if path.exists():
+        return pd.read_parquet(path)
+    xs = "train" if split == "holdout" else split
+    F.build(xs, c)
+    m, out = load(), []
+    for p in F.xfiles(xs, c):
+        X = pd.read_parquet(p)
+        if split == "holdout":                          # a file holds every pair of its SX
+            X = X[np.isin(X.qx.to_numpy(), X.qx.to_numpy()[X.fold.to_numpy() == 0])]
+        out.append(pd.DataFrame({"q1": X.q1.to_numpy(np.int32), "qx": X.qx.to_numpy(np.int32), "p": predict(m, X)}))
+        del X
+        F.trim()
+    d = pd.concat(out, ignore_index=True) if out else pd.DataFrame({"q1": np.zeros(0, np.int32),
+                                                                    "qx": np.zeros(0, np.int32),
+                                                                    "p": np.zeros(0, np.float32)})
+    CACHE.mkdir(parents=True, exist_ok=True)
+    d.to_parquet(path, index=False)
+    return d

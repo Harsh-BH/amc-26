@@ -1,10 +1,17 @@
-# Python 3.12. Exactly what src/ imports; licences in parentheses (all MIT / Apache-2.0 / BSD / ISC, no models).
+# Python 3.12. Exactly what src/ imports; licences in parentheses (all MIT / Apache-2.0 / BSD / ISC).
+# One pretrained model: intfloat/multilingual-e5-small (MIT, 118M params), fine-tuned by rerank.py train.
 numpy==2.5.3            # BSD-3
 pandas==3.0.6           # BSD-3
 pyarrow==25.0.1         # Apache-2.0
 scipy==1.18.1           # BSD-3
-scikit-learn==1.9.1     # BSD-3  (hashed TF-IDF, stub logistic regression)
+scikit-learn==1.9.1     # BSD-3  (hashed TF-IDF, blend stack logistic regression)
 sparse_dot_topn==1.2.0  # Apache-2.0  (top-k sparse cosine for blocking)
 anyascii==0.3.3         # ISC  (accent / script folding)
 rapidfuzz==3.14.6       # MIT
 duckdb==1.5.5           # MIT  (builds the transliteration training pairs)
+lightgbm==4.7.0         # MIT  (M2 matcher)
+torch==2.14.0           # BSD-3  (cross-encoder; CUDA build for the GPU)
+transformers==5.17.0    # Apache-2.0
+tokenizers==0.23.2      # Apache-2.0
+safetensors==0.8.0      # Apache-2.0
+huggingface_hub==1.33.0 # Apache-2.0  (base weights, downloaded once, then HF_HUB_OFFLINE)
