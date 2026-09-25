@@ -1,14 +1,56 @@
 # P9-integrate — RESULT
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
-- **#6: `run.py --split test --stage model` = `output/sub6` byte for byte** (both files, `cmp`), validator PASS.
-  `--t-country France=0.88` = `sub6b` and `France=0.95` = `sub6c`, byte for byte. `--recipe sub5` re-checked = #5
-  (sub4 was checked in the #5 round, on the same no-pruner path).
-- **Holdout with the pruner 0.9885** (half 1 0.98831 vs P10's 0.98825; 4.30 cands/S1, candidate recall 0.9874).
-  `prune.train()` retrains `pruner.txt` bit for bit. `test_pipeline.py` passes.
-- **Recommendation:** merge. The default is #6 with France by P6's rule (0.78); the master fixes France with
-  `--t-country France=<t>` or `run.T_FRANCE_OVERRIDE`.
+- **#7 = `run.py --split test --stage model` (default recipe `sub7`)** → `output/sub7`, validator PASS. The recipe:
+  pruner → m2_big → P11's 2-epoch CE (w [0.617, 0.666, 0.261], t 0.71) → France fixed at 0.95.
+  - Against `sub6c`, 12,791 S1 lines differ (0.74%): India 7,402, US 5,389, France 0; `candidate_pairs` is identical.
+- **Holdout 0.98881** (#6 0.98852). On the report half: 0.98869 vs 0.98831 = **+0.00038**, P11's +0.00039.
+  - `--recipe sub6 --t-country France=0.95` still gives sub6c byte for byte, because each CE has its own score cache.
+  - `test_pipeline` passes.
+- **Recommendation:** merge, and upload `output/sub7` (worktree path below) when #7 is due. `rerank.train(epochs=2)`
+  retrain: only partly checked. Same 778,520 pairs, and epoch 0 matches P11 (val band AUC 0.9286 vs 0.9275). The full
+  2-epoch run was killed twice: by the 00:31 power loss, then by the GPU clamped at 210 MHz after it.
 
-## #6 — the pruner in run.py, France's threshold as a setting
+## #7 — P11's 2-epoch cross-encoder, France t 0.95 by default
+**Change (smallest):**
+- `rerank.CE = data/work/p11/ce_s2P.pt`, `rerank.EPOCHS = 2`, `rerank.CFG["w"] = [0.617, 0.666, 0.261]`.
+  `rerank.train(epochs, out=…)` writes wherever the recipe points.
+- `run.T = 0.71`, `run.T_FRANCE_OVERRIDE = 0.95` (#7's default; `None` = P6's rule).
+- `run.RECIPES` gains `ce`, `ce_epochs` and `t_france`: `sub7` (default), and `sub6` / `sub5` / `sub4` with
+  `p4b/ce.pt`, 1 epoch and France by P6's rule.
+- `--t-country France=<t>` still overrides the recipe's France t.
+- **The CE path is passed to the scoring subprocess** (`rerank.py score in out <ce>`). Without it the subprocess
+  would load the module default, so `--recipe sub6` would silently score with the new CE.
+- The r cache was already keyed by the checkpoint's sha1 (`p9/r_<split>_<c>_<ce hash>`), so #6's scores stay in their
+  own file.
+- `ensure_ce()` trains the recipe's CE (`train epochs=<n> out=<ce>`) under the GPU lock when it is absent.
+
+| check | result |
+|---|---|
+| `run.py --split holdout --stage model` (pipe p9-model) | **F0.5 0.98881**: India 0.9900, US 0.9880; half 0 0.98894, **half 1 0.98869**. #6 on the same pipeline: 0.98852 / 0.98831 → **+0.00029 overall, +0.00038 on the report half** (P11: +0.00039 ± 0.00006). P 0.9980, R 0.9700, 4.30 cands/S1. Blend refit on the pruned half 0 = [0.624, 0.670, 0.267] (CFG [0.617, 0.666, 0.261] is P11's unpruned fit). CE on 725k holdout band pairs (278k India + 447k US) in 5.5 min |
+| `run.py --split test --stage model` → `output/sub7` | validator PASS. France t 0.95 (P6's rule would give 0.78, still printed), India / US 0.71. 656k + 583k band pairs scored by the new CE (5 + 5 min GPU); 11 min end to end, 1.5 GB |
+| vs `output/sub6c` (ledger test-model-vs-sub6c) | `matching_results`: 1,719,753 / 1,732,544 lines identical; 12,791 differ (India 7,402 = 0.91% of S1, US 5,389 = 0.81%, France 0). Pairs: India +3,528 / −4,049, US +2,637 / −2,836. `candidate_pairs`: identical (same pruner) |
+| `--recipe sub6 --t-country France=0.95` vs `output/sub6c` | **byte-identical, both files** (CE scores from `r_test_*_127f69fb`, the p4b CE's cache) |
+| `test_pipeline.py` (#7 defaults) | **pass**: rules 0.8575, model 0.9964; Xland (unseen) keeps P6's rule (t 0.89) since the override is France-only |
+| `rerank.py train epochs=2 out=p9/ce_retrain.pt` (from src, P4b's in-loop recipe) | **partial.** (1) Run 1 (23:56): the same **778,520** train pairs as P11 and 40,000 val. It ran at 750 pairs/s (P11: 719); epoch 0 val band AUC CE **0.9286** (P11 epoch 0: 0.9275; P4b's 1-epoch ce.pt: 0.9263). It died in epoch 1 at 00:31 (battery 0%); the checkpoint is written only at the end. (2) Run 2 (01:47): the GPU was stuck at 210 MHz, P8, throttle `0x24` = SW power cap + SW thermal slowdown, with the battery charging from 0% (42→58%). No step 500 in 21 min, i.e. ≥ 15× slow; killed to free the lock. **To finish when the GPU clocks are back:** `flock /tmp/amc-gpu.lock .venv/bin/python code/business_entity_resolution/src/rerank.py train epochs=2 out=data/work/p9/ce_retrain.pt`, then `.venv/bin/python probes/P9-integrate/ce_retrain_eval.py data/work/p9/ce_retrain.pt`. That is ~35 + 6 min; it logs `ce-retrain-2ep-holdout` against 0.98869 on half 1. Not bit-identical by design: bf16 GPU training, and P11 pre-tokenised and bucketed by token length where src buckets by character length |
+
+**Where #7 is:** `/home/harsh1/github-repos/amc-26-wt/p9-integrate/output/sub7/{matching_results,candidate_pairs}.tsv`
+(this worktree; no code.zip built).
+
+**Environment (for the master):** after the 01:41 reboot the RTX 3050 stays at **210 MHz / P8** (`nvidia-smi` throttle 0x24: SW power cap + SW thermal) even at 100% utilisation.
+- Every GPU job (CE scoring in `run.py`, training) is ~15× slower until that clears.
+- Likely the laptop's battery-protection power limit while it recharges from 0%. I did not touch system power settings.
+- Check `nvidia-smi --query-gpu=clocks.sm,pstate --format=csv` before a run that needs the CE fresh.
+- `run.py` for #7 no longer needs the GPU: every band pair's CE score is cached (`p9/r_*_bb0c29f0`).
+
+**Docs:**
+- README: the recipes table gains CE and France columns, plus #7 commands and runtimes.
+- SETUP.md:
+  - status → #7;
+  - best LB → 0.981142 (D4);
+  - `models/p11/ce_s2P.pt` added to the artefact table with its sha256 `4dc0d882…`. The Drive upload is pending: the
+    master's call.
+
+## #6 — the pruner in run.py, France's threshold as a setting   (history)
 **Change:**
 - **`src/prune.py`** = P10's `prune.py` with `src` paths.
   - `MODEL = data/work/p10/pruner.txt`, `FEATS` (30 columns), `PARAMS` (`deterministic=True`), `TAU = 0.03`.
