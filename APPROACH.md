@@ -1,6 +1,6 @@
 # Our approach — Amazon ML Challenge 2026 (explained simply)
 
-*Last updated: 25 Sep 2026, evening. Deadline: 27 Sep 2026, 23:59 IST.*
+*Team **Yeti** — Harsh Bhatt, Shriya Sinha, Aditya Kashyap, Anurag Pokhariyal (IIT Kharagpur). Last updated: 25 Sep 2026, evening. Deadline: 27 Sep 2026, 23:59 IST.*
 
 ---
 
@@ -133,7 +133,7 @@ internet lookups, no address APIs, no outside data — only the provided trainin
 | #2 | Simple rules: exact cleaned name + address check | 0.771 | — |
 | #3 | A trained model (LightGBM) instead of rules | 0.981 | — |
 | #4 | + the language model re-checks uncertain pairs (India/US) | 0.988 | — |
-| **#5** | + the model trained on 4× more data | **0.9885** | **0.980** |
+| **#5** | + the model trained on 4× more data | **0.9885** | **0.980** (rank 33) |
 
 The jump from rules to a trained model (+21 points) was the biggest win: the model learned when a same-name business
 at a different street is *not* the same business.
@@ -180,7 +180,7 @@ country, test on another" experiments predicted for an unseen country. We are no
 | 25 Sep night | France diagnosis from the leaderboard; merge P9; P10's smaller shortlists (submission #6) |
 | 26 Sep | Improve France (French-specific cleaning rules, better threshold); add the shortlist filter to the pipeline and the document; one or two more improvements, each kept only if it measurably helps |
 | 27 Sep, by 14:00 | Freeze. Re-run everything from a clean copy to prove it reproduces |
-| 27 Sep, by 22:00 | Final upload + the final zip (`<team_name>_submission.zip`: outputs + code + methodology document) — 2 hours of buffer before the deadline |
+| 27 Sep, by 22:00 | Final upload + the final zip (`Yeti_submission.zip`: outputs + code + methodology document) — 2 hours of buffer before the deadline |
 
 ---
 

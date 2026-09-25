@@ -1,7 +1,7 @@
 # ML Challenge 2026: Business Entity Resolution Solution
 
-**Team Name:** [team name as registered on Unstop]
-**Team Members:** [members]
+**Team Name:** Yeti
+**Team Members:** Harsh Bhatt, Shriya Sinha, Aditya Kashyap, Anurag Pokhariyal (IIT Kharagpur)
 **Submission Date:** 27 September 2026
 
 > Every number below is traceable to a row in `ledger/*.jsonl` and to the merge memos `probes/MERGE-*.md`.

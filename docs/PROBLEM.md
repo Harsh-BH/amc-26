@@ -177,7 +177,7 @@ Test-only:
 5. Is the final zip due at 23:59:49 on the 27th or later? (`grace_period: 15` appears on every Unstop
    round, so it says nothing specific.)
 6. Final ranking: private leaderboard only, or both?
-7. What exact string is `<team_name>` in the zip name?
+7. ~~What exact string is `<team_name>` in the zip name?~~ **Yeti** (Unstop team name) → `Yeti_submission.zip`.
 
 ## Links
 
