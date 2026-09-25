@@ -66,6 +66,20 @@ If you have rclone set up for the same Drive: `rclone copy gdrive:amc26-offload/
 
 Skip this step to retrain everything from scratch — the same command does it, it just takes longer.
 
+### 5b. (Fastest) Also use our cached test features — the run takes minutes instead of hours
+
+The Drive folder `amc26-offload/work/` mirrors `data/work/` with every **test-side** intermediate file (~4.6 GB):
+parquet copies of the test TSVs, record features, TF-IDF vectorizers, candidate lists, the 65-feature pair files
+(`p4/X/test_*`), and the cached LightGBM and cross-encoder scores (`p9/m2_test_*`, `p9/r_test_*`). Copy the whole
+folder's contents into `data/work/` (keep the sub-folders):
+
+```bash
+rclone copy gdrive:amc26-offload/work data/work/      # or download the folder from Drive and merge it into data/work/
+```
+
+With 5 + 5b in place, step 6 only decides and writes (a few minutes). The caches are keyed by file name, so they
+must come from the same code version as your checkout — pull the repo at the same commit Harsh used.
+
 ## 6. Run
 
 ```bash
@@ -89,7 +103,7 @@ Everything it computes is cached under `data/work/`, so a second run only re-sco
 | score test pairs (LightGBM) | ~1 h (less with the pruner) | ~1 h |
 | cross-encoder rescoring (GPU) | ~18 min | ~18 min |
 | decide + write + validate | ~3 min | ~3 min |
-| **Total** | **~2.5–3 h** | **~5.5–6 h** |
+| **Total** | **~2.5–3 h** (**minutes** with 5b) | **~5.5–6 h** |
 
 ## 8. Other useful commands
 
