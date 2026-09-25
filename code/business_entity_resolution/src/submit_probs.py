@@ -1,4 +1,4 @@
-"""Scored candidate pairs -> the two submission TSVs. Decision: each S2/S3 goes to its argmax S1 (column `am`),
+"""Scored candidate pairs -> the two submission TSVs. Decision: each S2/S3 goes to its argmax S1 (recomputed here),
 kept when p >= the country's threshold. Candidates = every scored pair (the exact set the model ran on).
 
     python src/submit_probs.py --probs data/work/p4/prob_test_{country}.parquet --out output/sub3 \
@@ -15,7 +15,7 @@ from rules import _lines
 
 
 def decide(p: pd.DataFrame, t: float) -> pd.DataFrame:
-    """Argmax per S2/S3 (precomputed `am`), then p >= t. Many-to-one: an S1 keeps every record that chose it."""
+    """Argmax per S2/S3 (`am`), then p >= t. Many-to-one: an S1 keeps every record that chose it."""
     return p[p.am & (p.p >= t)][["s1", "sx"]]
 
 
@@ -28,8 +28,10 @@ def write(probs_tmpl: str, out: Path, t: float, t_country: dict) -> dict:
         for country in sorted(s1_all.country.unique()):             # open label set: every country in the file
             ids = s1_all.entity_id[s1_all.country == country].tolist()
             path = Path(probs_tmpl.format(country=country))
-            p = pd.read_parquet(path, columns=["s1", "sx", "p", "am"]) if path.exists() else \
-                pd.DataFrame({"s1": [], "sx": [], "p": [], "am": []}).astype({"am": bool})
+            p = pd.read_parquet(path, columns=["s1", "sx", "p"]) if path.exists() else \
+                pd.DataFrame({"s1": [], "sx": [], "p": []})
+            # argmax per S2/S3 recomputed on THIS p (a reranker blend can change which S1 wins); ties -> first row
+            p["am"] = ~p.sort_values("p", ascending=False, kind="stable").duplicated("sx").reindex(p.index)
             tc = t_country.get(country, t)
             acc = decide(p, tc)
             assert acc.sx.is_unique, "an S2/S3 record may go to one S1 only"
