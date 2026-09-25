@@ -22,7 +22,7 @@ overstated precision (0.994 vs 0.912 for the rules).
 | D3 | skipped (D2 settled the direction) | `output/d3/matching_results.tsv` + `output/d3/code.zip` | — (diagnostic) | #5 with France t 0.70 (looser): 5.4% empty, 3.31 per S1. LB up vs #5 ⇒ France under-matches |
 | D4 | **uploaded 23:02 — LB 0.981142 (+0.00012 vs D2, best) ⇒ curve flattening near 0.95** | `output/d4/matching_results.tsv` + `output/d4/code.zip` | — (diagnostic) | #5 with France t 0.95: 6.85% empty, 2.99 per S1. Above 0.981024 ⇒ stricter still helps |
 | 6b | staged, validator PASS | `output/sub6b/…` | 0.98825 (India/US) | #6 (pruner, 4.83 cands/S1) + France t 0.88 (D2's winner) |
-| 6c | **upload now (last slot 25 Sep)** | `output/sub6c/…` | 0.98825 (India/US) | #6 + France t 0.95 |
+| 6c | **uploaded 23:36 — LB 0.980954** (D4 − 0.00019 = pruner cost, as the holdout predicted) | `output/sub6c/…` | 0.98825 (India/US) | #6 + France t 0.95 |
 
 **Upload next (25 Sep, 2 slots):** D4, then 6c if D4 > 0.981024 else 6b — a real submission goes last.
 
