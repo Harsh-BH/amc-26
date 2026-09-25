@@ -12,7 +12,8 @@ overstated precision (0.994 vs 0.912 for the rules).
 | # | Status | Files | Holdout F0.5 | What it is |
 |---|---|---|---|---|
 | 1 | staged | `output/matching_results.tsv` + `output/code_s0.zip` | 0.1775 (plain) | exact name + first address segment. Sanity only — **skip it**, #2 tests the same upload path |
-| 2 | **staged, validator PASS** — upload this | `output/sub2/matching_results.tsv` + `output/sub2/code.zip` | **0.7708 full-corpus** (precision 0.912; dense-world 0.8215 overstated) | P2 transliteration → P1 normaliser → exact name/website key within state + address confirmation, unique best S1. Test: 1,540,960 of 1,732,544 S1 matched (France 86%, India 87%, US 92%) |
+| 2 | staged, validator PASS (superseded by #3) | `output/sub2/matching_results.tsv` + `output/sub2/code.zip` | **0.7708 full-corpus** (precision 0.912; dense-world 0.8215 overstated) | P2 transliteration → P1 normaliser → exact name/website key within state + address confirmation, unique best S1. Test: 1,540,960 of 1,732,544 S1 matched (France 86%, India 87%, US 92%) |
+| 3 | **staged, validator PASS — upload this first** | `output/sub3/matching_results.tsv` + `output/sub3/code.zip` | **0.9814 full-corpus** (precision 0.994, recall 0.959; audited clean) | P4 LightGBM on 65 label-free features over P3 blocking ∪ rule pairs; each S2/S3 to its argmax S1, kept if p ≥ 0.71 (France 0.83, P6 profile threshold). Test profile matches holdout: 3.36 matches/S1, 5.7% empty |
 
 **Upload first:** the highest-numbered staged row.
 
