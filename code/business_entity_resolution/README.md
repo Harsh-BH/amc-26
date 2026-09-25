@@ -30,17 +30,24 @@ a 3 GB memory cap. The cross-encoder steps need the GPU; they take the lock `/tm
 
 It writes `output/matching_results.tsv` and `output/candidate_pairs.tsv`, asserts the format rules, then runs the
 official validator. Nothing else has to run first: on a cold `data/work` the command rebuilds every step below in
-order (training included). With the caches present it only scores, decides and writes. It reproduces submission #5
-byte for byte (both files). From the cached X files, with M2 recomputed and the CE scores of #4's band reused, that
-took 91 min at a 2.3 GB peak on a shared, loaded machine (load 20-45 on 16 cores).
+order (training included). With the caches present it only scores, decides and writes. It reproduces submission #6
+byte for byte (both files). From the cached X files, the pruner, m2_big on the 8.37M kept pairs and the cached CE
+scores took 28 min (validator included) at a 1.8 GB peak.
 
-`--recipe sub4` switches the booster, blend weights and thresholds back to #4, which it also reproduces byte for byte.
-The recipes live in `run.RECIPES`:
+**France's threshold** is P6's label-free rule by default (0.78 for #6). Fix it with `--t-country France=0.88`, or
+set `run.T_FRANCE_OVERRIDE`. The leaderboard diagnostics showed France over-matching at 0.78: 0.88 scored +0.0010.
+`--t-country` takes any `Country=t`. Every other unseen label keeps P6's rule.
+- `--t-country France=0.88` reproduces `output/sub6b` byte for byte.
+- `--t-country France=0.95` reproduces `output/sub6c` byte for byte.
 
-| recipe | M2 booster (train folds) | blend w | t (India / US, blended p) | `T_M2` → France t |
-|---|---|---|---|---|
-| `sub5` (default) | `p4/m2_big.txt` (2–5) | [0.678, 0.715, 0.338] | 0.69 | 0.69 → 0.78 |
-| `sub4` | `p4/m2_ladder.txt` (2) | [0.636, 0.757, 0.355] | 0.70 | 0.71 → 0.82 |
+`--recipe` switches the booster, blend weights, thresholds and pruner back to an earlier submission; each one
+reproduces its staged files byte for byte. The recipes live in `run.RECIPES`:
+
+| recipe | M2 booster (train folds) | blend w | t (India / US, blended p) | `T_M2` → France t (P6 rule) | pruner τ → candidates / S1 |
+|---|---|---|---|---|---|
+| `sub6` (default) | `p4/m2_big.txt` (2–5) | [0.678, 0.715, 0.338] | 0.69 | 0.69 → 0.78 | 0.03 → 4.83 |
+| `sub5` | `p4/m2_big.txt` (2–5) | [0.678, 0.715, 0.338] | 0.69 | 0.69 → 0.78 | none → 15.87 |
+| `sub4` | `p4/m2_ladder.txt` (2) | [0.636, 0.757, 0.355] | 0.70 | 0.71 → 0.82 | none → 15.87 |
 
 | step | what | module / function | cached at (`data/work/…`) |
 |---|---|---|---|
@@ -52,18 +59,19 @@ The recipes live in `run.RECIPES`:
 | blocking | per country, within state group: each S2/S3 → its top-2 S1 (top-10 if it has no address) ∪ each S1's top-10 S2/S3 | `block.split_cands` | `p3/txt*/`, `p3/cands_<split>_<country>.parquet` |
 | rule pairs | exact (country, name core) or website key + address evidence ≥ 2 → the unique best S1 | `rules.match` | — (inside the features) |
 | pair features | 65 label-free features per candidate pair (P3 ∪ rule-accepted): name / address similarities, house number / city / state agreement, website, chain size, and each pair's rank and margin among its S1's and its S2/S3's candidates | `features.build` | `p4/X/<split>_<country>_sx_NNN.parquet` |
+| pruner | 300-tree LightGBM on 30 of the 65 features (blocking signals + name / address similarities), train folds 2–3. A pair goes on iff q ≥ 0.03 or it is rule-accepted. The features stay computed over the full blocking list | `prune.train`, `prune.prune` | `p10/pruner.txt` |
 | M2 | LightGBM on the pairs of the train folds 2–5 S1 (12.6M), early-stopped on fold 1 | `train_matcher.main` | `p4/m2_big.txt` |
-| M2 scores | p for every candidate pair | `model.split_probs` | `p9/m2_<split>_<country>_<booster hash>.parquet` |
+| M2 scores | p for every kept candidate pair | `model.split_probs` | `p9/m2_<split>_<country>_<booster hash>_<pruner hash>_<τ>.parquet` |
 | cross-encoder | e5-small fine-tuned on "name \| addr" pairs from M2-like uncertain bands of train folds 4–9 (India, US) | `rerank.py band`, `rerank.py train` | `p4b/trainband_*.parquet`, `p4b/ce.pt` |
 | rerank | India / US pairs with 0.02 < p < 0.98: p′ = σ(0.678 logit p + 0.715 logit r + 0.338) | `run.rerank` → `rerank.py score` | `p9/r_<split>_<country>_<ce hash>.parquet` |
-| decision | each S2/S3 to its argmax-p S1, kept if p ≥ t. India / US: t = 0.69 on p′. France or any label without training data: M2's p, t from P6's label-free rule (below) | `run.thresholds` | — |
-| output | one row per test S1 (all countries); candidates = every scored pair | `run.write_lists` | `output/*.tsv` |
+| decision | each S2/S3 to its argmax-p S1 among the kept pairs, kept if p ≥ t. India / US: t = 0.69 on p′. France or any label without training data: M2's p, t from P6's label-free rule (below) unless overridden | `run.thresholds` | — |
+| output | one row per test S1 (all countries); candidates = the kept pairs (what M2 + CE scored) | `run.write_lists` | `output/*.tsv` |
 
 **France threshold, label-free.** France has no labels, and a model applied to an unseen country is over-confident
 (leave-one-country-out: US→India loses 4 pts at the source threshold). So the threshold is where France's predicted
 empty-S1 rate equals the labelled countries' S1-weighted rate under M2 at M2's own optimum `T_M2` = 0.69. It is
-clipped to [0.69, 0.89], and computed from the test probabilities on every run. For the submission it gives 0.78
-(#4's M2: 0.82).
+clipped to [0.69, 0.89], and computed from the test probabilities on every run. It gives 0.78, both with and
+without the pruner (#4's M2: 0.82). The override above replaces it for France only.
 
 Runtimes and memory (measured, 3 GB cap):
 
@@ -73,10 +81,12 @@ Runtimes and memory (measured, 3 GB cap):
 | record features, test (`PROCS = 2`) | ~20 min | 1.5 GB |
 | pair features, test (`features.build`) | 3 / 20 / 9 min (France / India / US) | 2.8 GB |
 | TRAIN side for the models: blocking for all 2.2M train S1, record + pair features | ~35 + 20 + 50 min | 2.9 GB |
+| pruner training (`prune.py train`: 6.3M folds 2–3 pairs; `deterministic=True`, the retrain is bit-identical) | 74 s | 2.3 GB |
 | M2 training (`train_matcher.py`: 12.6M folds 2–5 pairs as float16, 793k fold-1 validation pairs) | ~45 min (P4: 2,371 s fit, 4,930 trees) | 3.7 GB (~0.5 GB swap) |
 | cross-encoder: `band` ×2 + `train` (GPU) | 5 + 25 min | 2.6 GB, 2.4 GB VRAM |
-| M2 scores, test (27.5M pairs from the X files; m2_big has 4,930 trees) | 5 / 18 / 43 min (France / India / US; the machine was loaded) | 2.0 GB |
-| CE rescoring, test (847k India + 702k US band pairs, GPU) | 11 + 7 min cold; 1.5 + 2 min with #4's r cached (129k + 103k new pairs) | 2.0 GB (own process), 3.4 GB VRAM |
+| pruner + M2 scores, test (the pruner reads all 27.5M pairs; m2_big scores the kept 8.37M) | 3 / 18 / 5 min (France / India / US; India under load) | 1.8 GB |
+| M2 scores without the pruner (`--recipe sub5`, all 27.5M pairs) | 5 / 18 / 43 min (loaded machine) | 2.0 GB |
+| CE rescoring, test (847k India + 702k US band pairs without the pruner; −20% with it, GPU) | 11 + 7 min cold; 0 with the r cache | 2.0 GB (own process), 3.4 GB VRAM |
 | decision + writing + validator | 2.5 min | 2.3 GB |
 
 ## 3. Validate on the training data
@@ -88,20 +98,22 @@ Runtimes and memory (measured, 3 GB cap):
 ```
 
 `holdout` is the test-shaped proxy. The fold-0 S1 (220,358) are scored while every train S1 and every train S2/S3
-of the country compete (2.2M S1, 10.3M S2/S3). Each S2/S3's argmax sees all its train S1: 11.5M pairs are
-scored, and 979k band pairs go to the cross-encoder. The metric is macro F0.5 per S1, singletons included
+of the country compete (2.2M S1, 10.3M S2/S3). Each S2/S3's argmax sees all its train S1 (11.5M pairs). The
+pruner keeps 2.78M of them (4.30/S1), and those go to m2_big and the cross-encoder. The metric is macro F0.5 per S1, singletons included
 (`metric.py`). The run also refits the blend weights on holdout half 0, as a check.
 `dev` runs the same stages in memory (blocking, features, M2, CE) on the 30k-S1 dev world.
 
 | run | F0.5 | time (cold / cached) | peak RAM |
 |---|---|---|---|
-| `--split holdout --stage model` (#5) | **0.9888** (India 0.9899, US 0.9880; half 0 0.9890, half 1 0.9885; P 0.9977, R 0.9705) | 38 min (loaded machine) / 1 min | 2.1 GB |
+| `--split holdout --stage model` (#6) | **0.9885** (India 0.9896, US 0.9878; half 0 0.98872, half 1 0.98831 vs P10's 0.98825 with D3; P 0.9977, R 0.9698, candidate recall 0.9874, 4.30 cands/S1) | 7 min / 1 min | 2.2 GB |
+| `--split holdout --stage model --recipe sub5` | 0.9888 (India 0.9899, US 0.9880; half 0 0.9890, half 1 0.9885; P 0.9977, R 0.9705) | 38 min (loaded machine) / 1 min | 2.1 GB |
 | `--split holdout --stage model --recipe sub4` | 0.9884 (India 0.9894, US 0.9876; half 0 0.9885, half 1 0.9882; P 0.9975, R 0.9697) | 22 min / 1 min | 2.2 GB |
 | `--split dev --stage model` | 0.9949 (plain world) | 1.7 min | 0.8 GB |
 | `train_matcher.py eval` M2 alone, fold argmax | 0.9813 (`m2_ladder.txt`) = 0.9813 (retrained, #4 recipe); m2_big 0.9834 (P4, argmax over all S1, no CE) | 7.5 min for two | 2.5 GB |
 | `--split holdout --stage rules` | 0.7708 | 21 min cold | 2.1 GB |
 
-The blend refit on holdout half 0 returns [0.678, 0.715, 0.337] for m2_big (CFG [0.678, 0.715, 0.338]) and
+The blend refit on holdout half 0 returns [0.678, 0.715, 0.337] for m2_big (CFG [0.678, 0.715, 0.338]),
+[0.674, 0.718, 0.343] for m2_big + pruner (P10: keeping #5's w costs nothing, 0.98825 vs 0.98824), and
 [0.636, 0.757, 0.355] for m2_ladder.
 
 ## 4. Tests
@@ -109,6 +121,7 @@ The blend refit on holdout half 0 returns [0.678, 0.715, 0.337] for m2_big (CFG 
 ```bash
 .venv/bin/python code/business_entity_resolution/src/test_pipeline.py      # end to end: every label incl. an unseen one
 .venv/bin/python code/business_entity_resolution/src/features.py           # feature self-check
+.venv/bin/python code/business_entity_resolution/src/prune.py              # pruner self-check
 .venv/bin/python code/business_entity_resolution/src/rerank.py check       # blend-rule self-check
 .venv/bin/python code/business_entity_resolution/src/block.py              # blocking self-check
 .venv/bin/python code/business_entity_resolution/src/metric.py             # metric self-check (PDF example)
@@ -125,5 +138,6 @@ The blend refit on holdout half 0 returns [0.678, 0.715, 0.337] for m2_big (CFG 
 
 The zip holds `output/`, `code/business_entity_resolution/` (src, this README, requirements) and the filled
 `Documentation_template.md`. The script checks its structure and that both TSVs have one row per test S1.
-The fine-tuned weights (`data/work/p4b/ce.pt`, 43 MB) and the booster (`data/work/p4/m2_big.txt`, 69 MB) are
-artefacts, not source. Both are rebuilt from the train data by the commands above.
+The fine-tuned weights (`data/work/p4b/ce.pt`, 43 MB), the booster (`data/work/p4/m2_big.txt`, 69 MB) and the
+pruner (`data/work/p10/pruner.txt`, 1.1 MB) are artefacts, not source. All three are rebuilt from the train data
+by the commands above, and the pipeline trains any that is missing.

@@ -1,12 +1,45 @@
 # P9-integrate — RESULT
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
-- **#5: `run.py --split test --stage model` reproduces submission #5 byte for byte** (both files, 1,732,544 / 1,732,544
-  lines, `cmp`), validator PASS; France t 0.78 from P6's rule. `--recipe sub4` still reproduces #4 byte for byte.
-- **Full-corpus holdout #5 = 0.9888** (half 1 0.9885 = P4's number; #4 0.9884 on the same pipeline). The blend refit on
-  half 0 returns CFG's w. `train_matcher.py` now trains like big.py (folds 2-5, float16); only a 2% smoke retrain was run.
-- **Recommendation:** merge the branch; the defaults are #5, and `run.RECIPES` / `--recipe` keep #4 reachable.
+- **#6: `run.py --split test --stage model` = `output/sub6` byte for byte** (both files, `cmp`), validator PASS.
+  `--t-country France=0.88` = `sub6b` and `France=0.95` = `sub6c`, byte for byte. `--recipe sub5` re-checked = #5
+  (sub4 was checked in the #5 round, on the same no-pruner path).
+- **Holdout with the pruner 0.9885** (half 1 0.98831 vs P10's 0.98825; 4.30 cands/S1, candidate recall 0.9874).
+  `prune.train()` retrains `pruner.txt` bit for bit. `test_pipeline.py` passes.
+- **Recommendation:** merge. The default is #6 with France by P6's rule (0.78); the master fixes France with
+  `--t-country France=<t>` or `run.T_FRANCE_OVERRIDE`.
 
-## #5 — reproducing submission #5 (m2_big)
+## #6 — the pruner in run.py, France's threshold as a setting
+**Change:**
+- **`src/prune.py`** = P10's `prune.py` with `src` paths.
+  - `MODEL = data/work/p10/pruner.txt`, `FEATS` (30 columns), `PARAMS` (`deterministic=True`), `TAU = 0.03`.
+  - Functions: `train(folds=(2,3))`, `score(m, X)`, `prune(X, q, tau)` = q ≥ τ | rule_acc.
+  - `load_model()` trains the pruner when the file is absent (after `train_matcher.prepare()` builds the train X).
+- **`model.split_probs`** prunes each X file before m2_big predicts.
+  - The X files keep the FULL blocking list, so the context columns are unpruned and a kept pair's p is its #5 p.
+  - The cache key adds the pruner hash + τ.
+- **`model.score`** (in-memory worlds) returns (keep, p): the features come from the full list, then the pruner.
+- **CE:** only kept band pairs. The argmax runs per SX over the kept pairs, and `candidate_pairs.tsv` is the kept pairs.
+- **`model.TAU`:** `None` switches the pruner off.
+- **`run.RECIPES`** are now dicts with `tau`: `sub6` (default, τ 0.03), `sub5` / `sub4` (τ None).
+- **France's threshold:**
+  - `run.T_FRANCE_OVERRIDE = None` (None = P6's rule).
+  - `run.T_COUNTRY` / `--t-country C=t` set any country's t; the P6 value is still printed next to the override.
+  - Any other unseen label keeps P6's rule; test_pipeline's Xland still gets it.
+
+| check | result |
+|---|---|
+| `run.py --split test --stage model` vs `output/sub6` | **byte-identical, both files** (P9-integrate/test-model-vs-sub6). 8,370,573 kept pairs (France 1,332,296 / India 3,969,085 / US 3,069,192), = P10's. France t 0.78 by the rule. All CE scores came from the r cache. 28 min incl. validator, 1.8 GB |
+| `--t-country France=0.88` vs `output/sub6b` | **byte-identical, both files** (test-model-vs-sub6b); France 811,100 matches; validator PASS |
+| `--t-country France=0.95` vs `output/sub6c` | **byte-identical, both files** (test-model-vs-sub6c); validator PASS |
+| `--recipe sub5` vs `output/sub5` | byte-identical, both files (cached, no pruner) |
+| `run.py --split holdout --stage model` (pipe p9-model, ad774a7) | **F0.5 0.9885** (0.98852): India 0.9896, US 0.9878, half 0 0.98872, **half 1 0.98831** (P10 fixed-w D3: 0.98825; the plain t 0.69 vs D3's t0 gate explains the +0.00006, as for #5). P 0.9977, R 0.9698, cand recall 0.9874, 4.30 cands/S1. Blend refit [0.674, 0.718, 0.343] = P10's refit. 7 min, 2.2 GB. #5 on the same pipeline: 0.9888 → pruner cost −0.0003 overall |
+| `prune.py train` (from src) | 6,296,233 pairs (0.241 true), 300 trees, 74 s; **bit-identical to `data/work/p10/pruner.txt`** (`cmp`) |
+| `test_pipeline.py` (#6 defaults) | **pass**: rules 0.8575, model **0.9964**; Xland (unseen) P6 rule t 0.89, 94% hit; Yland empty |
+
+**Not changed:** the holdout number does not depend on the France override (France is not in the holdout). The dev
+world and `test_pipeline` have no France label.
+
+## #5 — reproducing submission #5 (m2_big)   (history)
 **Change (smallest):** the defaults move to #5, and #4 stays one flag away.
 - `model.BOOSTER = p4/m2_big.txt`, `model.FOLDS = (2, 3, 4, 5)`.
 - `rerank.CFG["w"] = [0.678, 0.715, 0.338]`.
@@ -118,6 +151,10 @@ In `code/business_entity_resolution/src/` (probe-dir helpers: `probes/P9-integra
 - `main(out, folds)`: fold 2 (#4) 18 min, 2.7 GB; folds 2–5 (#5) ~45 min, 3.7 GB (P4's big.py measurement).
 - `holdout(boosters)`: 7.5 min for two boosters.
 - `prepare()` builds every train input (P3 train cands, rf, X) when absent.
+
+**prune.py** (#6)
+- `train(folds=(2, 3), out=MODEL)`: 74 s, 2.3 GB, deterministic.
+- `score` + `prune` on all 27.5M test pairs: inside `split_probs`, 3 / 18 / 5 min with m2_big on the kept pairs.
 
 **rerank.py**
 - `score_file(in, out)`: 1,363 pairs/s (India) and 1,700 pairs/s (US), 2.0 GB RSS, 3.4 GB VRAM.
