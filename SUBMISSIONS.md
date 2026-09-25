@@ -24,6 +24,8 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 6b | staged, validator PASS | `output/sub6b/…` | 0.98825 (India/US) | #6 (pruner, 4.83 cands/S1) + France t 0.88 (D2's winner) |
 | 6c | **uploaded 23:36 — LB 0.980954** (D4 − 0.00019 = pruner cost, as the holdout predicted) | `output/sub6c/…` | 0.98825 (India/US) | #6 + France t 0.95 |
 
-**Upload next (25 Sep, 2 slots):** D4, then 6c if D4 > 0.981024 else 6b — a real submission goes last.
+| 7 | **staged, validator PASS — upload first on 26 Sep** | `output/sub7/matching_results.tsv` + `output/sub7/code.zip` | **0.98881 full-corpus** (+0.0003 vs #6 on the same pipeline; report half +0.00038) | #6c + P11's 2-epoch e5-small CE (w [0.617, 0.666, 0.261], India/US t 0.71); pruner 4.83 cands/S1; France t 0.95 (unchanged vs #6c). 12,791 S1 differ from #6c (India 0.91%, US 0.81%, France 0). Expected LB ≈ 0.98120 |
+
+**Upload next (26 Sep, 5 slots):** #7 first; then France variants from P13 (bge second opinion) / P14 (France fixes) as they land.
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.
