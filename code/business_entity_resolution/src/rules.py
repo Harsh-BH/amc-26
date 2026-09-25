@@ -78,22 +78,40 @@ def _scored(m: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame({"sx": m.id_b.to_numpy(), "s1": m.id_a.to_numpy(), "sc": addr_score(side("_a"), side("_b"))})
 
 
-def match(f1: pd.DataFrame, fx: pd.DataFrame, chunk: int = 400_000) -> tuple:
+MAX_NOSTATE_CHAIN = 50   # a state-less record may only join key groups of at most this many S1
+
+
+def _key_join(x: pd.DataFrame, f: pd.DataFrame, xkey: str, fkey: str, by_state: bool) -> pd.DataFrame:
+    """x ⋈ f on (country, x.xkey = f.fkey). by_state partitions the join -- state agrees on 99.94% of true pairs
+    (P3) -- so name chains stop multiplying across states: stated⋈same state, stated⋈state-less S1, and
+    state-less records only into key groups of <= MAX_NOSTATE_CHAIN S1."""
+    j = lambda a, b, k: a.merge(b, left_on=["country", xkey] + k, right_on=["country", fkey] + k, suffixes=("_b", "_a"))
+    if not by_state:
+        return j(x, f, [])
+    xs, xn, fs, fn = x[x.state != ""], x[x.state == ""], f[f.state != ""], f[f.state == ""]
+    small = f[f.groupby(["country", fkey]).id.transform("size") <= MAX_NOSTATE_CHAIN]
+    return pd.concat([j(xs.assign(k_st=xs.state), fs.assign(k_st=fs.state), ["k_st"]), j(xs, fn, []), j(xn, small, [])],
+                     ignore_index=True)
+
+
+def match(f1: pd.DataFrame, fx: pd.DataFrame, chunk: int = 400_000, by_state: bool = False,
+          keep_cands: bool = True) -> tuple:
     """-> (accepted pairs [s1, sx], candidate pairs [s1, sx]). Chunked over S2/S3: each record's decision only
-    involves its own key matches, so chunking is exact and bounds the chain blow-up of the merge."""
+    involves its own key matches, so chunking is exact. by_state bounds memory on test-size chains (see _key_join)."""
     f1 = f1[f1.core != ""]
     fsq = f1.assign(sq=f1.core.str.replace(" ", "", regex=False))
     acc, cands = [], []
     for i in range(0, len(fx), chunk):
         x = fx.iloc[i:i + chunk]
-        m = x.merge(f1, on=["country", "core"], suffixes=("_b", "_a"))
+        m = _key_join(x, f1, "core", "core", by_state)
         C = pick(_scored(m))
-        xw = x[x.is_web & (x.web.str.len() >= 4)]
-        w = xw.merge(fsq, left_on=["country", "web"], right_on=["country", "sq"], suffixes=("_b", "_a"))
+        w = _key_join(x[x.is_web & (x.web.str.len() >= 4)], fsq, "web", "sq", by_state)
         W = pick(_scored(w))
         acc.append(pd.concat([C, W[~W.sx.isin(C.sx)]])[["s1", "sx"]])
-        cands.append(pd.concat([m[["id_a", "id_b"]], w[["id_a", "id_b"]]]).set_axis(["s1", "sx"], axis=1))
-    return pd.concat(acc, ignore_index=True), pd.concat(cands, ignore_index=True).drop_duplicates()
+        if keep_cands:
+            cands.append(pd.concat([m[["id_a", "id_b"]], w[["id_a", "id_b"]]]).set_axis(["s1", "sx"], axis=1))
+    cands = pd.concat(cands, ignore_index=True).drop_duplicates() if keep_cands else pd.DataFrame(columns=["s1", "sx"])
+    return pd.concat(acc, ignore_index=True), cands
 
 
 def to_sets(pairs: pd.DataFrame, keys) -> dict:
@@ -111,7 +129,7 @@ def train_s1_feats() -> pd.DataFrame:
     return pd.read_parquet(path)
 
 
-def evaluate(world: str = "holdout", dense: bool = False) -> dict:
+def evaluate(world: str = "holdout", dense: bool = False, by_state: bool = False) -> dict:
     t0 = time.time()
     s1, sx, truth = load_world(world)
     groups = dict(zip(s1.entity_id, s1.country))
@@ -119,7 +137,7 @@ def evaluate(world: str = "holdout", dense: bool = False) -> dict:
     if dense:
         extra = train_s1_feats()
         f1 = pd.concat([f1, extra[~extra.id.isin(set(f1.id))]], ignore_index=True)
-    acc, cands = match(f1, fx)
+    acc, cands = match(f1, fx, by_state=by_state)
     pred, cs = to_sets(acc, truth), to_sets(cands, truth)
     tp = sum(len(pred[s] & truth[s]) for s in truth)
     n_true = sum(map(len, truth.values()))
@@ -129,19 +147,53 @@ def evaluate(world: str = "holdout", dense: bool = False) -> dict:
     return m
 
 
+P3 = WORK / "p3"
+
+
+def _sx_rows(split: str, ids=None, country=None) -> pd.DataFrame:
+    """S2+S3 rows of a split, filtered by id set or country, one raw source in memory at a time."""
+    parts = []
+    for i in (2, 3):
+        d = pd.read_parquet(WORK / f"{split}_source{i}.parquet")
+        parts.append(d[d.entity_id.isin(ids)] if ids is not None else d[d.country == country])
+        del d
+    return pd.concat(parts, ignore_index=True)
+
+
+def _lines(pairs: pd.DataFrame, ids) -> str:
+    """One TSV line per S1 in ids: 's1<TAB>sx1,sx2,...' (empty when it has no pairs)."""
+    joined = pairs.groupby("s1").sx.agg(lambda v: ",".join(sorted(set(v)))).to_dict()
+    return "".join(f"{s}\t{joined.get(s, '')}\n" for s in ids)
+
+
 def run_test(out: Path = Path("output/sub2")):
-    s1 = pd.read_parquet(WORK / "test_source1.parquet")
-    f1 = feats(s1)
-    fx = pd.concat([feats(pd.read_parquet(WORK / f"test_source{i}.parquet")) for i in (2, 3)],
-                   ignore_index=True)                    # one raw source in memory at a time
-    acc, cands = match(f1, fx)
-    ids = s1.entity_id.tolist()
-    pred, cs = to_sets(acc, ids), to_sets(cands, ids)
-    assert len(pred) == len(cs) == 1_732_544 and all(pred[s] <= cs[s] for s in ids)
-    write(pred, out / "matching_results.tsv", "matched_entity_ids")
-    write(cs, out / "candidate_pairs.tsv", "candidate_entity_ids")
-    by_c = s1.assign(n=[len(pred[s]) for s in ids]).groupby("country").n.agg(["mean", lambda v: (v == 0).mean()])
-    print("matches per S1 / empty share by country:\n", by_c.round(3).to_string())
+    """Per country (P7 run shape), state-partitioned exact-key rules; features cached to
+    data/work/rf_test_*_<country>.parquet for v1 to reuse."""
+    s1_all = pd.read_parquet(WORK / "test_source1.parquet")
+    out.mkdir(parents=True, exist_ok=True)
+    fm, fc = open(out / "matching_results.tsv", "w"), open(out / "candidate_pairs.tsv", "w")
+    fm.write("source1_entity_id\tmatched_entity_ids\n"); fc.write("source1_entity_id\tcandidate_entity_ids\n")
+    rows = 0
+    for country in sorted(s1_all.country.unique()):          # open label set: every country in the file
+        s1 = s1_all[s1_all.country == country]
+        cache1, cachex = WORK / f"rf_test_s1_{country}.parquet", WORK / f"rf_test_sx_{country}.parquet"
+        if not cache1.exists():
+            feats(s1).to_parquet(cache1, index=False)
+        if not cachex.exists():
+            feats(_sx_rows("test", country=country)).to_parquet(cachex, index=False)
+        f1, fx = pd.read_parquet(cache1), pd.read_parquet(cachex)
+        acc, _ = match(f1, fx, by_state=True, keep_cands=False)      # validated dense: see test_rules_cands.py
+        cpath = P3 / f"cands_test_{country}.parquet"
+        c = pd.read_parquet(cpath, columns=["s1", "sx"]) if cpath.exists() else pd.DataFrame(columns=["s1", "sx"])
+        c = pd.concat([c, acc], ignore_index=True)    # candidates = P3 blocking ∪ accepted rule pairs (matches ⊆ it)
+        ids = s1.entity_id.tolist()
+        fm.write(_lines(acc, ids)); fc.write(_lines(c, ids))
+        rows += len(ids)
+        print(f"{country}: {len(ids):,} S1, {len(c):,} candidates, {len(acc):,} matches, "
+              f"{acc.s1.nunique() / len(ids):.3f} of S1 matched", flush=True)
+        del f1, fx, c, acc
+    fm.close(); fc.close()
+    assert rows == len(s1_all) == 1_732_544, rows
 
 
 if __name__ == "__main__":
