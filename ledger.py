@@ -6,11 +6,14 @@
     log("exp", probe="P3-block", subproblem="blocking", name="tfidf-char3-k20", world="dev",
         metrics={"pair_recall": 0.962, "cands_per_s1": 20}, config={"k": 20, "ngram": 3})
 """
-import argparse, fcntl, json, subprocess, sys, tempfile, time
+import argparse, fcntl, json, os, subprocess, sys, tempfile, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-FILES = {"exp": ROOT / "ledger" / "experiments.jsonl", "pipe": ROOT / "ledger" / "pipelines.jsonl"}
+# AMC_LEDGER_DIR: probes in git worktrees log to the main checkout's ledger, so there is one ledger and
+# branch merges never conflict on it (the probe runner sets it).
+LDIR = Path(os.environ.get("AMC_LEDGER_DIR", ROOT / "ledger"))
+FILES = {"exp": LDIR / "experiments.jsonl", "pipe": LDIR / "pipelines.jsonl"}
 REQUIRED = {"exp": {"probe", "subproblem", "name", "world", "metrics", "config"},
             "pipe": {"version", "world", "metrics", "config"}}
 
@@ -26,7 +29,7 @@ def log(kind: str, **row) -> dict:
     if missing:
         raise ValueError(f"{kind} ledger row missing {sorted(missing)}")
     row = {"ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "git": _git(), **row}
-    FILES[kind].parent.mkdir(exist_ok=True)
+    FILES[kind].parent.mkdir(parents=True, exist_ok=True)
     with open(FILES[kind], "a", encoding="utf-8") as f:
         fcntl.flock(f, fcntl.LOCK_EX)          # released on close
         f.write(json.dumps(row, default=str) + "\n")

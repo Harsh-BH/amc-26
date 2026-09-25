@@ -10,6 +10,9 @@ main() {
   # kernel OOM killer picks them, not the claude CLI (it killed the CLI in P2 at 04:13 when it was the biggest).
   export SHELL=/usr/bin/bash BASH_ENV="$PWD/probes/oom_child.sh"
   export CLAUDE_CODE_SUBAGENT_MODEL=claude-opus-5-5
+  # worktree probes log to the MAIN checkout's ledger (one ledger, no merge conflicts on it)
+  local MAIN; MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+  export AMC_LEDGER_DIR="$MAIN/ledger"
   local prompt sess
   if [[ $MODE == resume ]]; then prompt=("$DIR/RESUME.md"); sess=(--resume "$SID")
   else prompt=(probes/_COMMON.md "$DIR/BRIEF.md"); sess=(--session-id "$SID"); fi
