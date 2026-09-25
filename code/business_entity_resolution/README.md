@@ -30,7 +30,9 @@ a 3 GB memory cap. The cross-encoder steps need the GPU; they take the lock `/tm
 
 It writes `output/matching_results.tsv` and `output/candidate_pairs.tsv`, asserts the format rules, then runs the
 official validator. Nothing else has to run first: on a cold `data/work` the command rebuilds every step below in
-order (training included). With the caches present it only scores, decides and writes.
+order (training included). With the caches present it only scores, decides and writes. From the cached X files
+(M2 and the cross-encoder recomputed) that takes 35.5 min at a 2.3 GB peak, and reproduces submission #4 byte for
+byte.
 
 | step | what | module / function | cached at (`data/work/…`) |
 |---|---|---|---|
@@ -64,9 +66,9 @@ Runtimes and memory (measured, 3 GB cap):
 | TRAIN side for the models: blocking for all 2.2M train S1, record + pair features | ~35 + 20 + 50 min | 2.9 GB |
 | M2 training (`train_matcher.py`) | TBD | TBD |
 | cross-encoder: `band` ×2 + `train` (GPU) | 5 + 25 min | 2.6 GB, 2.4 GB VRAM |
-| M2 scores, test | TBD | TBD |
-| CE rescoring, test (1.58M band pairs, GPU) | TBD | TBD |
-| decision + writing + validator | TBD | TBD |
+| M2 scores, test (27.5M pairs from the X files) | 2.3 / 7 / 6 min (France / India / US) | 1.8 GB |
+| CE rescoring, test (886k India + 697k US band pairs, GPU) | 11 + 7 min | 2.0 GB (own process), 3.4 GB VRAM |
+| decision + writing + validator | 2.5 min | 2.3 GB |
 
 ## 3. Validate on the training data
 

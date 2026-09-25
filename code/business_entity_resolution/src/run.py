@@ -320,7 +320,7 @@ def refit_w(parts: list) -> list | None:
         b = np.flatnonzero(~np.isnan(d["r"]))
         s1 = np.array(d["id1"].take(pa.array(d["q1"][b])).to_pylist(), object)
         sx = d["idx"].take(pa.array(d["qx"][b])).to_pylist()
-        m = np.isin(s1, np.array(list(d["truth"]), object))
+        m = np.fromiter((s in d["truth"] for s in s1), bool, len(s1))    # np.isin on objects is quadratic
         m[m] &= half(s1[m]) == 0
         P.append(d["p_m2"][b][m]), Rr.append(d["r"][b][m])
         Y.append(np.array([x in d["truth"][s] for s, x in zip(s1[m], np.array(sx, object)[m])], bool))
