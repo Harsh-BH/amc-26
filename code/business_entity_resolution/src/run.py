@@ -57,17 +57,21 @@ N_TEST_S1 = 1_732_544
 CCOLS = ["s1", "sx", "block_score", "block_rank_s1", "block_rank_sx", "via"]
 T = 0.69            # threshold on the CE-blended p (#5: m2_big + refit blend, holdout-tuned)
 T_M2 = 0.69         # M2's own holdout optimum (m2_big 0.69): the reference point of the unseen-country rule (P6)
-# submission -> (booster, its train folds, blend w, T, T_M2). Module defaults = sub5; --recipe sub4 reproduces #4.
-RECIPES = {"sub4": ("m2_ladder.txt", (2,), [0.636, 0.757, 0.355], 0.70, 0.71),
-           "sub5": ("m2_big.txt", (2, 3, 4, 5), [0.678, 0.715, 0.338], 0.69, 0.69)}
+T_FRANCE_OVERRIDE = None   # France's t; None = P6's label-free rule (0.78 on m2_big). LB: 0.88 scored +0.0010 vs 0.78
+T_COUNTRY = {}             # more per-country t overrides (--t-country C=t); any other unseen label keeps P6's rule
+# submission -> booster, its train folds, blend w, T, T_M2, pruner tau. Module defaults = sub6 (--recipe switches).
+RECIPES = {"sub4": dict(booster="m2_ladder.txt", folds=(2,), w=[0.636, 0.757, 0.355], t=0.70, t_m2=0.71, tau=None),
+           "sub5": dict(booster="m2_big.txt", folds=(2, 3, 4, 5), w=[0.678, 0.715, 0.338], t=0.69, t_m2=0.69, tau=None),
+           "sub6": dict(booster="m2_big.txt", folds=(2, 3, 4, 5), w=[0.678, 0.715, 0.338], t=0.69, t_m2=0.69, tau=0.03)}
 GPU_LOCK = "/tmp/amc-gpu.lock"
 
 
 def use(recipe: str):
-    """Switch booster, blend weights and thresholds to one submission's recipe (RECIPES)."""
+    """Switch booster, blend weights, thresholds and pruner to one submission's recipe (RECIPES)."""
     global T, T_M2
-    b, M.FOLDS, w, T, T_M2 = RECIPES[recipe]
-    M.BOOSTER, M._M, RR.CFG["w"] = WORK / "p4" / b, None, list(w)
+    r = RECIPES[recipe]
+    M.BOOSTER, M.FOLDS, M.TAU, M._M, RR.CFG["w"] = WORK / "p4" / r["booster"], r["folds"], r["tau"], None, list(r["w"])
+    T, T_M2 = r["t"], r["t_m2"]
 
 
 def ensure(split: str):
@@ -296,7 +300,8 @@ def empty_curve(q1: np.ndarray, qx: np.ndarray, p: np.ndarray, n_s1: int, ts) ->
 def thresholds(parts: list) -> dict:
     """Per-country t. A country with training labels gets T on the final p. Any other label (France) gets P6's
     rule on M2's p -- the model it is scored with: the t where its empty-S1 rate matches the labelled countries'
-    (S1-weighted) at T_M2, clipped to [T_M2, T_M2 + 0.2]; T_M2 + 0.1 if the run holds no labelled country."""
+    (S1-weighted) at T_M2, clipped to [T_M2, T_M2 + 0.2]; T_M2 + 0.1 if the run holds no labelled country.
+    T_FRANCE_OVERRIDE / T_COUNTRY replace the result for their countries (the rule's value is still printed)."""
     import train_matcher
     seen = set(train_matcher.countries())
     ts = np.round(np.arange(0.5, 0.99, 0.01), 2)
@@ -314,6 +319,11 @@ def thresholds(parts: list) -> dict:
             out[d["c"]] = float(min(max(float((e - r).abs().idxmin()), T_M2), round(T_M2 + 0.2, 2)))
             print(f"{d['c']}: unseen label, t = {out[d['c']]:.2f} (empty-S1 rate {e.loc[out[d['c']]]:.4f} vs labelled "
                   f"{r:.4f} at T_M2 {T_M2})", flush=True)
+    fixed = ({"France": T_FRANCE_OVERRIDE} if T_FRANCE_OVERRIDE is not None else {}) | T_COUNTRY
+    for c, t in fixed.items():
+        if c in out:
+            print(f"{c}: t overridden {out[c]:.2f} -> {t:.2f}", flush=True)
+            out[c] = float(t)
     return out
 
 
@@ -375,7 +385,9 @@ def model_parts(split: str, world=None) -> list:
             pm, idx = np.zeros(0, np.float32), pa.array([], pa.string())
         else:
             _, K, pairs = assemble("model", f1, fx, cands, np.ones(len(f1), bool))
-            q1, qx, pm, idx = K >> 32, K & 0xFFFFFFFF, M.score(pairs, f1, fx), arr(fx.id)
+            keep, pm = M.score(pairs, f1, fx)
+            K, idx = K[keep], arr(fx.id)
+            q1, qx = K >> 32, K & 0xFFFFFFFF
             del pairs
         tx = lambda a, b, f1=f1, fx=fx: tuple((f.name.astype(str) + " | " + f.addr.astype(str)).to_numpy(object)[i]
                                               for f, i in ((f1, a), (fx, b)))
@@ -524,7 +536,8 @@ def run(split: str, stage: str, out: Path, world=None, log=True) -> dict:
             cfg |= {"score": f"M2 {M.BOOSTER.name} ({M.tag(M.BOOSTER)}) + CE {RR.CE.name} ({M.tag(RR.CE)}) "
                              f"band {RR.CFG['band']} w {RR.CFG['w']} on {list(RR.CFG['countries'])}",
                     "decide": f"argmax S1 per SX + t {ts}", "unseen_rule": f"P6 empty-rate match on M2 p at {T_M2}",
-                    "recipe": next((k for k, v in RECIPES.items() if v[0] == M.BOOSTER.name), M.BOOSTER.name),
+                    "recipe": next((k for k, v in RECIPES.items() if v["booster"] == M.BOOSTER.name
+                                    and v["tau"] == M.TAU), M.BOOSTER.name), "pruner_tau": M.TAU,
                     "blend_w_refit_half0": w}
         ledger_log("pipe", version=f"p9-{stage}", world=split + ("-dense" if split.startswith("holdout") else ""),
                    metrics={k: round(float(v), 4) for k, v in m.items()}, config=cfg)
@@ -536,8 +549,11 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
     ap.add_argument("--split", choices=["test", "holdout", "holdout-world", "dev"], required=True)
     ap.add_argument("--stage", choices=["rules", "model"], default="rules")
     ap.add_argument("--out", type=Path, default=Path("output"))
-    ap.add_argument("--recipe", choices=sorted(RECIPES), default="sub5")
+    ap.add_argument("--recipe", choices=sorted(RECIPES), default="sub6")
+    ap.add_argument("--t-country", nargs="*", default=[], metavar="C=t",
+                    help="fixed thresholds per country, e.g. France=0.88 (default: France and unseen labels by P6's rule)")
     a = ap.parse_args()
     use(a.recipe)
+    T_COUNTRY.update({k: float(v) for k, v in (x.split("=") for x in a.t_country)})
     assert not (a.stage == "model" and a.split == "holdout-world"), "holdout-world is the rules-only regression link"
     run(a.split, a.stage, a.out)
