@@ -1,11 +1,43 @@
 # P9-integrate — RESULT
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
-- **`run.py --split test --stage model` reproduces submission #4 byte for byte.** Both files match on all 1,732,544 of
-  1,732,544 lines and pass the official validator. It takes 35.5 min from cached X (M2 and CE recomputed) at a 2.3 GB peak.
-- **Full-corpus holdout 0.9884** (target 0.988 ± 0.001; half 1 0.9882). `train_matcher.py` retrains M2 from the train
-  data at 0.9813 = `m2_ladder.txt` 0.9813. The rebuilt X files match P4's cache cell for cell.
-- **Recommendation:** merge `wave/p9-integrate`. From now on `run.py --stage model` is the one submission command, and
-  `submit_probs.py` + the probe-dir scripts are superseded.
+- **#5: `run.py --split test --stage model` reproduces submission #5 byte for byte** (both files, 1,732,544 / 1,732,544
+  lines, `cmp`), validator PASS; France t 0.78 from P6's rule. `--recipe sub4` still reproduces #4 byte for byte.
+- **Full-corpus holdout #5 = 0.9888** (half 1 0.9885 = P4's number; #4 0.9884 on the same pipeline). The blend refit on
+  half 0 returns CFG's w. `train_matcher.py` now trains like big.py (folds 2-5, float16); only a 2% smoke retrain was run.
+- **Recommendation:** merge the branch; the defaults are #5, and `run.RECIPES` / `--recipe` keep #4 reachable.
+
+## #5 — reproducing submission #5 (m2_big)
+**Change (smallest):** the defaults move to #5, and #4 stays one flag away.
+- `model.BOOSTER = p4/m2_big.txt`, `model.FOLDS = (2, 3, 4, 5)`.
+- `rerank.CFG["w"] = [0.678, 0.715, 0.338]`.
+- `run.T = 0.69`, `run.T_M2 = 0.69`.
+- `run.RECIPES = {"sub4": (m2_ladder.txt, (2,), [0.636, 0.757, 0.355], 0.70, 0.71), "sub5": (...)}`; `run.py --recipe
+  sub4|sub5` (default sub5) switches all five values.
+- `train_matcher.main(out, folds=(2,3,4,5), frac=1, rounds=8000)` = big.py's `train`:
+  - rows as float16 in an `lgb.Sequence`;
+  - the Dataset built with default params and constructed before `lgb.train(M.PARAMS, …)`;
+  - early stop 100 on the same 25% fold-1 sample.
+- `--frac` / `--rounds` exist for smoke tests. `model.fit` (unused) is deleted.
+
+| check | result |
+|---|---|
+| `run.py --split test --stage model` vs `output/sub5` | **0 differing lines in both files; `cmp` byte-identical** (ledger P9-integrate/test-model-vs-sub5). Validator PASS. France t **0.78** (empty 0.0569 vs ref 0.0569 at T_M2 0.69); India / US 0.69. 91 min wall on a loaded machine (load 20–45): m2_big 5 / 18 / 43 min France / India / US. CE only for the 129k + 103k band pairs that #4's band lacked (81 + 127 s); the rest reused from `p9/r_test_*` |
+| m2_big p recomputed from X vs P4's `prob_test_France_big` | same 4,348,797 pairs and order, max \|Δp\| 0.0 |
+| band sizes | India 847,265 (128,671 new), US 702,137 (103,004 new) = big.py's reuse / new split exactly |
+| `run.py --split holdout --stage model` (pipe p9-model, dcd4df4) | **F0.5 0.9888** (India 0.9899, US 0.9880), half 0 0.9890 / half 1 **0.9885** (P4 improve-big-ce-D3: 0.9885). P 0.9977, R 0.9705, singleton 0.9884. Blend refit on half 0 = [0.678, 0.715, 0.337] (CFG 0.338). 38 min wall, 2.09 GB |
+| `run.py --split test --stage model --recipe sub4` vs `output/sub4` | **byte-identical, both files**; France 0.82, validator PASS; 80 s to both files from caches (no GPU) |
+| `train_matcher.py --folds 2,3,4,5 --frac 0.02 --rounds 50` (smoke) | 252,154 train pairs (2% S1 sample of folds 2–5, 0.240 true), val 793,402 (= P4's), 50 trees, 54 s, 1.28 GB. **Full retrain not run**: its 3.7 GB peak (P4) was too much while other probes' jobs kept memguard pausing at < 1.5 GB free |
+| `test_pipeline.py` (#5 defaults) | **pass**: rules 0.8575, model **0.9970**; unseen Xland gets P6's rule (t 0.89 = T_M2 + 0.2 cap), 95% of its S1 hit; Yland empty rows. It waited 49 min for the GPU lock (P11's CE training), about 1 min of its own work |
+
+**Why #5 is byte-identical despite big.py's shortcut.**
+- big.py recovered #4's CE scores by inverting #4's blend (max \|Δr\| 8.5e-4). My pipeline uses the exact scores
+  cached by the #4 run and scores only the new band pairs fresh.
+- No decision moved: no p′ within the inversion error of 0.69, and no argmax flipped.
+
+**Risk (#5).**
+- France churns 10.4% of S1 vs #4 (P4's note).
+- t_France moved 0.82 → 0.78 with m2_big. That is the rule working, but the reference match is again tight
+  (0.0569 vs 0.0569).
 
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
 Merge branch `wave/p9-integrate` (commits c731de4 … HEAD). All files are under `code/business_entity_resolution/`:
@@ -13,8 +45,8 @@ Merge branch `wave/p9-integrate` (commits c731de4 … HEAD). All files are under
 | file | what |
 |---|---|
 | `src/features.py` | **new.** P4 features.py + featrun.py. `rec`, `featurize` (in memory, mirrors the files exactly), `build(split, c)` → `data/work/p4/X/` (ctx_step + feat_step) |
-| `src/model.py` | **rewritten** (the stub is gone). M2 behind P8's plug point: `score(pairs, f1, fx)`, `split_probs(split, c)`, `fit`, `predict`, `argmax_sx`, `BOOSTER = data/work/p4/m2_ladder.txt` |
-| `src/train_matcher.py` | **new.** `main(out)` = P4's ladder M2; `holdout([boosters])` = the M2-only dense F0.5 |
+| `src/model.py` | **rewritten** (the stub is gone). M2 behind P8's plug point: `score(pairs, f1, fx)`, `split_probs(split, c)`, `predict`, `argmax_sx`, `BOOSTER = data/work/p4/m2_big.txt` (#5; #4 = m2_ladder.txt), `FOLDS` |
+| `src/train_matcher.py` | **new.** `main(out, folds)` = big.py's M2 training (#4's ladder when `--folds 2`); `holdout([boosters])` = the M2-only dense F0.5 |
 | `src/rerank.py` | **new.** P4b's rerank.py without the analysis code. `band`, `train` (+`n=` smoke), `score_file` (pipeline step [ta, tb] → [r]), `blend`, `fit_blend`, `texts`, `CFG` |
 | `src/run.py` | model stage (below). Rules stage unchanged: dev 0.8526 / precision 0.9947, as P8 |
 | `README.md`, `requirements.txt` | the end-to-end reproduction with measured runtimes; + lightgbm / torch / transformers pins |
@@ -31,10 +63,10 @@ Commands:
   at `data/work/p9/m2_<split>_<c>_<booster sha1>`.
 - `run.rerank` → only for `rerank.CFG["countries"]` (India, US). The band 0.02 < p < 0.98 is scored by
   `flock /tmp/amc-gpu.lock python rerank.py score` in its own process; r is cached per CE hash; p′ = `rerank.blend`.
-- `run.thresholds` → a country of the train file gets `T = 0.70` on p′.
+- `run.thresholds` → a country of the train file gets `T` (#5 0.69, #4 0.70) on p′.
   - Any other label gets P6's rule on **M2's** p: match the labelled countries' S1-weighted empty-S1 rate at
-    `T_M2 = 0.71`, then clip to [0.71, 0.91].
-  - It is computed from the test probabilities on every run. France → **0.82**.
+    `T_M2` (#5 0.69, #4 0.71), then clip to [T_M2, T_M2 + 0.2].
+  - It is computed from the test probabilities on every run. France → **0.78** (#5), 0.82 (#4).
 - argmax per S2/S3, p ≥ t → both TSVs → asserts → validator.
 
 Changed semantics the master should know:
@@ -45,6 +77,8 @@ Changed semantics the master should know:
   scores the competitors' band pairs: 979k pairs vs P4b's 195k-per-half files.
 
 ## Evidence         (table: ledger name | world | key metrics | verdict)
+#5 rows are in the #5 section above; below is the #4 integration evidence (m2_ladder).
+
 | ledger name | world | key metrics | verdict |
 |---|---|---|---|
 | P9-integrate/test-model-vs-sub4 | test | matching_results 1,732,544 / 1,732,544 identical lines, candidate_pairs 1,732,544 / 1,732,544; `cmp`: both byte-identical. Validator PASS. France t 0.82 (empty 0.0568 vs ref 0.0569), India/US 0.70; 35.5 min, 2.34 GB | **keep** |
@@ -81,7 +115,7 @@ In `code/business_entity_resolution/src/` (probe-dir helpers: `probes/P9-integra
 - 31k pairs/s; test 2.3 / 7 / 6 min, 1.8 GB.
 
 **train_matcher.py**
-- `main(out)`: 18 min, 2.7 GB.
+- `main(out, folds)`: fold 2 (#4) 18 min, 2.7 GB; folds 2–5 (#5) ~45 min, 3.7 GB (P4's big.py measurement).
 - `holdout(boosters)`: 7.5 min for two boosters.
 - `prepare()` builds every train input (P3 train cands, rf, X) when absent.
 
@@ -120,12 +154,12 @@ With them a rerun skips all scoring: measured 52 s on holdout; the test rerun wa
   not measured as one cold run: ~4.5 h, including the train-side blocking / features and both trainings.
 
 ## Open questions   (for the master; each with your best guess)
-- **Ship `ce.pt` (43 MB) and `m2_ladder.txt` (32 MB) in the code zip?** Best guess: no. They are artefacts; the README
+- **Ship `ce.pt` (43 MB) and `m2_big.txt` (69 MB) in the code zip?** Best guess: no. They are artefacts; the README
   rebuilds both. A retrain is equivalent (0.9813 = 0.9813) but not bit-identical, so keep the cached files as the
   submission's source of truth.
 - **Delete `src/submit_probs.py`?** Best guess: yes after merge, since `run.py --stage model` supersedes it. It is left
   in place because staging scripts may still call it.
-- **Adopt P4's stage-2 model (0.9822 vs 0.9814) next?** Best guess: that is #5-material. It needs `split_probs` to add
+- **Adopt P4's stage-2 model (0.9822 vs 0.9814, on m2_ladder) next?** Best guess: only if it still gains on top of m2_big + CE. It needs `split_probs` to add
   the p1 features, and it needs the CE blend weights, T and France t refitted (`--split holdout` prints the w refit).
   Then check that the holdout gain survives the CE: both fix look-alike errors.
 - **Should the unseen-country threshold be recomputed on the final (blended) p once France gets a CE?** Best guess:

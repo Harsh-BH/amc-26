@@ -1,9 +1,14 @@
-"""Train M2 from the TRAIN data exactly as P4-match's train.py ladder did: LightGBM (model.PARAMS) on every
-candidate pair of the fold-2 S1, early-stopped (100 rounds, max 3000) on a 25% S1-hash sample of fold 1. Folds 0
-(holdout) and 1 (dev / early stopping) are never fitted on.
+"""Train M2 from the TRAIN data exactly as P4-match's big.py trained m2_big (submission #5): LightGBM
+(model.PARAMS) on every candidate pair of the S1 in the train folds, early-stopped (100 rounds, max 8000) on a 25%
+S1-hash sample of fold 1. Folds 0 (holdout) and 1 (dev / early stopping) are never fitted on. The training rows are
+held as float16 in an lgb.Sequence (folds 2-5: 12.6M pairs, 1.6 GB instead of 3.3 GB of float32); the Dataset is
+built with LightGBM's default params and constructed before training, as big.py did.
 
-    python code/business_entity_resolution/src/train_matcher.py [--out data/work/p4/m2_ladder.txt]   # ~40 min
-    python code/business_entity_resolution/src/train_matcher.py eval a.txt [b.txt ...]   # holdout F0.5, ~3 min each
+    python code/business_entity_resolution/src/train_matcher.py --out data/work/p4/m2_big.txt   # folds 2-5, ~45 min
+    python code/business_entity_resolution/src/train_matcher.py --folds 2 --out ...   # #4's fold-2 M2 (m2_ladder was
+                                        # float32 + Dataset params: an equivalent model, 0.9813 = 0.9813, not the file)
+    python code/business_entity_resolution/src/train_matcher.py --frac 0.02 --rounds 50 --out /tmp/x.txt   # smoke
+    python code/business_entity_resolution/src/train_matcher.py eval a.txt [b.txt ...]   # holdout F0.5, ~4 min each
 
 Inputs are the full-density train X files (features.build over P3's candidates for EVERY train S1 ∪ the
 rule-accepted pairs, data/work/p4/X/train_*), rebuilt when absent. eval scores every fold-0 S1 at full density:
@@ -43,8 +48,8 @@ def prepare():
         F.build("train", c)
 
 
-def load(folds, frac: float = 1.0, seed: int = 0):
-    """(X float32 [n, 65], y, feature names) of the pairs of S1 in `folds`, countries and files in P4's order;
+def load(folds, frac: float = 1.0, seed: int = 0, dtype=np.float32):
+    """(X [n, 65], y, feature names) of the pairs of S1 in `folds`, countries and files in P4's order;
     frac < 1 keeps an S1-hash sample. Preallocated, so RAM is one copy of X plus one file."""
     files = [p for c in countries() for p in F.xfiles("train", c)]
     cols = M.feats(pd.DataFrame(columns=pq.read_schema(files[0]).names))
@@ -53,11 +58,11 @@ def load(folds, frac: float = 1.0, seed: int = 0):
         return np.isin(f, folds) & ((q1 * np.uint64(2654435761) + np.uint64(seed)) % np.uint64(1000) < frac * 1000)
 
     n = sum(int(keep(pq.read_table(p, columns=["q1", "fold"])).sum()) for p in files)
-    X, y, a = np.empty((n, len(cols)), np.float32), np.empty(n, bool), 0
+    X, y, a = np.empty((n, len(cols)), dtype), np.empty(n, bool), 0
     for p in files:
         t = pq.read_table(p, columns=ID + cols)
         d = t.filter(keep(t)).to_pandas()
-        X[a:a + len(d)], y[a:a + len(d)] = d[cols].to_numpy(np.float32), d.is_true.to_numpy()
+        X[a:a + len(d)], y[a:a + len(d)] = d[cols].to_numpy(np.float32).astype(dtype), d.is_true.to_numpy()
         a += len(d)
         del t, d
         F.trim()
@@ -65,14 +70,33 @@ def load(folds, frac: float = 1.0, seed: int = 0):
     return X, y, cols
 
 
-def main(out: Path = M.BOOSTER, train_folds=(2,), val_frac: float = 0.25):
+def main(out: Path = M.BOOSTER, folds=M.FOLDS, val_frac: float = 0.25, frac: float = 1.0, rounds: int = 8000):
+    import lightgbm as lgb
+
+    class Seq(lgb.Sequence):
+        def __init__(self, a):
+            self.a, self.batch_size = a, 65_536
+
+        def __getitem__(self, i):
+            return self.a[i].astype(np.float64)       # LightGBM samples rows as double
+
+        def __len__(self):
+            return len(self.a)
+
+    assert not {0, 1} & set(folds), "never train on folds 0 (holdout) / 1 (early stopping)"
     t0 = time.time()
     prepare()
-    Xtr, ytr, cols = load(train_folds)
+    Xtr, ytr, cols = load(folds, frac=frac, dtype=np.float16)
     Xva, yva, _ = load((1,), frac=val_frac)
-    print(f"train {len(ytr):,} pairs ({ytr.mean():.3f} true), val {len(yva):,}, {len(cols)} feats, "
+    print(f"train {len(ytr):,} pairs ({ytr.mean():.3f} true) folds {list(folds)}, val {len(yva):,}, {len(cols)} feats, "
           f"load {time.time() - t0:.0f}s, peak {B.peak_gb():.2f} GB", flush=True)
-    m = M.fit(Xtr, ytr, Xva, yva, rounds=3000, cols=cols)
+    d = lgb.Dataset([Seq(Xtr)], label=ytr.astype(np.float32), feature_name=cols, free_raw_data=True)
+    dv = lgb.Dataset(Xva, yva.astype(np.float32), reference=d)
+    d.construct()
+    del Xtr
+    F.trim()
+    m = lgb.train(M.PARAMS, d, rounds, valid_sets=[dv],
+                  callbacks=[lgb.early_stopping(100, verbose=False), lgb.log_evaluation(250)])
     out.parent.mkdir(parents=True, exist_ok=True)
     m.save_model(str(out))
     print(f"M2: {m.num_trees()} trees -> {out} in {time.time() - t0:.0f}s, peak {B.peak_gb():.2f} GB", flush=True)
@@ -131,9 +155,12 @@ if __name__ == "__main__":
     ap.add_argument("cmd", nargs="?", default="train", choices=["train", "eval"])
     ap.add_argument("boosters", nargs="*", type=Path)
     ap.add_argument("--out", type=Path, default=M.BOOSTER)
+    ap.add_argument("--folds", default=",".join(map(str, M.FOLDS)), help="train folds, e.g. 2,3,4,5 (#5) or 2 (#4)")
+    ap.add_argument("--frac", type=float, default=1.0, help="S1-hash sample of the train folds (smoke tests)")
+    ap.add_argument("--rounds", type=int, default=8000)
     a = ap.parse_args()
     if a.cmd == "eval":
         holdout(a.boosters)
     else:
         assert not a.out.exists(), f"{a.out} exists: pass --out elsewhere (it is the pipeline's booster)"
-        main(a.out)
+        main(a.out, tuple(int(f) for f in a.folds.split(",")), frac=a.frac, rounds=a.rounds)
