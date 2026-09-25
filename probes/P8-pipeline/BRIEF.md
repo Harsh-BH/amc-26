@@ -37,3 +37,15 @@ Acceptance:
 - Commit your work on your branch as you go (git add + git commit inside your worktree — never push, never touch main).
 Memory: your cap is 3 GB INCLUDING the CLI. Run test scale one country at a time. P3's test candidates already exist in
 data/work/p3/cands_test_*.parquet — reuse them, but the code path to recompute them must exist and be tested on dev.
+
+## UPDATE (12:00) — current state of src/rules.py on main (your branch includes it)
+- `rules.match(f1, fx, by_state=True, keep_cands=False)` is the validated bounded-memory rule stage.
+  Dense holdout F0.5 0.8215, pair precision 0.9940 (test_rules_cands.py). Use by_state=True at test scale;
+  the unpartitioned join blows up to >10 GB on test name chains.
+- `rules.run_test()` is the current submission #2 writer (per country). It caches features to
+  data/work/rf_test_{s1,sx}_<country>.parquet — reuse those caches in run.py instead of recomputing (~10 min saved).
+- Candidates for the output = P3 blocking (data/work/p3/cands_test_*.parquet) ∪ accepted pairs, so matches ⊆ candidates.
+- Scoring must be dense. P3's cands_holdout_full_* files keep only holdout S1 rows, so they understate competition
+  for records whose true parent is a non-holdout S1. Any stage that judges uniqueness only among candidates needs
+  candidate lists against ALL train S1 — P4 is building the full train candidate set; coordinate through
+  data/work/p4/ rather than recomputing.
