@@ -8,9 +8,9 @@ low IDF) and P42's hn-equal extras (p >= 0.8) add these pairs wholesale.
 
 Variants: 'ruled' removes only pairs with p < T_BASE (added by post-threshold rules: hn-extra, gc, rescue, ...);
           'all' also removes pairs the matcher accepted on its own (p >= T_BASE).
-    .venv/bin/python probes/P54-fr-decoyword-removal/p54.py cells             # -> data/work/p54/cells.parquet
-    .venv/bin/python probes/P54-fr-decoyword-removal/p54.py build <base> <out> [ruled|all]
-    .venv/bin/python probes/P54-fr-decoyword-removal/p54.py selftest
+    .venv/bin/python probes/N54-fr-decoyword-removal/p54.py cells             # -> data/work/p54/cells.parquet
+    .venv/bin/python probes/N54-fr-decoyword-removal/p54.py build <base> <out> [ruled|all]
+    .venv/bin/python probes/N54-fr-decoyword-removal/p54.py selftest
 """
 import csv, os, sys, tempfile
 from pathlib import Path

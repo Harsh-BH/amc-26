@@ -1,4 +1,4 @@
-# P51-fr-fp-audit — RESULT (written by the master, 04:30; the Gemini run hit its quota, the GPT-OSS rerun's p51.py is REJECTED)
+# N51-fr-fp-audit — RESULT (written by the master, 04:30; the Gemini run hit its quota, the GPT-OSS rerun's p51.py is REJECTED)
 ## TL;DR
 - **No France false-positive cell with real support.** Scan: `cells_fix.csv` (France accepted pairs per S1 vs US/India
   holdout, by name relation × hn class × gained-word lens band × address-less; P31 proxy base).

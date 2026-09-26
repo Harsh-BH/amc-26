@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path[:0] = [str(ROOT), str(ROOT / "code/business_entity_resolution/src"), str(ROOT / "probes/P48-fr-filler-tier")]
+sys.path[:0] = [str(ROOT), str(ROOT / "code/business_entity_resolution/src"), str(ROOT / "probes/N48-fr-filler-tier")]
 from p48 import get_diffs_vec, fold_series, lens_table
 
 W = ROOT / "data/work"

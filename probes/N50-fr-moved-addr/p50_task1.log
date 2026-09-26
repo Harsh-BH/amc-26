@@ -1,8 +1,8 @@
 
 --- India ---
 Traceback (most recent call last):
-  File "/home/epitaph/repos/ml-challenge/amc-26/probes/P50-fr-moved-addr/p50_task1.py", line 103, in <module>
-  File "/home/epitaph/repos/ml-challenge/amc-26/probes/P50-fr-moved-addr/p50_task1.py", line 28, in run_task1
+  File "/home/epitaph/repos/ml-challenge/amc-26/probes/N50-fr-moved-addr/p50_task1.py", line 103, in <module>
+  File "/home/epitaph/repos/ml-challenge/amc-26/probes/N50-fr-moved-addr/p50_task1.py", line 28, in run_task1
     SUM(CASE WHEN g.s1 IS NOT NULL THEN 1 ELSE 0 END) as trues
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 _duckdb.OutOfMemoryException: Out of Memory Error: failed to offload data block of size 96.0 KiB (11.7 GiB/11.7 GiB used).

@@ -1,4 +1,4 @@
-# P51-fr-fp-audit — the precision side of France: accepted France pairs that are likely FALSE
+# N51-fr-fp-audit — the precision side of France: accepted France pairs that are likely FALSE
 Read probes/NIGHT/AGY_COMMON.md first (incl. the REVISED VALIDATION BAR and MEMORY GOTCHAS), then P46/P48 RESULT.md
 (the lens: per gained word, sibling-offset share s and same-hn share e; decoy-marker words like "holding" have s≈0.9).
 

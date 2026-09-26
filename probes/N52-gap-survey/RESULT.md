@@ -1,4 +1,4 @@
-# P52-gap-survey — RESULT
+# N52-gap-survey — RESULT
 
 ## 1. Lever Table (Compact Summary of All Probes)
 Below is a compact summary of every lever tried, extracted from the probe RESULTs.
@@ -41,11 +41,11 @@ Below is a compact summary of every lever tried, extracted from the probe RESULT
 | P44-meta-stack | - **The report's idea fails on our holdout. Our own combiner passes the gate in both directions.** Their logistic meta-learner   is −0.0055 LB-eq vs #... | | |
 | P45-ens-stages | - DRAFT 3 (03:25 IST). **One member passes, and it is not a tree:** our shipped bge CE scored on EVERY argmax   pair (`r_all`, not only the 0.02<p<0.9... | | |
 | P46-noise-word-tier | - **A France generator template the India/US model never saw.** A true France variant drops one S1 word and gains "Développement" at the identical add... | | |
-| P48-fr-filler-tier | - **A France generator pattern missed by P46:** Same-address pairs where the variant drops one word AND gains a French filler phrase (like `& Fils`, `... | | |
-| P49-fr-fuzzy-street | The brief hypothesized that the base matcher rejects France argmax pairs where the only difference is the street name, caused by normalization bugs (e... | | |
+| N48-fr-filler-tier | - **A France generator pattern missed by P46:** Same-address pairs where the variant drops one word AND gains a French filler phrase (like `& Fils`, `... | | |
+| N49-fr-fuzzy-street | The brief hypothesized that the base matcher rejects France argmax pairs where the only difference is the street name, caused by normalization bugs (e... | | |
 | P4b-rerank | - **The answer:** a multilingual-e5-small cross-encoder reads both records' "name  addr" and rescores P4-M2's uncertain band. It catches the look-alik... | | |
 | P5-decide | **MERGE-2 (blended p from P4 M2 + the P4b cross-encoder): keep the threshold, do not adopt the stack.** On the blended p, the D7 stack refit scores 0.... | | |
-| P50-fr-moved-addr | Pairs where the SX name perfectly matches the S1 name (`name_raw_eq = True`), the city matches, but the street and house number are completely differe... | | |
+| N50-fr-moved-addr | Pairs where the SX name perfectly matches the S1 name (`name_raw_eq = True`), the city matches, but the street and house number are completely differe... | | |
 | P6-france | Dense LOCO: a GBDT trained on one country loses 5–7 pts F0.5 on the other, and it is over-confident there. US→India scores 0.9054 vs 0.9792 in-country... | | |
 | P7-scale | - **The full test run fits on the laptop, so no AWS is needed.** One country is resident at a time. The heaviest moment is India, at about 5 GB of a 1... | | |
 | P8-pipeline | - **Done:** `src/run.py` runs raw TSVs → both files, with pluggable stages. Its `--split test --stage rules` output is **byte-identical to submission ... | | |

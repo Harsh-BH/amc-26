@@ -1,6 +1,6 @@
-# P53-fr-drop1-sameaddr — France pairs: SX name = S1 name minus exactly one word, IDENTICAL full address
+# N53-fr-drop1-sameaddr — France pairs: SX name = S1 name minus exactly one word, IDENTICAL full address
 Read probes/NIGHT/AGY_COMMON.md (REVISED VALIDATION BAR, MEMORY GOTCHAS) and probes/P28-addr-anchor/RESULT.md
-(same-address key), probes/P48-fr-filler-tier/RESULT.md (its "pure drop1" finding used the OLD bar — redo it).
+(same-address key), probes/N48-fr-filler-tier/RESULT.md (its "pure drop1" finding used the OLD bar — redo it).
 
 Master's quick count (P31 proxy base, data/work/p31/pairs_France.parquet): argmax pairs with name_rel=='drop1' and
 hn_cls==0 and S1 hn non-empty: 24,895; accepted 20,108; rejected with SX free 4,787, of which 1,273 have p >= 0.8 in a

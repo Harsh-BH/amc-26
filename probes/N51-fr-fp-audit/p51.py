@@ -50,7 +50,7 @@ def assign_band(kind, word, lens_df):
     return ">0.5"
 
 def load_cells():
-    cells = pd.read_csv(ROOT / "probes/P51-fr-fp-audit/cells_fix.csv")
+    cells = pd.read_csv(ROOT / "probes/N51-fr-fp-audit/cells_fix.csv")
     suspects = cells[(cells["excess"] > 0.001) & (cells["us_ind_min_cell_prec"] < 0.7)]
     return suspects
 

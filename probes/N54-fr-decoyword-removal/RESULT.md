@@ -1,7 +1,7 @@
-# P54-fr-decoyword-removal — RESULT (master, laptop, 27 Sep ~05:15 IST)
+# N54-fr-decoyword-removal — RESULT (master, laptop, 27 Sep ~05:15 IST)
 ## TL;DR
 - **France accepts ~5k decoys that the generator builds by swapping one org word at the SAME address**
-  ("Tiags Club SAS" → "Tiags Ecole SAS", "Syndicale Parents" → "Syndicale Anciens", same house number and street).
+  (template: "<X> Club SAS" → "<X> Ecole SAS", "<X> Parents" → "<X> Anciens", same house number and street).
   Most enter through the post-threshold rules — mainly P42's hn-equal extras (p ≥ 0.8), which carry no word check.
 - **In-domain this cell is all false:** swapped-in word with lens support n_hn ≥ 20 and sibling share s > 0.2, house
   number equal, argmax pair → **US holdout 0 true / 65, India 1 / 759** (the #8c model accepts 0% / 0.2% of them).
@@ -13,9 +13,9 @@
   79 emptied). Expected LB: +0.00045 if 90% of removed pairs are false; break-even at ≈ 29% false.
 
 ## Recommendation
-1. Build on the current best base (teammate box): `.venv/bin/python probes/P54-fr-decoyword-removal/p54.py cells`
+1. Build on the current best base (teammate box): `.venv/bin/python probes/N54-fr-decoyword-removal/p54.py cells`
    (≈ 1 min; writes data/work/p54/cells.parquet from data/work/p31/pairs_France.parquet) then
-   `.venv/bin/python probes/P54-fr-decoyword-removal/p54.py build output/<best> output/sub54r_<best> ruled`,
+   `.venv/bin/python probes/N54-fr-decoyword-removal/p54.py build output/<best> output/sub54r_<best> ruled`,
    validator `--check-ids`. This is a France-only REMOVAL, so one upload measures it cleanly.
 2. If it gains, try `all` (adds the matcher-accepted part of the cell).
 3. run.py integration (after every France add rule, including hn-extra / gc / rescue / P46): drop accepted France pairs
@@ -32,7 +32,7 @@
 | France cell size | test, P31 pairs | 29,673 candidate pairs (0.11 / S1 vs US 0.0005, India 0.009); 704 with p ≥ 0.9868 |
 | France in base (proxy: P31 acc ∪ hn-extra p ≥ 0.8) | test | 5,453 pairs; 4,749 with p < 0.9868; top words comite 507, ecole 452, amicale 379, club 283 |
 | phantom-mates signal (other SX with the same core+city) | holdout / France | does not separate (cell is ~all mates = 0 everywhere) |
-Scripts: probes/NIGHT/decoyword_fp.py, decoyword_ho.py, decoy_mates.py; probes/P54-fr-decoyword-removal/p54.py.
+Scripts: probes/NIGHT/decoyword_fp.py, decoyword_ho.py, decoy_mates.py; probes/N54-fr-decoyword-removal/p54.py.
 
 ## Risks
 - The France cell is 13× India's per S1: France's generator makes many more same-address org-swap decoys — or, the

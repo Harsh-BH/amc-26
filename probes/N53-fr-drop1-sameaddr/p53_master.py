@@ -2,7 +2,7 @@
 import sys; from pathlib import Path
 import numpy as np, pandas as pd, pyarrow as pa, pyarrow.compute as pc, pyarrow.parquet as pq
 R = Path("."); W = R / "data/work"
-sys.path[:0] = [str(R / "code/business_entity_resolution/src"), str(R / "probes/P28-addr-anchor"), str(R / "probes/P20-france-patterns"), str(R / "probes/P49-fr-fuzzy-street")]
+sys.path[:0] = [str(R / "code/business_entity_resolution/src"), str(R / "probes/P28-addr-anchor"), str(R / "probes/P20-france-patterns"), str(R / "probes/N49-fr-fuzzy-street")]
 from anchor import street_key
 from fr_street import french_street_key
 from patterns import name_rel

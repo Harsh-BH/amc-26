@@ -1,4 +1,4 @@
-# P49-fr-fuzzy-street — France pairs with an exact name and same house number whose STREET string differs
+# N49-fr-fuzzy-street — France pairs with an exact name and same house number whose STREET string differs
 Read probes/NIGHT/AGY_COMMON.md first, then probes/P28-addr-anchor/RESULT.md (same-address rule) and
 code/business_entity_resolution/src/normalize.py (how streets / house numbers are normalised).
 

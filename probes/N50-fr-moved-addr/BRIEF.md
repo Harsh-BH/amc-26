@@ -1,4 +1,4 @@
-# P50-fr-moved-addr — exact-name SX at a DIFFERENT street in the same city: true "moved" variant or decoy?
+# N50-fr-moved-addr — exact-name SX at a DIFFERENT street in the same city: true "moved" variant or decoy?
 Read probes/NIGHT/AGY_COMMON.md first, then probes/P40-generator/RESULT.md (the generator op catalogue) and
 probes/P28-addr-anchor/RESULT.md.
 

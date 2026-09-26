@@ -1,4 +1,4 @@
-# P50-fr-moved-addr: True "moved" entities vs Decoys
+# N50-fr-moved-addr: True "moved" entities vs Decoys
 
 ## TL;DR
 Pairs where the SX name perfectly matches the S1 name (`name_raw_eq = True`), the city matches, but the street and house number are completely different (not a generator sibling offset), are a rich source of true variants **if restricted to S3** (where businesses frequently move or have poorly synced old addresses) and **unique names (`k=1`)**. 

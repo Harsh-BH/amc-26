@@ -140,5 +140,5 @@ print("\n--- SUSPECTS ---")
 suspects_print = suspects.reset_index().sort_values('excess', ascending=False)
 print(suspects_print.to_string())
 
-df.to_csv("probes/P51-fr-fp-audit/cells.csv")
+df.to_csv("probes/N51-fr-fp-audit/cells.csv")
 print("Saved all cells to cells.csv")

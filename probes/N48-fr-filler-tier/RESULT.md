@@ -1,4 +1,4 @@
-# P48-fr-filler-tier
+# N48-fr-filler-tier
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
 - **A France generator pattern missed by P46:** Same-address pairs where the variant drops one word AND gains a French filler phrase (like `& Fils`, `Développement`). These represent a one-word drop plus filler addition, which the pruner masks as multi-token changes or `drop1` with gained fillers.
 - **A robust lens isolates the fillers:** By evaluating the sibling offset share ($s$) and same-hn share ($e$) over ALL pairs that drop exactly one word and gain a specific phrase, the lens $s \le 0.25$ and $e \ge 0.75$ perfectly separates true fillers (`developpement`, `groupe`, `et fils`, `cie`) from sibling branch words (`holding`), decoys (`club`, `ecole`), and swapped legal forms (`sas`, `sarl`).
@@ -12,7 +12,7 @@
   2. Exactly 1 word dropped from the raw name.
   3. The gained phrase (non-empty) passes the lens: $s \le 0.25$ and $e \ge 0.75$.
   4. SX is free, and S1 caps apply (S2: 5, S3: 6).
-- To build: `.venv/bin/python probes/P48-fr-filler-tier/p48.py build output/<base> output/sub48_<name>`
+- To build: `.venv/bin/python probes/N48-fr-filler-tier/p48.py build output/<base> output/sub48_<name>`
 
 ## Evidence         (table: ledger name | world | key metrics | verdict)
 | ledger name | world | key metrics | verdict |
@@ -37,7 +37,7 @@
 
 ## MASTER VERDICT (04:55) — CLOSED: covered by existing rules; do not stage
 - R1 (P20) strips & Fils / & Cie / Associés / Frères from the core, so "drop a word + gain a filler" is a pure core drop1.
-  P53 (master, probes/P53-fr-drop1-sameaddr/p53_master.py) counted ALL France drop1 pairs at an IDENTICAL address that
+  P53 (master, probes/N53-fr-drop1-sameaddr/p53_master.py) counted ALL France drop1 pairs at an IDENTICAL address that
   are free, argmax, unaccepted and not taken by hn-extra (p>=0.8, non-empty) or gc: **1,026**; of them only 1 has
   "fils", 15 "cie", 3 "associ", 9 "groupe", 3 "développement" (223 "services"). The v1 "19,587 flips" were counted on
   the P31 proxy base and are almost all already added by hn-extra / P28 / P46 in the current base.
