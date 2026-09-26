@@ -158,5 +158,6 @@ def build(base: str, out: str):
             os.link(base / name, out / name)
     print(f"Added {len(added)} pairs")
 
-        elif sys.argv[1] == "build":
-            build(sys.argv[2], sys.argv[3])
+
+if __name__ == "__main__" and len(sys.argv) > 3 and sys.argv[1] == "build":
+    build(sys.argv[2], sys.argv[3])

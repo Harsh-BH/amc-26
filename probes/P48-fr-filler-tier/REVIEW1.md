@@ -18,3 +18,6 @@
    rough guide; report it.
 4. Build output only if a local base exists; otherwise the script + counts are the deliverable. Selftest must pass.
 Memory: another two probes run in parallel — keep one python job at a time, ≤ 1.7 GB.
+
+UPDATE 04:10: the validation bar in probes/NIGHT/AGY_COMMON.md was REVISED (negatives-per-S1 bound). Use it for item 1
+instead of "precision among pred==False" — report both, decide on the new bar.

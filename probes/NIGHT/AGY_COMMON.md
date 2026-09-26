@@ -34,10 +34,19 @@ DATA (all local):
   (same-address rule), P20-france-patterns (R1 French filler stripping), P40-generator, P41-fr-brand, P42-fr-joint-tune
   (LOCO machinery, solution_p42.py), P37-fr-complete (p37.py LOCO).
 
-VALIDATION BAR: a France rule is only worth staging if (1) the analogous cell on US AND India holdout truth is
->= 0.90 precise on the pairs the in-domain model did NOT accept (and ideally overall), (2) label-free France statistics
-(e.g. P46's lens: sibling-offset share, same-hn share) say the France cell behaves like the true-variant cells, and
-(3) it is disjoint from / or explicitly de-duplicated against what P37/P40/P41/P42/P46 already add.
+VALIDATION BAR (REVISED by the master at 04:10 — the old "precision among pred==False" test is WRONG for France):
+In India/US the in-domain model rejects only a tiny, hard remainder of any cell (e.g. 0.1% of it), so precision among
+pred==False there says nothing about France, where the out-of-domain model rejects a large share of the cell, mostly
+true pairs. Use the NEGATIVES-PER-S1 bound instead:
+  neg_per_s1(c) = (# FALSE pairs of the cell on the c holdout, all pairs, accepted or not) / (# holdout S1 of c)
+  expected France negatives in the cell  N_neg = neg_per_s1(c) × 259,452 (France S1)
+  France add precision  >= 1 − N_neg / (# France pairs the rule would ADD)          (worst case: every negative is added)
+Compute it with the US AND the India rate; a rule passes if the US-rate bound >= 0.90 and the India-rate bound >= 0.75
+(France addresses behave like the US: 92% of accepted pairs are hn-equal). Also report the cell's overall holdout
+precision and its size per S1 in US / India / France (a France cell much LARGER per S1 than US/India means France has
+more of something — possibly decoys — and the bound is unreliable: flag it).
+Still required: label-free France stats consistent with a true-variant cell, and de-duplication against what
+P37/P40/P41/P42/P46 already add (P42 hn-extra = free argmax non-sibling SX, hn equal, p >= 0.80, S1 group non-empty).
 
 DELIVERABLE: probes/<ID>/RESULT.md (TL;DR with numbers, evidence tables, recommendation, what failed) and
 probes/<ID>/<id>.py with `build <base_dir> <out_dir>` like p46.py: reads <base_dir>/matching_results.tsv and
