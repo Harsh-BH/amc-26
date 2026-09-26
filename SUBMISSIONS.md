@@ -50,10 +50,13 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 31_m2 | staged, validator PASS | `output/sub31_m2/…` | = #31 | #31 without the P26 matcher (backup) |
 | 34 | staged, validator PASS (P34, --check-ids) | `output/sub34/…` | India/US +0.0002 LB-eq (India +0.0002, US +0.0004 holdout) | #31 with India/US from P23/P34's a10 residual stacker (p2-masked, sibling guard); France = #31 |
 | 34_veto | **uploaded 26 Sep 22:54 — LB 0.985647 (+0.00005 vs #31, ≈ flat)** | `output/sub34_veto/…` | as #34 | India/US = #34 + France = #31_veto (bge veto τ 0.1). Everything that passed its checks |
-| 34v_r90 | **uploaded 26 Sep 23:00 — LB 0.98596 (BEST, +0.00031 vs #34_veto)** | `output/sub34v_rescue90/…` | = #34_veto | #34_veto + **France empty-S1 rescue**: an S1 left empty gets its best (argmax, non-sibling) candidate if p ≥ 0.90 — fills 1,205 of 16,892 empty France S1 (6.51% empty vs ~5.7% true singletons) |
+| 34v_r90 | uploaded 26 Sep 23:00 — LB 0.98596 (+0.00031 vs #34_veto) | `output/sub34v_rescue90/…` | = #34_veto | #34_veto + **France empty-S1 rescue**: an S1 left empty gets its best (argmax, non-sibling) candidate if p ≥ 0.90 — fills 1,205 of 16,892 empty France S1 (6.51% empty vs ~5.7% true singletons) |
 | 34v_r70 | staged, validator PASS | `output/sub34v_rescue70/…` | = #34_veto | same at p ≥ 0.70 — fills 1,958 |
+| 37_gc70 | **staged, validator PASS (P37) — upload next** | `output/sub37_gc70/…` | = #34v_r90 (India/US byte-identical) | #34v_r90 + **France group completion**: an S1 whose predicted group has only S2 (or only S3) gets every free argmax, non-sibling candidate of the missing source with p ≥ 0.70 (caps 5/6). +10,084 pairs to 9,322 France S1 (one-sided 20.7% → 17.1%). LOCO (density-matched t): US→India +0.00082, India→US +0.00204 France-F0.5 (added-pair precision 0.71 / 0.85) ⇒ LB ≈ +0.0001–0.0003 |
+| 37_gc80 | staged, validator PASS (P37) | `output/sub37_gc80/…` | = #34v_r90 | #37_gc70 at p ≥ 0.80: +8,698 pairs to 8,122 France S1. LOCO +0.00079 / +0.00185 (prec 0.72 / 0.86). Upload only if #37_gc70 gains and the looser end needs isolating |
+| 37_hn90 | staged, validator PASS (P37) — **fails the LOCO gate** | `output/sub37_hn90/…` | = #34v_r90 | #37_gc at 0.90 + extra members for TWO-sided groups when hn(SX) = hn(S1): +24,868 pairs to 23,255 S1. LOCO −0.00083 (US→India) / +0.0036 (India→US); France lens looks decoy-like (name-token overlap 0.57, core equal 0.20). Diagnostic only, last in queue |
 
-**Upload next (26 Sep, last 2 slots before midnight):** 1) **#34v_r90** (France empty-S1 rescue); 2) #34v_r70 if r90 gains, else #34 (isolates the veto).
+**Upload next (27 Sep):** 1) **#37_gc70** (France group completion on #34v_r90; LOCO passes both ways). 2) If it gains: keep it as the France base for later probes; #37_gc80 only to isolate the loose end. #37_hn90 is diagnostic only.
 #7, #7s, #8a, #8b, #8p are superseded (same tests on a weaker base).
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.
