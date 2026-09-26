@@ -1,0 +1,28 @@
+# From Aditya's laptop (night run, 27 Sep 03:00–05:30 IST) — for Harsh / the master
+
+## 1. Upload candidate: N54 — remove France same-address org-word-swap decoys (France-only REMOVAL)
+probes/N54-fr-decoyword-removal/RESULT.md. Decoys that swap one org word (comite / ecole / amicale / club / parents …)
+and KEEP the house number. In-domain the cell (sub1 swap, swapped-in word lens n_hn ≥ 20 & s > 0.2, hn equal, argmax)
+is 0/65 true (US holdout) and 1/759 (India). France's lens for these 83 words mirrors India's decoy words. France's base
+accepts ≈ 5.4k of them, ≈ 4.7k via post-threshold rules (mostly P42 hn-extra p ≥ 0.8, which has no word check).
+  .venv/bin/python probes/N54-fr-decoyword-removal/p54.py cells
+  .venv/bin/python probes/N54-fr-decoyword-removal/p54.py build output/<best> output/sub54r ruled   # then validator
+Expected +0.0002–0.0005 LB (break-even at 29% of removed pairs false). One upload measures it cleanly (France-only diff).
+Also worth adding the same word guard inside hn-extra / gc in run.py.
+
+## 2. Already-run answers for P49-twin-prior (save its time)
+- Test 3 (raw-string channel): train US, twins by normalised core, address-less true SX: SX raw name == true twin's raw
+  name 4.3% vs == other twin's 5.3% (twins' raw names differ in 26% of cases). No signal. probes/NIGHT/twin_raw.py
+- Test 5 (within-group distinctness): TRUE twin's cluster holds an addressed SX with the same raw name 8.1% vs 6.1% for
+  false twins — reverse and weak; split-case true-in-no-dup 43% (k=2, chance 50%). probes/NIGHT/twin_dupname.py
+
+## 3. France negatives from tonight (don't repeat)
+- N49 fuzzy street (same core + hn + city, street typo): only 2,443 pairs new after P28/P42/P37, India bound 0.72. Drop.
+- N48 filler phrases (& Fils / Cie / Associés): after R1 they are core drop1; ≈ 20 unaccepted at identical address. Drop.
+- N53 pure drop1 at identical address: 1,026 new pairs, ≈ +0.00004. Drop.
+- N50 exact name at a different address (S3, unique name): valid but 150 pairs. Drop.
+- N51 France FP audit: accepted sibling-offset pairs are clean (holdout accepted hc==1 0.98 / 0.99 true). No FP cell except N54.
+- France blocking: only ≈ 2.3k never-candidate SX share core+city+hn with an S1, and the 516 unique-key ones are
+  different streets (coincident numbers). Drop.
+- Validation note: for France cells, "precision among pred==False on the India/US holdout" is the wrong bar (the
+  in-domain model rejects only a hard 0.1–1% remainder). Use negatives-per-S1 × France S1 vs the pairs added.
