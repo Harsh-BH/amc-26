@@ -59,3 +59,10 @@ The matcher does NOT concentrate the few trues at high p (they sit at p < 0.3, n
 (p ≥ 0.8 via hn-extra / gc / rescue, and ≥ 0.9868 for `all`) the profile equals pure decoys (SE ≈ ±0.02 on the share).
 ⇒ expected LB for `ruled` ≈ +0.0004–0.0005, for `all` ≈ +0.0005–0.0006. Script: in this file's commit message folder,
 probes/NIGHT (inline; reproduce with the dropped/gained word split of P20 name_rel 'sub1').
+
+## Addendum 2 (04:55) — N54 is the only decoy family inside the France add rules
+Simulated on the P31 proxy: **hn-extra** (free argmax, hn equal, p ≥ 0.8, non-empty group) adds 35,928 pairs: eq 14,683;
+sub1 12,149 (3,880 with a decoy word — N54's target — the other 8,269 swap in true noise words: fils 2,102, groupe
+1,543, cie 1,212, développement 1,110, associés 1,070); disjoint 4,247 (web / brand names); add1 3,282 (221 decoy-word).
+**gc** (one-sided completion, p ≥ 0.7) adds 10,120: its sub1/add1 gained words are the same noise words, with a
+decoy-word tail (ecole 59, comite 57, amicale 48, …) that N54 also removes. Nothing else looks decoy-like.
