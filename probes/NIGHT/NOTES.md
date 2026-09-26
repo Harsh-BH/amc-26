@@ -31,3 +31,4 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - 04:50 France blocking: 261,886 SX never a candidate; 13% share a core with some France S1, 3.9% core+city, 0.9% (≈2.3k) core+city+hn → blocking misses ≤ ~2.3k strong pairs (≈ +0.0001). Parked.
 - 04:55 P48 CLOSED: filler variants are core-drop1 after R1; at identical address only ~20 unaccepted filler pairs remain after hn-extra/P28/P46. v1's 19.6k was a proxy-base artefact.
 - 05:15 **P54 FOUND**: France same-hn org-word-swap decoys (comite/ecole/amicale/club…, lens s>0.2 n≥20) — in-domain cell 0/65 US, 1/759 India true; France accepts ≈5.4k (4.7k via rules p<0.9868, mostly hn-extra). Removal script p54.py (ruled/all). Expected +0.0002–0.0005; break-even 29% false. → push branch for Harsh.
+- 05:30 Renamed night probes N48–N54 (Harsh launched P48-fr-ce-all / P49-twin-prior). Merged origin/main. PUSHED branch night/aditya (N54 + FOR_HARSH.md).
