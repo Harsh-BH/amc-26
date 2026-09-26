@@ -1,4 +1,4 @@
-# P40-generator — RESULT (final, 27 Sep ~01:15 IST)
+# P40-generator — RESULT (final, 27 Sep ~01:15 IST; addendum ~01:35 for the master's sub41 follow-up)
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
 - **India/US: one generator op, the address-less SX, carries 59% of the remaining loss (0.00492 of 0.00828 LB), and
   0.00373 LB (45% of all India/US loss) is a Bayes floor.** Those SX belong to an S1 whose full name ≥ 2 train S1 share, and
@@ -7,11 +7,15 @@
   core is unique among France S1. Label-free, France holds 3–6× more of them per S1 below its threshold than either
   LOCO target. `xu_noaddr|gib` at France p ≥ 0.9 is positive in both LOCO directions: +0.00043 / +0.00004 France-F0.5,
   or ≈ +0.00026 / +0.00006 LB scaled to France's volume. It misses the +0.0005 both-ways gate.
-- **Staged `output/sub40`** = #37_gc70 + that rule (+6,521 France pairs, validator PASS). Expected LB +0.00006 to +0.00026,
+- **Update (after P41):** on top of `output/sub41`, stage **`output/sub40x`**. It adds only the address-less part, with a
+  full-name key: +2,441 France pairs, LOCO +0.000077 / +0.000024, expected LB +0.00002 to +0.00010. See the Addendum.
+- Staged before P41: `output/sub40` = #37_gc70 + that rule (+6,521 France pairs, validator PASS). Expected LB +0.00006 to +0.00026,
   downside ≈ 0. Looser `output/sub40_t70` (+9,624 pairs): +0.0004 / −0.00002.
 
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
-- **Upload `output/sub40`** after any higher-priority France upload. If it gains, `output/sub40_t70` is the next step
+- **Now that #41 is being uploaded: queue `output/sub40x` after #41** (then `sub40x_t70`). Addendum at the end;
+  both rows are in SUBMISSIONS.md.
+- Without #41: **upload `output/sub40`** after any higher-priority France upload. If it gains, `output/sub40_t70` is the next step
   (same rule at FR 0.7).
   - Both folders: India/US lines, `candidate_pairs.tsv` and `code.zip` are #37_gc70's (hard links). Every added pair comes
     from the France pair file, so it is already a candidate (checked: 0 lines with a match outside the candidates).
@@ -260,3 +264,39 @@ acc |= R40.add(s1c, sxc, is2, d["p"], am, acc, sib, cls, 0.90)          # = outp
   Best guess: only via unique-name matches (sub40's xu part). Ambiguous names are coin flips in France as well.
 - **Add acronym / exact-address classes to rule40?** +0.00006 to +0.00009 LB, with evidence in US→India only. Best guess:
   not worth an upload on their own; fold them in only if sub40 gains.
+
+## Addendum (27 Sep ~01:35): rule40's non-gib part on top of P41's `output/sub41`
+The master asked for this follow-up: P41's gib rule (`sub41`) overlaps rule40's gib half. As pair sets, 3,206 of sub40's
+3,944 gib pairs are in sub41's 5,742 adds. The question was whether the address-less part still adds something on top of
+sub41 (`loco42.py`).
+
+- **The LOCO base is faithful.** It is P37's gc70 base + P41's `key1_bare` rule at FR 0.3, and it reproduces P41's own
+  numbers exactly: +0.000078 (83 pairs, precision 1.00) and +0.000102 (182 pairs, 0.989).
+- **Result table.** Cell format: dF ± SE(h1), then (added, precision).
+
+| class, on top of sub41 | FR t | US→India | India→US | France pairs (overlap with sub41 adds) | scaled LB |
+|---|---|---|---|---|---|
+| `xu_noaddr` (core == S1 core, core unique) | 0.9 | +0.000262 ± 0.000025 (318, 0.987) | **−0.000015 ± 0.000010 (67, 0.552)** | 2,577 (0) | +0.00011 / −0.00004 |
+| `xu_noaddr` | 0.7 | +0.000433 ± 0.000044 (469, 0.985) | −0.000041 ± 0.000013 (103, 0.524) | 3,387 (0) | |
+| **`xf_noaddr`** (full name, legal form kept, == S1's and unique) | **0.9** | **+0.000077 ± 0.000015 (98, 0.969)** | **+0.000024 ± 0.000022 (292, 0.764)** | 2,441 (0; 56 shared S1) | **+0.000098 / +0.000015** |
+| `xf_noaddr` | 0.7 | +0.000114 ± 0.000020 (145, 0.959) | +0.000034 ± 0.000048 (456, 0.735) | 4,692 (0; fills 77 empty S1) | +0.00019 / +0.000027 |
+| `xf_noaddr` | 0.5 | +0.000137 ± 0.000022 (195, 0.954) | +0.000028 ± 0.000052 (522, 0.713) | 5,596 (0) | |
+
+- **xu_noaddr fails the master's condition** (India→US ≥ 0). Its false adds are SX that dropped a token and landed on
+  another S1 with a unique core. The full-name key (legal form kept) removes most of them, so **xf_noaddr passes at
+  0.9 and at 0.7**.
+- The two classes are disjoint from P41's rule (gib SX need an address; these SX have none). The LOCO shows no interaction:
+  on the gc70 base, xu_noaddr gives exactly the same dF.
+- **Staged on sub41** (`loco42.py build`, `P40_XU=full P41_BASE=output/sub41`):
+  - `output/sub40x`: +2,441 pairs / 2,360 S1;
+  - `output/sub40x_t70`: +4,692 / 4,514.
+  - Both: validator PASS, only France lines differ from sub41, 0 matches outside the candidates. Candidates and code.zip
+    are hard links to sub41's.
+  - Both rows are in SUBMISSIONS.md.
+- **run.py:** after P41's gib line, same loop:
+  `acc |= R40.add(s1c, sxc, is2, d["p"], am, acc, sib, cls, 0.90)` with
+  `cls[pool] = R40.xf_noaddr(n1[pool], nx[pool], ax[pool], fr_full_count)`.
+  - `pool = am & ~acc & (p >= 0.9)`.
+  - `fr_full_count` = `{rule40.fkey(name): #France S1}` over the test France S1 names.
+- **`output/sub40` / `sub40_t70` are superseded** once sub41 is uploaded: their gib half is mostly inside sub41, and their
+  address-less half is the failing `xu` class.
