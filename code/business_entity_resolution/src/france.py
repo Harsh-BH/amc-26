@@ -1,5 +1,8 @@
-"""#31's France (LB 0.9856), label-free throughout. Ported from probes P20 (rescore, R1), P26 (house-number features,
-c_hn), P28 (bxneg), P29 (paren_hn, key tier, cap), P30 (veto) and P31 (the chain). run.py drives it (--recipe sub31*):
+"""The unseen-country chain (#31's France, LB 0.9856; + #34v / #37's decision-time additions, LB 0.986304), label-free
+throughout. It runs on every test S1 label absent from train S1 (run.unseen(): France is the only one); C is set by
+run.py, no country is named here. Ported from probes P20 (rescore, R1), P26 (house-number features, c_hn), P28 (bxneg),
+P29 (paren_hn, key tier, cap), P30 (veto), P31 (the chain), P34v (rescue) and P37 (group completion). run.py drives
+it (--recipe sub31* / sub37*):
 
   world(base)  data/work/p9/fr31 = #9ab's idf144 France world (base) with rf_test_sx_France's house numbers re-parsed
                where an address segment opens with '(n)' ('(520) RUE X': 1.6% of France S2/S3, P6 / P29)
@@ -8,13 +11,19 @@ c_hn), P28 (bxneg), P29 (paren_hn, key tier, cap), P30 (veto) and P31 (the chain
                full candidate list (P26) -> p per kept pair
   post(...)    after the bge blend, at France's t: key tier (p := 1), bxneg (p := max(p, 0.99)), optional veto (p := 0),
                cap (an SX over 5 S2 / 6 S3 per S1 loses every pair)
+  complete(...) after the decision (argmax, p >= t): empty-S1 rescue (#34v_r90, p >= 0.90), then group completion of
+               one-sided groups (#37_gc70, p >= 0.70), then optional hn-equal extras for two-sided groups (hn90), then
+               optional synthetic-brand recovery (P41, brand_mask: #41 at p >= 0.30)
 
     python code/business_entity_resolution/src/france.py        # self-check
 """
+import collections
+import json
 import os
 import re
 import sys
 import time
+import unicodedata
 from pathlib import Path
 
 import numpy as np
@@ -28,7 +37,7 @@ sys.path.insert(0, str(SRC))
 import normalize as N
 from worlds import WORK
 
-C = "France"
+C = None               # the unseen country label (run.france31 / the chn argv set it)
 NOISE = {"fils", "cie", "associes", "freres", "frs"}   # R1: '& Fils', '& Cie', 'et Associés', 'Frères' keep the hn 81-88%
 PAREN = r"(^|,\s*)\((\d+)\)"                          # '(520) RUE X' -> '520 RUE X'
 HN = ["hn_cls", "hn_d", "hn_nsame", "hn_nssame", "hn_ns1hn"]
@@ -390,6 +399,151 @@ def post(q1, qx, id1: pa.Array, idx: pa.Array, p: np.ndarray, g: np.ndarray, t: 
     return p.astype(np.float32)
 
 
+# ---------------------------------------------------------------- after the decision (P34v rescue, P37 completion)
+def _best_per(key: np.ndarray, p: np.ndarray, m: np.ndarray) -> np.ndarray:
+    """Mask: the highest-p row of m per key (ties -> the first row)."""
+    o = np.flatnonzero(m)
+    o = o[np.lexsort((-p[o], key[o]))]
+    out = np.zeros(len(p), bool)
+    out[o[np.r_[True, key[o][1:] != key[o][:-1]]] if len(o) else o] = True
+    return out
+
+
+def rescue(q1, p, am, acc, sib, t: float) -> np.ndarray:
+    """#34v_r90's empty-S1 rescue: an S1 with no accepted pair gets its best argmax, non-sibling pair if p >= t. The SX
+    of an unaccepted argmax pair is accepted nowhere, so the one-S1-per-SX rule holds."""
+    has = np.bincount(q1[acc], minlength=int(q1.max()) + 1)[q1] > 0
+    return _best_per(q1, p, am & ~sib & ~has & ~acc & (p >= t))
+
+
+def gc_add(q1, qx, is2, p, am, acc, sib, t: float, guard: np.ndarray | None = None) -> np.ndarray:
+    """P37's group completion: an S1 whose accepted group holds one source only (S2s or S3s) gets every free (SX
+    accepted nowhere) argmax, non-sibling pair of the missing source with p >= t, best p first, up to CAP per source.
+    guard (per pair, e.g. hn equal): a pair of a two-sided group that passes it joins too (#37_gc70_hn90). In the
+    train truth 81% of S1 hold both sources and 14% one; France's predictions were one-sided for 20.7% of its S1."""
+    free = np.bincount(qx[acc], minlength=int(qx.max()) + 1)[qx] == 0
+    ns = int(q1.max()) + 1
+    n2, n3 = (np.bincount(q1[acc & m], minlength=ns)[q1] for m in (is2, ~is2))
+    miss = np.where(is2, (n2 == 0) & (n3 > 0), (n3 == 0) & (n2 > 0))       # this row's source is the missing one
+    c = am & ~acc & free & ~sib & (p >= t) & (miss if guard is None else miss | ((n2 + n3 > 0) & guard))
+    o = np.flatnonzero(c)
+    k = q1 * 2 + is2
+    o = o[np.lexsort((-p[o], k[o]))]
+    i = np.arange(len(o))
+    rank = i - np.maximum.accumulate(np.where(np.r_[True, k[o][1:] != k[o][:-1]], i, 0))
+    room = np.where(is2, CAP["S2"] - n2, CAP["S3"] - n3)
+    out = np.zeros(len(p), bool)
+    out[o[rank < room[o]]] = True
+    return out
+
+
+def complete(q1, qx, is2, p, am, acc, h1, hx, rescue_t=None, gc_t=None, hn_t=None, brand=None) -> np.ndarray:
+    """acc (the decision: am & p >= t) plus, in the staged files' order, the rescue (rescue_t), the group completion
+    (gc_t), the hn-equal two-sided extras (hn_t) and the brand recovery (brand = (t, brand_mask per pair)); None = off.
+    p is compared in float64, as P37 / P41 built them. Siblings (stack.sib_mask on h1 / hx, the house numbers of q1 /
+    qx) never join."""
+    import stack as S
+    p, sib = np.asarray(p, np.float64), S.sib_mask(h1, hx)
+
+    def add(name, t, m):
+        print(f"{C}: {name} p >= {t:g}: +{int(m.sum()):,} pairs to {len(np.unique(q1[m])):,} S1", flush=True)
+        return acc | m
+
+    if rescue_t is not None:
+        acc = add("empty-S1 rescue", rescue_t, rescue(q1, p, am, acc, sib, rescue_t))
+    if gc_t is not None:
+        acc = add("group completion", gc_t, gc_add(q1, qx, is2, p, am, acc, sib, gc_t))
+    if hn_t is not None:
+        acc = add("hn-equal extras", hn_t, gc_add(q1, qx, is2, p, am, acc, sib, hn_t, (h1 != "") & (h1 == hx)))
+    if brand is not None:                               # any non-empty group, guarded pairs only (P41)
+        acc = add("brand recovery", brand[0], gc_add(q1, qx, is2, p, am, acc, sib | ~brand[1], brand[0],
+                                                     np.ones(len(p), bool)))
+    return acc
+
+
+# ---------------------------------------------------------------- P41: synthetic-brand ("gib") recovery (P36's detector)
+_DIG = str.maketrans("0158", "olsb")                  # the generator's digit-for-letter typos
+_WEBN = re.compile(r"www|\.[a-z]{2,4}\b|@|#|com\b", re.I)
+
+
+def btoks(s: str) -> list:
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch)).lower().translate(_DIG)
+    return re.findall(r"[a-z]+", s)
+
+
+def _core(oov, min_end: int = 100, k: int = 25) -> list:
+    """The k-core of 3-7 letter strings that start AND end >= min_end OOV tokens, linked when two glue into one."""
+    pre, suf = collections.Counter(), collections.Counter()
+    for t in oov:
+        for L in range(3, min(8, len(t) - 2)):
+            pre[t[:L]] += 1
+            suf[t[-L:]] += 1
+    cand = {m for m in pre if pre[m] >= min_end and suf[m] >= min_end}
+    edges = collections.defaultdict(set)
+    for t in oov:
+        for L in range(3, len(t) - 2):
+            a, b = t[:L], t[L:]
+            if a in cand and b in cand:
+                edges[a].add(b)
+                edges[b].add(a)
+    m = set(cand)
+    while drop := {x for x in m if len(edges[x] & m) < k}:
+        m -= drop
+    return sorted(m)
+
+
+def syllables(split: str = "test") -> list:
+    """P36: the generator's brand syllables, label-free from the split's own names (every country): SX name tokens no
+    S1 name uses (non-web names, >= 6 letters) -> _core. 44 syllables on train and on test. Cached (data/work/p36)."""
+    path = WORK / "p36" / f"morph_{split}.json"
+    if not path.exists():
+        names = lambda i: (n for b in pq.ParquetFile(WORK / f"{split}_source{i}.parquet").iter_batches(
+            500_000, columns=["business_name"]) for n in b.column(0).to_pylist())
+        v1 = {t for n in names(1) for t in btoks(n)}
+        oov = {t for i in (2, 3) for n in names(i) if not _WEBN.search(n) for t in btoks(n) if len(t) >= 6 and t not in v1}
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(_core(oov)))
+    return json.loads(path.read_text())
+
+
+def n_syll(t: str, m: set) -> int:
+    """Fewest syllables that spell token t exactly (0 = it cannot be spelled)."""
+    best = [0] + [99] * len(t)
+    for i in range(len(t)):
+        if best[i] < 99:
+            for L in range(2, min(8, len(t) - i) + 1):
+                if t[i:i + L] in m:
+                    best[i + L] = min(best[i + L], best[i] + 1)
+    return best[-1] if best[-1] < 99 else 0
+
+
+def brand_mask(s1: np.ndarray, sx: np.ndarray, v: Path) -> np.ndarray:
+    """P41's guard per pair (s1 / sx ids): the SX's name is one bare synthetic brand (a single token spelled by >= 2
+    syllables, no word kept from the S1's name) and the pair's S1 is the only S1 of the country whose hn + street + city
+    key equals the SX's (hn / city: rules.feats, the SX side from world v; street: street_key; all non-empty). In train
+    truth such an SX is that S1's 99.8% (US) / 96.1% (India) of the time."""
+    m = set(syllables("test"))
+    raw = lambda k, cols: pq.read_table(WORK / f"test_source{k}.parquet", columns=["entity_id", *cols],
+                                        filters=[("country", "==", C)]).to_pandas()
+    x = pd.concat([raw(k, ["business_name", "business_address"]) for k in (2, 3)], ignore_index=True)
+    x = x[np.fromiter((len(t) == 1 and n_syll(t[0], m) >= 2 for t in map(btoks, x.business_name)), bool, len(x))]
+    key = ["hn", "street", "city"]
+    rx = _rf(v / f"rf_test_sx_{C}.parquet", x.entity_id.to_numpy(), ["hn", "city"])
+    kx = pd.DataFrame({"hn": rx.hn.fillna("").to_numpy(), "city": rx.city.fillna("").to_numpy(),
+                       "street": street_key(x.business_address).to_numpy()}, index=x.entity_id.to_numpy())
+    a = raw(1, ["business_address"])
+    r1 = _rf(WORK / f"rf_test_s1_{C}.parquet", a.entity_id.to_numpy(), ["hn", "city"])
+    k1 = pd.DataFrame({"id": a.entity_id.to_numpy(), "hn": r1.hn.fillna("").to_numpy(), "city": r1.city.fillna("").to_numpy(),
+                       "street": street_key(a.business_address).to_numpy()})
+    g = k1[(k1[key] != "").all(axis=1)].groupby(key).id.agg(["first", "size"])
+    j = kx.merge(g, left_on=key, right_index=True, how="left")
+    one = ((kx[key] != "").all(axis=1) & (j["size"] == 1)).to_numpy()
+    key1 = pd.Series(np.where(one, j["first"].fillna("").to_numpy(object), ""), index=kx.index)
+    print(f"{C}: {len(kx):,} bare brand SX, {int(one.sum()):,} with a unique hn + street + city S1", flush=True)
+    return key1.reindex(sx).fillna("").to_numpy(object) == s1
+
+
 def _check():
     assert [strip(c) for c in ["martin fils", "fils", "wallon cie", "dupont freres", ""]] == ["martin", "fils", "wallon",
                                                                                               "dupont", ""]
@@ -407,11 +561,35 @@ def _check():
     assert H[:, 4].tolist() == [1, 1, 0, 1, 0], H                       # one other SX of S1 0 carries its hn 10
     s3, pred = np.array([False] * 7 + [True]), np.ones(8, bool)
     assert cap_mask(np.zeros(8, int), s3, np.arange(8) / 10, pred).tolist() == [True, True] + [False] * 6
+    # rescue / completion toy: S1 0 has an S3 only (row 0), S1 1 has S2 + S3; rows 3..6 are free argmax candidates
+    q1, qx, is2 = np.array([0, 1, 1, 0, 0, 1, 0]), np.arange(7), np.array([0, 1, 0, 1, 1, 1, 0], bool)
+    p, am, acc = np.array([.99, .99, .99, .92, .95, .91, .93]), np.ones(7, bool), np.r_[[True] * 3, [False] * 4]
+    no = np.zeros(7, bool)
+    assert np.flatnonzero(gc_add(q1, qx, is2, p, am, acc, no, .9)).tolist() == [3, 4]        # S1 0's missing S2s
+    assert np.flatnonzero(gc_add(q1, qx, is2, p, am, acc, no, .94)).tolist() == [4]
+    assert np.flatnonzero(gc_add(q1, qx, is2, p, am, acc, no, .9, np.r_[no[:6], True])).tolist() == [3, 4, 6]
+    assert np.flatnonzero(gc_add(q1, qx, is2, p, am, acc, p == .95, .9)).tolist() == [3]    # a sibling never joins
+    assert not gc_add(q1, qx, is2, p, am, acc | (qx == 3), no, .9)[4]                       # S1 0 is two-sided now
+    assert not rescue(q1, p, am, acc, no, .9).any()                                           # no empty S1
+    assert np.flatnonzero(rescue(q1, p, am, np.r_[no[:1], acc[1:]], no, .9)).tolist() == [0]  # S1 0 empty: its best
+    z, one = np.zeros(8, int), np.r_[True, np.zeros(7, bool)]                                # CAP: 5 S2 per S1
+    assert np.flatnonzero(gc_add(z, np.arange(8), ~one, 1 - np.arange(8) / 100, np.ones(8, bool), one, ~np.ones(8, bool),
+                                 .9)).tolist() == [1, 2, 3, 4, 5]
+    ms = {"zeph", "calo", "nex", "brix", "pyra", "lyra", "kelo", "iri", "quo", "sol"}
+    assert [n_syll(t, ms) >= 2 for n in ["Zephcalonex", "QÚOLYRASOL", "Ke1ozeph", "Zeph", "Solar"] for t in btoks(n)] == \
+        [True, True, True, False, False]
+    assert btoks("M/s Brixpyra Pvt") == ["m", "s", "brixpyra", "pvt"] and n_syll("zephcalobrix", {"zeph", "calo", "brix"}) == 3
+    g = np.r_[no[:6], True]                                                                   # brand: only row 6 may join
+    assert complete(q1, qx, is2, p, am, acc, h := np.array([""] * 7, object), h, brand=(.9, g)).tolist() == \
+        acc.tolist()[:6] + [True]
+    h = np.array(["1", "", "", "7", "2", "", ""], object)
+    assert complete(q1, qx, is2, p, am, acc, h, h, .9, .9, .9).tolist() == [True] * 3 + [True, True, False, False]
     print("france self-check ok")
 
 
 if __name__ == "__main__":
-    if sys.argv[1:2] == ["chn"]:                        # run.france31's subprocess: france.py chn MODEL OUT
+    if sys.argv[1:2] == ["chn"]:                        # run.france31's subprocess: france.py chn MODEL OUT COUNTRY
+        C = sys.argv[4]
         chn(Path(sys.argv[2]), Path(sys.argv[3]))
     else:
         _check()

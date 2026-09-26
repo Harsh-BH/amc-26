@@ -110,7 +110,8 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `models/p17/stack_sup-bge-l21.0_US.txt` (#8c) | `data/work/p17/stack_sup-bge-l21.0_US.txt` | 0.7 MB | `46116715d9821b8a143d05c1ba6c35c40ada7a93dc1ae9523c7fc6cceb15d184` |
 | `models/p31/c_hn.txt` (#31 France matcher, P26's AWS job; also on S3 `amc26-p26/results/p26-full-hn-0926-1533/`) | `data/work/p31/c_hn.txt` | 50 MB | `7b48aaede1c4d9ff0a2acf60f09650b307953b64b4c224e3559aee3f020cf36c` |
 | `work/p26/bge/r/`, `work/p29/r/`, `work/p31/r/` (#31; bge scores of the France band pairs new on c_hn / the rebuild) | `data/work/{p26/bge,p29,p31}/r/r_bge_pool_test_*.parquet` | 1.5 MB | — |
-| `work/p30/r/r_pool_France.parquet` (`sub31_veto` only; bge scores of the confident France pairs) | `data/work/p30/r/r_pool_France.parquet` | 15 MB | — |
+| `work/p30/r/r_pool_France.parquet` (the veto of `sub31_veto`, `sub34_veto`, `sub37*`; bge scores of the confident France pairs) | `data/work/p30/r/r_pool_France.parquet` | 15 MB | — |
+| `models/p34/a10_h0.txt` (#34 / #37's a10 stacker; also on S3 `amc26-offload/final/models/p34/`) | `data/work/p34/a10_h0.txt` | 0.7 MB | `2ecb55bb0c626bc724c85b832884f4dda274d5499dde661255ad029285285052` |
 
 **bge needs a GPU to score fresh.** With P13's cached scores above, #8c / #9 need no GPU at all. Scoring the bge band
 anew needs two things:
@@ -120,7 +121,8 @@ anew needs two things:
 ```bash
 rclone copy gdrive:amc26-offload/models data/work/     # or copy the files by hand into those paths
 sha256sum data/work/p4/m2_big.txt data/work/p4b/ce.pt data/work/p10/pruner.txt data/work/p11/ce_s2P.pt \
-    data/work/p13/ckpt/ce_bge_pool.pt data/work/p17/stack_sup-bge-l21.0_US.txt data/work/p31/c_hn.txt   # must match
+    data/work/p13/ckpt/ce_bge_pool.pt data/work/p17/stack_sup-bge-l21.0_US.txt data/work/p31/c_hn.txt \
+    data/work/p34/a10_h0.txt   # must match
 ```
 
 ## 6. Cached test features — path A only (the run takes minutes)
@@ -176,11 +178,15 @@ and log it (`ledger.py`). A change is worth keeping at ≥ +0.0005.
 ## 7. Run
 
 ```bash
-.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --out output/
+.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # sub37 = LB 0.986304
+.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --recipe sub37_small \
+    --out output/sub37_final_small       # the final zip's files: same matches, 4.42 candidates per S1
 ```
 
 It writes `output/matching_results.tsv` and `output/candidate_pairs.tsv` (1,732,544 rows each — one per test Source 1
-entity, France included), checks the format, then runs the official validator. Expect `PASS`.
+entity, France included), checks the format, then runs the official validator. Expect `PASS`. A later France winner
+is one flag away (`--hn-extra 0.9`, `--rescue 0.7`, `--gc 0.6`, `--veto 0.05`, `--t-country France=0.99`; 0 turns a
+rule off), on either recipe.
 
 It rebuilds whatever is missing, in order, and caches it under `data/work/`, so a second run only re-scores and
 re-writes. To force a step to rebuild, delete its cache file(s) from the table in step 6.
@@ -197,6 +203,7 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 | bge cross-encoder | — (AWS-trained, downloaded) | — (downloaded) | — (downloaded: `run.py` does not retrain it) |
 | score test pairs (pruner + LightGBM) | cached | ~30 min | ~30 min |
 | cross-encoder rescoring | cached (`p13/r`) | cached (`p13/r`, from `models/`) | cached, or ~2 h on the RTX 3050 / ~20 min on an A10G |
+| a10 stacker features (India + US; cached in `p9/a10_*` after the first run) | ~6 min | ~6 min | ~6 min + the holdout fit (`run.ensure_a10`) |
 | decide + write + validate | ~4 min | ~4 min | ~4 min |
 | **Total** | **a few minutes** | **~2–2.5 h** | **~5–6 h** |
 
@@ -242,21 +249,27 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
-- The command now produces **submission #31** (the default recipe `sub31`, public LB **0.9856**, our best):
-  - #8c's India / US: the pruner, m2_big, P13's bge cross-encoder (t 0.71) and P17's US stacker;
-  - France: `france.py`'s chain (README section 2), t 0.9868: #9ab's IDF-fixed world rebuilt with the `(n)` house
-    numbers and the R1 name fillers, P26's c_hn matcher, the bge blend, then P29's key tier, P28's same-address rule
-    (bxneg) and P29's cap.
-  - `--t-country France=0.9818` gives `sub31_t9818`; `--recipe sub31_veto` (+ P30's bge veto) gives `sub31_veto`;
-    `--recipe sub31_small` (same matching, 4.42 candidates per S1) gives `sub31_small`.
-  - Holdout (India / US, = #8c): 0.98990 (half 1 0.98956). France has no labels.
-- Needs, beyond #9ab's files: `data/work/p31/c_hn.txt` and the France r top-ups `p26/bge/r`, `p29/r`, `p31/r`
-  (`p30/r/r_pool_France.parquet` for `sub31_veto`); see step 5.
-- Cold check: France rebuilt from the raw data under the current code (P21's learned région map included) gives
-  `sub31`'s France lines exactly: 0 of 259,452 differ (`probes/P9-integrate/cold31.py`, 20 min). With the model and
-  score files of step 5 present, a cold run needs ~3 h on the laptop; with step 6's caches (`p9/fr_idf144/`,
-  `p9/fr31/` included) it takes ~5 min.
-- `--recipe sub9ab`, `sub8c`, `sub9a`, `sub9b`, `sub9s`, `sub7`, `sub6`, `sub5`, `sub4` were each verified byte for byte
-  against their staged files. `sub9d` predates P21's learned région map, which moves 1,039 of its France rows by
-  design: delete `data/work/p9/fr_idfdom/` to rebuild it under the map.
-- Best leaderboard so far: **0.9856** (#31, 26 Sep).
+- The command now produces **submission #37_gc70** (the default recipe `sub37`, public LB **0.986304**, our best as of
+  27 Sep 01:00), byte for byte (both files; P43, 27 Sep):
+  - India / US = #34: #8c (the pruner, m2_big, P13's bge cross-encoder, P17's US stacker) + P34's a10 stacker
+    (`a10.py`), t 0.71.
+  - The unseen country (`run.unseen()` = test S1 labels absent from train S1 = France): `france.py`'s chain (README
+    section 2), t 0.9868: #9ab's IDF-fixed world rebuilt with the `(n)` house numbers and the R1 name fillers, P26's
+    c_hn matcher, the bge blend, then P29's key tier, P28's same-address rule (bxneg), P30's veto and P29's cap; after
+    the decision the empty-S1 rescue (p ≥ 0.90) and P37's group completion (p ≥ 0.70).
+  - **`--recipe sub37_small`** = the final zip's files (`output/sub37_final_small`): the same matching file,
+    7,658,102 candidate pairs = 4.42 per S1; official validator PASS with `--check-ids`.
+  - `--recipe sub37_hn90` (= `--hn-extra 0.9`) and `--rescue 0.7` rebuild P37's staged `sub37_gc70_hn90` /
+    `sub37_gc70_r70`.
+  - Holdout (India / US report half): 0.98984 with a10 (#8c 0.98956). France has no labels.
+- Needs, beyond #31's files: `data/work/p34/a10_h0.txt` and `p30/r/r_pool_France.parquet`; see step 5.
+- **No country is named in a decision.** Every unseen-country branch keys on `run.unseen()`; the organisers allow a
+  stricter rule for "countries unseen in training" defined that way (27 Sep ruling).
+- `--recipe sub31*`, `sub9ab`, `sub8c`, `sub9a`, `sub9b`, `sub9s`, `sub7`, `sub6`, `sub5`, `sub4` were each verified byte
+  for byte against their staged files before the UNSEEN refactor (P9). `sub9d` predates P21's learned région map,
+  which moves 1,039 of its France rows by design: delete `data/work/p9/fr_idfdom/` to rebuild it under the map.
+- Cold check (P9, #31): France rebuilt from the raw data gives `sub31`'s France lines exactly (0 of 259,452 differ,
+  `probes/P9-integrate/cold31.py`, 20 min). With the model and score files of step 5, a cold run needs ~3 h on the
+  laptop; with step 6's caches (`p9/fr_idf144/`, `p9/fr31/` included) ~12 min (6 min once `p9/a10_*` exists).
+- Leaderboard: 0.9856 (#31) → 0.985647 (#34_veto) → 0.98596 (#34v_r90) → **0.986304 (#37_gc70)**; 27 Sep:
+  [slot — later winners, SUBMISSIONS.md].
