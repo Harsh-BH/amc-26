@@ -416,6 +416,43 @@ def vecs(n: int = 1_000_000) -> dict:
     return pickle.loads(VECS.read_bytes())
 
 
+def idf_country(vec: dict, sx_text: pd.DataFrame, share: float, seed: int = 0) -> dict:
+    """P14's France fix (#9a): the train IDF refit with a seeded sample of an unseen country's own S2/S3 texts added
+    to the IDF pool at `share` (0.144 = France's share of test S2/S3). The train df is recovered from idf_ (smooth
+    idf: idf = ln((1 + n) / (1 + df)) + 1); idf_ = ln((1 + n + m) / (1 + df + df_c)) + 1. vec is changed in place."""
+    for view in ("name", "addr"):
+        hv, tf = vec[view].steps[0][1], vec[view].steps[1][1]
+        idf = tf.idf_.astype(np.float64)
+        n = round(np.exp(idf.max() - 1) - 1)                       # max idf = ln(1 + n) + 1 (df = 0)
+        df = np.rint((1 + n) / np.exp(idf - 1) - 1)
+        m = round(n * share / (1 - share))
+        X = hv.transform(sx_text[view].sample(n=min(m, len(sx_text)), random_state=seed)).tocsc()
+        dfc = np.diff(X.indptr)                                    # docs containing each hashed feature
+        tf.idf_ = (np.log((1 + n + X.shape[0]) / (1 + df + dfc)) + 1).astype(tf.idf_.dtype)
+    return vec
+
+
+def idf_domain(vec: dict) -> dict:
+    """P14's train-only fallback (#9d): the address IDF of the French domain words already listed in normalize.py
+    (street types, articles, régions + départements, house-number words) lowered to the median train IDF of the US
+    street types. City names stay at max IDF: no list of them exists without external data. In place."""
+    hv, tf = vec["addr"].steps[0][1], vec["addr"].steps[1][1]
+    fr = {k: w for k, w in N.STREET.items() if k in {"rue", "bd", "impasse", "allee", "chemin", "route", "faubourg",
+                                                     "quai", "cours", "sainte", "avenue", "av", "boulevard", "place",
+                                                     "saint"}}
+    words = set(fr) | set(fr.values()) | {"de", "des", "du", "la", "le", "les", "l", "d", "et", "en", "sur", "sous",
+                                          "aux", "au", "ndeg", "no", "bis", "ter", "france"}
+    for reg, deps in N.FR_REGIONS.items():
+        words |= {w for x in [reg, *deps] for w in x.split()}
+    ix = lambda ws: hv.transform([" ".join(ws)]).indices
+    val = float(np.median(tf.idf_[ix(["st", "rd", "dr", "ave", "ln", "ct", "blvd"])]))
+    idf = tf.idf_.copy()
+    j = ix(sorted(words))
+    idf[j] = np.minimum(idf[j], val)
+    tf.idf_ = idf
+    return vec
+
+
 def _txt(d: pd.DataFrame) -> pd.DataFrame:
     t = texts(d, CFG)
     t.insert(0, "entity_id", d.entity_id.to_numpy())
