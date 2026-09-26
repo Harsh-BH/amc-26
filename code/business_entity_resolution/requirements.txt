@@ -1,5 +1,6 @@
 # Python 3.12. Exactly what src/ imports; licences in parentheses (all MIT / Apache-2.0 / BSD / ISC).
-# One pretrained model: intfloat/multilingual-e5-small (MIT, 118M params), fine-tuned by rerank.py train.
+# Pretrained models: BAAI/bge-reranker-v2-m3 (Apache-2.0, 568M, default CE since #8, fine-tuned on an AWS A10G by
+# src/bge_train.py) and intfloat/multilingual-e5-small (MIT, 118M, #4-#7's CE, fine-tuned by rerank.py train).
 numpy==2.5.3            # BSD-3
 pandas==3.0.6           # BSD-3
 pyarrow==25.0.1         # Apache-2.0

@@ -1,10 +1,11 @@
-"""Cross-encoder reranker (P4b-rerank): intfloat/multilingual-e5-small (MIT, 118M params) fine-tuned on
+"""Cross-encoder reranker. Default since #8: BAAI/bge-reranker-v2-m3 (Apache-2.0, 568M), fine-tuned on an AWS A10G by
+bge_train.py (P13). History (#4-#7): intfloat/multilingual-e5-small (MIT, 118M params) fine-tuned on
 "name | addr" of both records, rescoring M2's uncertain band; blended back into p before the decision.
 
     python src/rerank.py band <country>                                   # train-side band (LightGBM, fold 2 fit)
     flock /tmp/amc-gpu.lock python src/rerank.py train [epochs=2 out=data/work/p11/ce_s2P.pt countries= tag= n=]
                                             # #7's CE: 2 epochs, 40 min (#4-#6: epochs=1 -> data/work/p4b/ce.pt, 25 min)
-    flock /tmp/amc-gpu.lock python src/rerank.py score in.parquet out.parquet [ce.pt]   # PIPELINE STEP: [ta, tb] -> [r]
+    flock /tmp/amc-gpu.lock python src/rerank.py score in.parquet out.parquet [ce.pt] [e5|bge]  # PIPELINE STEP: [ta, tb] -> [r]
     python src/rerank.py check                                            # blend-rule self-check
 
 The blend (CFG): for pairs with 0.02 < p < 0.98 of a country the CE was trained on,
@@ -127,12 +128,52 @@ def score(ta, tb, tok, m, bs: int = 512) -> np.ndarray:
     return r
 
 
-def score_file(inp: str, outp: str, model: str = str(CE)):
-    """THE PIPELINE STEP (own process): parquet [ta, tb] -> parquet [r], same rows."""
+BGE = "BAAI/bge-reranker-v2-m3"       # P13 (#8c): Apache-2.0, 568M params; fine-tuned 2 epochs on #5's CE set (AWS A10G)
+BGE_MAXLEN = 96
+
+
+def load_bge(path):
+    """P13's CE (solution_p13.Job.load('bge') + restore): the HF sequence classifier (1 logit, fp32 weights), the
+    fine-tuned checkpoint (fp16, every weight but the frozen word embeddings) loaded over it."""
+    import torch
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+    tok = AutoTokenizer.from_pretrained(BGE)
+    m = AutoModelForSequenceClassification.from_pretrained(BGE, num_labels=1, dtype=torch.float32)
+    miss, unexp = m.load_state_dict({k.removeprefix("m."): v.float() for k, v in torch.load(path, map_location="cpu").items()},
+                                    strict=False)
+    assert not unexp and all("word_embeddings" in k for k in miss), (miss[:5], unexp[:5])
+    return tok, m.cuda()
+
+
+def score_bge(ta, tb, tok, m, bs: int = 512) -> np.ndarray:
+    """P13's Job.score: pairs tokenised (longest_first to 96), batches sorted by token length, bf16 autocast."""
+    import torch
+    e = tok(list(ta), list(tb), truncation="longest_first", max_length=BGE_MAXLEN, return_attention_mask=False)["input_ids"]
+    ln = np.array([len(x) for x in e])
+    o = np.argsort(ln, kind="stable")
+    pad = tok.pad_token_id if tok.pad_token_id is not None else 0
+    r = np.empty(len(e), np.float32)
+    m.eval()
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+        for i in range(0, len(o), bs):
+            j = o[i:i + bs]
+            L = int(ln[j].max())
+            x = np.full((len(j), L), pad, np.int64)
+            msk = np.arange(L)[None, :] < ln[j][:, None]
+            x[msk] = np.concatenate([e[k] for k in j])
+            logit = m(input_ids=torch.from_numpy(x).cuda(), attention_mask=torch.from_numpy(msk.astype(np.int64)).cuda()).logits
+            r[j] = torch.sigmoid(logit.float().squeeze(-1)).cpu().numpy()
+    return r
+
+
+def score_file(inp: str, outp: str, model: str = str(CE), base: str = "e5"):
+    """THE PIPELINE STEP (own process): parquet [ta, tb] -> parquet [r], same rows. base: e5 (P4b / P11's e5-small
+    CE) | bge (P13's bge-reranker-v2-m3 CE; needs its HF base weights in the local cache and a GPU)."""
     t0 = time.time()
     d = pd.read_parquet(inp)
-    tok, m = load_model(model)
-    r = score(d.ta.to_numpy(object), d.tb.to_numpy(object), tok, m) if len(d) else np.zeros(0, np.float32)
+    tok, m = (load_bge if base == "bge" else load_model)(model)
+    r = ((score_bge if base == "bge" else score)(d.ta.to_numpy(object), d.tb.to_numpy(object), tok, m) if len(d)
+         else np.zeros(0, np.float32))
     pd.DataFrame({"r": r}).to_parquet(outp, index=False)
     print(f"rerank: {len(d):,} pairs scored in {time.time() - t0:.0f}s ({len(d) / max(time.time() - t0, 1e-9):.0f}/s), "
           f"peak {peak():.2f} GB", flush=True)
@@ -242,5 +283,5 @@ if __name__ == "__main__":
     cmd = sys.argv[1]
     kw = dict(a.split("=", 1) for a in sys.argv[2:] if "=" in a)       # tag=_loco_India countries=India
     kw = {k: tuple(v.split(",")) if k == "countries" else v for k, v in kw.items()}
-    {"band": lambda: band(sys.argv[2]), "train": lambda: train(**kw), "score": lambda: score_file(*sys.argv[2:5]),
+    {"band": lambda: band(sys.argv[2]), "train": lambda: train(**kw), "score": lambda: score_file(*sys.argv[2:6]),
      "check": _check}[cmd]()

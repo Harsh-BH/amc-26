@@ -1,4 +1,4 @@
-"""M2 pair matcher (P4-match): LightGBM on the 65 features of features.py. Submission #5: booster
+"""M2 pair matcher (P4-match): LightGBM on the 65 features of features.py. Submissions #5–#9: booster
 data/work/p4/m2_big.txt, trained on train folds 2-5 (#4: m2_ladder.txt, fold 2 only; run.py --recipe switches).
 train_matcher.py rebuilds it from the train data when absent. Submission #6: only the pairs the pruner keeps
 (prune.py, q >= TAU | rule_acc) are scored; TAU = None scores every blocked pair (#4 / #5).
@@ -81,18 +81,22 @@ def score(pairs: pd.DataFrame, f1: pd.DataFrame, fx: pd.DataFrame) -> tuple:
     return keep, predict(load(), X[keep])
 
 
+def probs_path(split: str, c: str) -> Path:
+    """split_probs' cache: data/work/p9/m2_<split>_<c>_<booster hash>[_<pruner hash>_<tau>].parquet."""
+    # ponytail: keyed by the booster / pruner only -- delete data/work/p9/m2_* (and p4/X) whenever the features change
+    if TAU is None:
+        return CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}.parquet"
+    import prune
+    prune.load_model()                                  # trains it first when absent
+    return CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}_{tag(prune.MODEL)}_{TAU}.parquet"
+
+
 def split_probs(split: str, c: str) -> pd.DataFrame:
     """q1, qx, p for every kept candidate pair of one country (P3 ∪ rule-accepted, P3 text rows), predicted from the
     X files (features.build writes the missing ones first; they hold the FULL blocking list). holdout = the train X
     files cut to every pair of the S2/S3 that a holdout (fold 0) S1 competes for, so each SX's argmax still sees all
     its train S1. Cached as data/work/p9/m2_<split>_<c>_<booster hash>[_<pruner hash>_<tau>].parquet."""
-    # ponytail: keyed by the booster / pruner only -- delete data/work/p9/m2_* (and p4/X) whenever the features change
-    if TAU is None:
-        path = CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}.parquet"
-    else:
-        import prune
-        prune.load_model()                              # trains it first when absent
-        path = CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}_{tag(prune.MODEL)}_{TAU}.parquet"
+    path = probs_path(split, c)
     if path.exists():
         return pd.read_parquet(path)
     xs = "train" if split == "holdout" else split

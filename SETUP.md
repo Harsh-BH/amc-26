@@ -8,10 +8,10 @@ For teammates (team **Yeti**). One command rebuilds both submission files from t
 | Path | You download | Run time (16-core laptop, RTX 3050) |
 |---|---|---|
 | **A. Fastest** | code + data + trained models + cached test features | **a few minutes** |
-| **B. Normal** | code + data + trained models | **~2.5–3 h** |
-| **C. From scratch** | code + data | **~5.5–6 h** (retrains every model) |
+| **B. Normal** | code + data + trained models | **~2–2.5 h** |
+| **C. From scratch** | code + data + the bge checkpoint | **~5–6 h** (retrains every other model; +~2 h of laptop GPU if the bge scores are not cached) |
 
-All three give the same output. Steps: **1** access → **2** code → **3** install → **4** data → **5** models (A, B) →
+All three give the same output. Steps: **1** access → **2** code → **3** install → **4** data → **5** models (A, B; C needs the bge checkpoint from it) →
 **6** cached features (A) → **7** run.
 
 ## 1. Getting access (Harsh does this once per teammate)
@@ -30,10 +30,13 @@ Never make the Drive folder "anyone with the link" — it holds a copy of Amazon
 ```
 amc26-offload/
 ├── data/student_resource/dataset/   the challenge data (train + test TSVs)          ~5 GB
-├── models/                          our trained models (step 5)                    ~110 MB
+├── models/                          our trained models (step 5)                    ~820 MB
 │   ├── p4/m2_big.txt                  LightGBM matcher (the "main judge")
 │   ├── p4b/ce.pt                      fine-tuned e5-small cross-encoder, 1 epoch (#4-#6; the "second opinion")
-│   ├── p11/ce_s2P.pt                  the same cross-encoder trained 2 epochs (#7, the default)
+│   ├── p11/ce_s2P.pt                  the same cross-encoder trained 2 epochs (#7)
+│   ├── p13/ckpt/ce_bge_pool.pt        bge-reranker-v2-m3 cross-encoder, fine-tuned on AWS (#8c / #9, the default)
+│   ├── p13/r/r_bge_pool_*             its cached scores (test India / US / France band, holdout) -- the byte check
+│   ├── p17/stack_sup-bge-l21.0_US.txt house-number stacker, US only (#8c)
 │   └── p10/pruner.txt                 candidate pruner (shrinks shortlists 15.9 → 4.8 per business)
 └── work/                            cached test-side intermediate files (step 6)    ~4.6 GB
 ```
@@ -61,9 +64,14 @@ cd amc-26
 ```bash
 python3.12 -m venv .venv
 .venv/bin/pip install -r code/business_entity_resolution/requirements.txt
-# the one pretrained model (MIT, 118M) — downloaded once; the pipeline then runs offline
+# pretrained base weights, downloaded once; the pipeline then runs offline (HF_HUB_OFFLINE=1)
+# e5-small (MIT, 118M): the e5 cross-encoder of #4-#7, the tests and the holdout's --ce-missing fallback
 .venv/bin/python -c "from transformers import AutoModel, AutoTokenizer as T; \
   AutoModel.from_pretrained('intfloat/multilingual-e5-small'); T.from_pretrained('intfloat/multilingual-e5-small')"
+# bge-reranker-v2-m3 (Apache-2.0, 568M, 2.3 GB): only to score the bge band fresh (no p13/r cache). On a slow link
+# set HF_HUB_DISABLE_XET=1 (xet transfers stalled here), or pull it on an AWS box
+.venv/bin/python -c "from transformers import AutoModelForSequenceClassification as M, AutoTokenizer as T; \
+  M.from_pretrained('BAAI/bge-reranker-v2-m3'); T.from_pretrained('BAAI/bge-reranker-v2-m3')"
 ```
 
 Always use `.venv/bin/python`, never a system `python3` (pandas 3 + Python 3.12 are pinned; other versions silently
@@ -84,6 +92,9 @@ data/student_resource/utils/validate_submission.py
 
 ## 5. Trained models — paths A and B (skips ~3 h of training)
 
+Path C still needs `p13/ckpt/ce_bge_pool.pt` from here: the bge cross-encoder was fine-tuned on AWS
+(`probes/P13-aws-rerank`, 76 min on an A10G) and `run.py` stops with instructions when it is missing.
+
 Download `amc26-offload/models/` and place the files exactly here:
 
 | Drive file | Put it at | Size | sha256 |
@@ -91,11 +102,20 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `models/p4/m2_big.txt` | `data/work/p4/m2_big.txt` | 67 MB | `598e51c859cf85bf7d59f75135959fcc47e4c71e05ebe6ae3a2414695e485f03` |
 | `models/p4b/ce.pt` | `data/work/p4b/ce.pt` | 42 MB | `16013613bbef1c9548a7d91b73978e0be6f833a6007ab45f2460644e1b55c789` |
 | `models/p10/pruner.txt` | `data/work/p10/pruner.txt` | 1 MB | `02ab27da2fca67220fc8377eb881c858aa4871c0eaeacd9efa75bed4eb885a52` |
-| `models/p11/ce_s2P.pt` (#7; upload pending) | `data/work/p11/ce_s2P.pt` | 43 MB | `4dc0d8826a9efb3a3d1d956130b5c9af139af6941b77596fc1a5719196c3b9af` |
+| `models/p11/ce_s2P.pt` (#7) | `data/work/p11/ce_s2P.pt` | 43 MB | `4dc0d8826a9efb3a3d1d956130b5c9af139af6941b77596fc1a5719196c3b9af` |
+| `models/p13/ckpt/ce_bge_pool.pt` (#8c; also on S3 `amc26-p13/results/p13-rerank-0925-2257/ckpt/`) | `data/work/p13/ckpt/ce_bge_pool.pt` | 624 MB | `36a946769b50322fda057f3693c7e5577e5f476f28ae95e2c4343fa267b72de7` |
+| `work/p13/r/` (#8c; its cached scores) | `data/work/p13/r/r_bge_pool_test_{India,US,France}.parquet`, `r_bge_poolck_holdout.parquet` | 39 MB | — |
+| `models/p17/stack_sup-bge-l21.0_US.txt` (#8c) | `data/work/p17/stack_sup-bge-l21.0_US.txt` | 0.7 MB | `46116715d9821b8a143d05c1ba6c35c40ada7a93dc1ae9523c7fc6cceb15d184` |
+
+**bge needs a GPU to score fresh.** With P13's cached scores above, #8c / #9 need no GPU at all. Scoring the bge band
+anew needs two things:
+- the HF base `BAAI/bge-reranker-v2-m3` (2.3 GB, downloaded once; >1 GB pulls go through AWS);
+- a GPU: ~20 min on an A10G, ~2 h on the laptop's RTX 3050 for the ~1.24M pruned band pairs.
 
 ```bash
-rclone copy gdrive:amc26-offload/models data/work/     # or copy the three files by hand into those paths
-sha256sum data/work/p4/m2_big.txt data/work/p4b/ce.pt data/work/p10/pruner.txt data/work/p11/ce_s2P.pt   # must match
+rclone copy gdrive:amc26-offload/models data/work/     # or copy the files by hand into those paths
+sha256sum data/work/p4/m2_big.txt data/work/p4b/ce.pt data/work/p10/pruner.txt data/work/p11/ce_s2P.pt \
+    data/work/p13/ckpt/ce_bge_pool.pt data/work/p17/stack_sup-bge-l21.0_US.txt   # must match
 ```
 
 ## 6. Cached test features — path A only (the run takes minutes)
@@ -143,8 +163,8 @@ training pairs). With them a retrain skips ~1 h 45 min of candidate search + fea
 | **Pruner** (threshold τ or its features) | τ only: **yes**, no retrain (`model.TAU`). New features: retrain (74 s) |
 | **Only thresholds / France cut-off** | **Yes** — no training at all; `--t-country France=<t>` and the cached scores make it seconds |
 
-Always compare on the **full-corpus holdout** (`run.py --split holdout --stage model`, #5 = 0.9888, #6 = 0.9885,
-#7 = 0.9888)
+Always compare on the **full-corpus holdout** (`run.py --split holdout --stage model --ce-missing fallback`, #5 = 0.9888,
+#6 = 0.9885, #7 = 0.9888, #8c = 0.9899)
 and log it (`ledger.py`). A change is worth keeping at ≥ +0.0005.
 
 ## 7. Run
@@ -167,18 +187,20 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 | record + pair features (test) | cached | ~50 min | ~50 min |
 | train-side candidates + features | — | — | ~1 h 45 min |
 | train LightGBM matcher | — | — | ~45 min |
-| train cross-encoder (GPU) | — | — | ~30 min |
-| score test pairs (LightGBM) | cached | ~1 h (less with the pruner) | ~1 h |
-| cross-encoder rescoring (GPU) | cached | ~18 min | ~18 min |
-| decide + write + validate | ~3 min | ~3 min | ~3 min |
-| **Total** | **a few minutes** | **~2.5–3 h** | **~5.5–6 h** |
+| pruner + US stacker (the stacker is refit from the holdout) | — | — | ~2 min + one holdout run |
+| bge cross-encoder | — (AWS-trained, downloaded) | — (downloaded) | — (downloaded: `run.py` does not retrain it) |
+| score test pairs (pruner + LightGBM) | cached | ~30 min | ~30 min |
+| cross-encoder rescoring | cached (`p13/r`) | cached (`p13/r`, from `models/`) | cached, or ~2 h on the RTX 3050 / ~20 min on an A10G |
+| decide + write + validate | ~4 min | ~4 min | ~4 min |
+| **Total** | **a few minutes** | **~2–2.5 h** | **~5–6 h** |
 
 ## 9. Other useful commands
 
 | What | Command |
 |---|---|
-| Score our own holdout (the number we trust; #5 = 0.9888) | `.venv/bin/python code/business_entity_resolution/src/run.py --split holdout --stage model` |
-| Reproduce submission #4 instead | add `--recipe sub4` |
+| Score our own holdout (the number we trust; #8c = 0.9899) | `.venv/bin/python code/business_entity_resolution/src/run.py --split holdout --stage model --ce-missing fallback` (without the flag it bge-scores ~570k competitor pairs: GPU + HF weights) |
+| A France option instead of #8c | add `--recipe sub9a` / `sub9b` / `sub9s` / `sub9d` |
+| An earlier submission | add `--recipe sub7` / `sub6` / `sub5` / `sub4` |
 | Pipeline regression test | `.venv/bin/python code/business_entity_resolution/src/test_pipeline.py` |
 | Validate any submission (from `data/student_resource/`) | `python3 utils/validate_submission.py --matching ../../output/matching_results.tsv --candidate ../../output/candidate_pairs.tsv --test-dir dataset/test` |
 | Experiment ledger (every run and its score) | `.venv/bin/python ledger.py show exp` · `show pipe` |
@@ -214,8 +236,16 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
-- The command now produces **submission #7**: the pruner (4.83 candidates per business), m2_big, the 2-epoch
-  cross-encoder (India / US t 0.71) and France fixed at t 0.95. Holdout 0.9888 (#6: 0.9885).
-- `--recipe sub6` gives #6 byte for byte, and `--recipe sub6 --t-country France=0.95` gives #6c (leaderboard
-  0.980954). `--recipe sub5` gives #5 (leaderboard 0.980017).
-- Best leaderboard so far: **0.981142** (D4: #5 with France t 0.95; France 0.88 scored 0.981024).
+- The command now produces **submission #8c** (the default recipe `sub8c`): the pruner, m2_big, P13's bge
+  cross-encoder (India / US, t 0.71), P17's house-number stacker on US, and France (m2_big p) fixed at t 0.95.
+  Holdout 0.98990 (half 1 0.98956; India 0.99004 / US 0.98924 = P17's numbers; competitor band pairs without a
+  bge score keep #7's e5 blend, `--ce-missing fallback`). #7: 0.98881.
+- The France variants on the same base, each byte for byte:
+  - `--recipe sub9a`: France IDF fix, t 0.975;
+  - `--recipe sub9b`: bge France, t 0.98;
+  - `--recipe sub9s`: sibling rule, t 0.95;
+  - `--recipe sub9d`: train-only IDF, t 0.98.
+- `--recipe sub7`, `sub6`, `sub5`, `sub4` still give #7 / #6 / #5 / #4; `--recipe sub6 --t-country France=0.95` gives
+  #6c (leaderboard 0.980954).
+- Best leaderboard so far: **0.981142** (D4: #5 with France t 0.95; France 0.88 scored 0.981024). The 26 Sep uploads
+  (#8c, then #9a / #9b / #9s on the same base) are queued in [SUBMISSIONS.md](SUBMISSIONS.md).

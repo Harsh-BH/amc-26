@@ -1,0 +1,5 @@
+# pip-installed by the SageMaker PyTorch CPU DLC (pytorch-training:2.9.0-cpu-py312) at job start; numpy / boto3 ship
+# with the image, pyarrow does not (P13/P16). Versions = the scratch venv the rehearsal ran in.
+xgboost-cpu==3.4.1
+catboost==1.2.10
+pyarrow==25.0.1

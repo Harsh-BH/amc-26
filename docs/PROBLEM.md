@@ -67,7 +67,7 @@ Reference points on train: all-empty = **0.056**; perfect precision with exactly
 match per S1 = **0.696**. The last 30 points are recall on multi-match clusters.
 
 Leaderboards: public = a subset of test, private = the rest, you always submit the full test set.
-PDF says final rank = private; guidelines say shortlisting uses both (open question below).
+Final rank = the private score **of the best-public submission** (organiser ruling below).
 
 ## Submitting
 
@@ -161,23 +161,55 @@ Test-only:
 2. A model or API that breaks the licence / no-external rule is disqualification, not a penalty.
 3. Tuning a threshold for F1 or accuracy — sweep it for F0.5 on a train holdout.
 4. Hill-climbing the public leaderboard with 5 submissions/day — trust the train holdout; spend
-   uploads on catching pipeline bugs. The private split decides.
+   uploads on catching pipeline bugs. The private split decides, but **for the best-public upload
+   only**, so the final pick must also be the top public score.
 5. Zero candidates for a non-singleton scores 0 silently — track "% S1 with no candidates".
 6. Unknown IDs: the PDF says "rejected", the validator says "lowers score" — treat as rejection.
 7. France has no labels — thresholds validated on US/India are unvalidated for 15% of test.
 8. `NULL` placeholders and `|`-joined names poison string features unless cleaned first.
 
-## Open questions — ask via the Google Form
+## Organiser rulings (Query Form responses, 24–26 Sep)
 
-1. When does the 5/day cap reset? (Assume midnight IST.)
-2. Does every leaderboard upload need the code zip, or only the final package?
-3. Does "final model" cover a blocking embedder too? Is 8B per model or total?
-4. May we fit unsupervised statistics (TF-IDF, IDF weights) on the **test** S2/S3 text?
-   The fair-play line says "using only the provided training data".
-5. Is the final zip due at 23:59:49 on the 27th or later? (`grace_period: 15` appears on every Unstop
-   round, so it says nothing specific.)
-6. Final ranking: private leaderboard only, or both?
-7. ~~What exact string is `<team_name>` in the zip name?~~ **Yeti** (Unstop team name) → `Yeti_submission.zip`.
+From "Response from Amazon Leaders" in the form's response sheet (PDF export, 19 pages). These settle
+the old open questions:
+
+- **Final rank = the private score of your best public submission.** Not your last upload, and you
+  don't pick one. A diagnostic upload that tops the public board becomes the final submission.
+- **Test-side unsupervised use is allowed:** TF-IDF/IDF, token frequencies, blocking indexes on the test
+  files, and **self-training / pseudo-labelling on test** (asked with France in mind), plus synthetic pairs
+  from the provided records.
+- **8B + MIT/Apache-2.0 applies to each model separately:** embedder, reranker, matcher, and any
+  preprocessing or augmentation model (its licence is checked too). Classic models you train (LightGBM,
+  LR) are fine. A local vLLM/Ollama server is fine if it makes no third-party calls.
+- **External data:** no packages that bundle geo/postal/business data. That rules out libpostal,
+  geocoders, postal-code or gazetteer data, "large static country/state/city tables", **cleanco** (it
+  bundles a legal-term DB) and **AWS Entity Resolution**. Allowed: small hand-written dictionaries
+  (legal suffixes, street types), **a hand-written list of state names and abbreviations ("City-level or
+  postal tables are not")**, and pure-algorithm libraries (RapidFuzz, jellyfish, sklearn, LightGBM,
+  fastText, wordfreq). Allowed text tools: anyascii, uroman, indic-transliteration, ftfy, unicodedata2,
+  textdistance, your own transliteration code, and IndicXlit within the model limits. No online translation.
+- **Content-identical S2/S3 duplicates: list every one of their IDs**, not only the top one.
+- **candidate_pairs.tsv** = the final candidate set fed to the matcher. In a cascade that is the input to
+  the first scoring model, and a pruned later stage is fine. It goes in the final zip only; the leaderboard
+  takes `matching_results.tsv` alone. Smaller sets per S1 rank higher "beyond the public/private
+  leaderboard". No formula was given.
+- **Private split** = the same test files, so the same 3 countries. Public and private both contain France.
+- **Zip layout:** `requirements.txt` + `README.md` go in `code/business_entity_resolution/` next to `src/`.
+  The top level holds only `output/`, `code/` and the doc. No page limit on the doc.
+- Row order in the submission doesn't matter. You don't have to submit every day. AI coding assistants are
+  allowed. SageMaker isn't mandatory.
+
+Still unanswered: when the daily cap resets, whether weights go in the zip, the hardware used to
+reproduce runs, tie-breaks, and where and when the final zip is uploaded.
+
+**Portal behaviour other teams reported (not confirmed by organisers):**
+- The config shows `allowed_submission_per_round: 5`. Several teams that used 5 uploads on 25 Sep found the
+  button greyed out ("Limit to submit in this round has exceeded") on 26 Sep. A double click counts twice.
+- The code-zip slot disappears after the first upload, which may lock in the first zip.
+- "Failed" status with no reason, often on files of about 60–100 MB (a 24–26 MB file scored). On Windows
+  `.tsv` has an empty MIME type, so the presigned-URL call returns 400 and "Please Wait 0" hangs.
+- Scores teams reported on day 1: 0.953, and 0.869 at rank 346.
+- `<team_name>` in the zip name is **Yeti** (Unstop team name), so the file is `Yeti_submission.zip`.
 
 ## Links
 
@@ -194,3 +226,18 @@ Source 1 entity will be ranked higher in the final evaluation beyond the public/
 `candidate_pairs.tsv` and the code that produces it. By definition that file is the exact set the final model scores,
 so a learned pruning stage (meta-blocking) before the matcher legitimately shrinks it. Full text:
 `data/notes/unstop_play_page_v2.txt`.
+
+## Organiser rulings (received 26 Sep, relayed by the team)
+1. **Final entry = the upload with the best PUBLIC score**; the final rank is that upload's private score. The entry we
+   want counted must beat every earlier public score (0.981142 = D4 as of 26 Sep noon). Lower-scoring uploads cost nothing.
+2. **Unlabelled test data may be used**: IDF, blocking, and pseudo-labelling on test (asked for France specifically).
+3. Candidate-set size per S1 ranks teams on top of the LB (smaller is better; a pruned later stage counts; no formula).
+4. Content-identical S2/S3 duplicates: list every ID; the scorer credits each correct ID.
+5. 8B / MIT–Apache limits apply per model (bge-reranker-v2-m3 Apache-2.0 and e5-small MIT both pass).
+6. External data — allowed: hand-written state names/abbreviations, small legal-suffix and street-type dictionaries,
+   anyascii / indic-transliteration / uroman / own transliteration. **Banned:** city-level or postal tables, "large static
+   country/state/city tables", libpostal, cleanco, AWS Entity Resolution.
+   → Gray area in our code: `normalize.FR_REGIONS` (13 régions → ~96 départements, one level below state). Replace with a
+   mapping learned from the data (allowed by ruling 2).
+7. The private split uses the same test files: same three countries, France in both splits.
+8. Final zip: README.md + requirements.txt inside code/business_entity_resolution/; top level = output/, code/, the doc.

@@ -1,0 +1,5 @@
+# the eval job (solution_p22ev.py) on the PyTorch CPU DLC: the laptop .venv's versions of what ev.py touches
+lightgbm==4.7.0
+pyarrow==25.0.1
+pandas==3.0.6
+scikit-learn==1.9.1

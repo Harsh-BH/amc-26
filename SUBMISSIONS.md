@@ -26,7 +26,25 @@ overstated precision (0.994 vs 0.912 for the rules).
 
 | 7 | **staged, validator PASS — upload first on 26 Sep** | `output/sub7/matching_results.tsv` + `output/sub7/code.zip` | **0.98881 full-corpus** (+0.0003 vs #6 on the same pipeline; report half +0.00038) | #6c + P11's 2-epoch e5-small CE (w [0.617, 0.666, 0.261], India/US t 0.71); pruner 4.83 cands/S1; France t 0.95 (unchanged vs #6c). 12,791 S1 differ from #6c (India 0.91%, US 0.81%, France 0). Expected LB ≈ 0.98120 |
 | 7s | staged, validator PASS — upload after #7 | `output/sub7s/matching_results.tsv` + `output/sub7s/code.zip` | — (France-only LB test) | #7 with P15's France sibling rule: France pairs with hx − h1 ∈ {3,4,5,7,9,11,13,21} dropped (4,367 matches, 4,160 France S1 changed). India/US identical to #7. ≥ +0.0002 vs #7 ⇒ keep rule (then try France t 0.88 + rule); ≤ −0.0002 ⇒ drop |
+| 8a | **staged, validator PASS** | `output/sub8a/…` | **0.98948 full-corpus** (India/US; +0.00059 ± 0.00007 vs #7's CE) | P13's bge-reranker-v2-m3 CE (2 epochs, AWS) for India/US, w [0.590, 0.632, 0.297], t 0.71; France = #6c/#7's France at t 0.95 (unchanged). Pruner 4.83 cands/S1. 15,009 S1 differ from #7 (India/US only). Expected LB ≈ #7 + 0.0005 |
+| 8b | **staged, validator PASS** | `output/sub8b/…` | 0.98948 (India/US) | #8a + bge CE for **France** with P13's label-free out-of-domain weights [0.925, 0.260, 0.052]; France t **0.98** = the threshold whose France profile matches D4 (2.99 matches/S1, 6.8% empty; P6's rule would say 0.74, but the LB showed that rule is too loose). 39,393 S1 differ from #7. LOCO proxies for this France recipe: +0.0028 / +0.0015 |
+| 8p | staged, validator PASS (P17's dry run) | `output/sub8p/…` | **+0.00067 ± 0.00007 over #7** (report half) | #7 (e5 CE) + P17's house-number/support stacker for India/US (US +0.00107, India +0.00008); France = #7's. 19,715 S1 differ from #7. Alternative to #8a (similar gain, different source); the combination bge + stack (#8c) is being fit |
+| 8c | **staged, validator PASS — best holdout** | `output/sub8c/…` | **#8a + 0.00033 ± 0.00005** (India+US report half; US +0.00055) ⇒ ≈ #7 + 0.0009 | #8a (bge CE) + P17's house-number/support stacker on **US only** (on the bge base India loses −0.00013, so India stays #8a). France = #8a's (0.95). 11,230 US S1 differ from #8a |
+| 9a | staged, validator PASS | `output/sub9a/…` | India/US = #8c | #8c + **P14 France IDF fix** (France's own S2/S3 text in the IDF at its 14.4% test share; proxy: fixes 96% of a −1.23 pt loss), France t 0.975 (= D4's empty rate). 45,396 France S1 differ from #8c. Uses unlabelled test text (same category as chain counts / P6's rule; open question 4) |
+| 9b | staged, validator PASS | `output/sub9b/…` | India/US = #8c | #8c + **bge CE for France** (label-free weights), t 0.98 (= D4's empty rate). 24,384 France S1 differ from #8c |
+| 9s | staged, validator PASS | `output/sub9s/…` | India/US = #8c | #8c + **France house-number sibling rule** (P15), t 0.95. 4,160 France S1 differ from #8c (same test as #7s, on the better base) |
+| 9d | staged, validator PASS | `output/sub9d/…` | India/US = #8c | #8c + **train-only IDF fallback** for France (158 French domain words at US street-type IDF), t 0.98. Use only if test statistics are ruled out |
+| 9as | staged, validator PASS | `output/sub9as/…` | India/US = #8c | #8c + France IDF fix + sibling rule (152,374 France pairs zeroed), t 0.975. Differs from #9a on 858 France S1 (the high threshold already removes most siblings). Candidate for the 5th slot if both #9a and #9s beat #8c |
+| 9ab | **uploaded 26 Sep 14:31 — LB 0.984072 (BEST, +0.0029 vs D4)** | `output/sub9ab/…` | India/US = #8c | #8c + France **IDF fix + bge CE** (P13 out-of-domain weights on P14's IDF candidates), France t 0.985 (= D4's empty rate). AWS scoring $0.13 |
+| 9ab_t990 | staged, validator PASS | `output/sub9ab_t990/…` | = #9ab | #9ab with France t **0.99** (stricter: 2.93 matches/S1, 7.1% empty vs 3.02 / 6.7% at 0.985) |
+| 9ab_t975 | staged, validator PASS | `output/sub9ab_t975/…` | = #9ab | #9ab with France t **0.975** (looser: 3.09 / 6.4%) |
 
-**Upload next (26 Sep, 5 slots):** #7 first; then France variants from P13 (bge second opinion) / P14 (France fixes) as they land.
+**Upload next (26 Sep, 5 slots) — every France test sits on the same India/US base (#8c), so each LB delta vs #8c is that France change alone:**
+1) **#8c** — the base (best India/US: bge CE + US stack; France = #6c's). Expected ≈ 0.9819.
+2) **#9a** — France IDF fix (biggest expected France gain).
+3) **#9b** — bge second opinion for France.
+4) **#9s** — France sibling rule.
+5) the **combination** of whatever won in 2–4 (master builds it after the scores), or keep as spare.
+#7, #7s, #8a, #8b, #8p are superseded (same tests on a weaker base).
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.
