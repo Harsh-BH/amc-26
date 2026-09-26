@@ -1,0 +1,4 @@
+train (30% of non-holdout India S1): 826,403 true pairs, Indic 0.180; states 22; P(max script | state) median 0.998
+state -> top script share (10 largest states): {'kl': ('Mlym', np.float64(1.0)), 'hr': ('Deva', np.float64(1.0)), 'gj': ('Gujr', np.float64(1.0)), 'wb': ('Beng', np.float64(1.0)), 'tn': ('Taml', np.float64(1.0)), 'ka': ('Knda', np.float64(1.0)), 'ap': ('Telu', np.float64(1.0)), 'up': ('Deva', np.float64(1.0)), 'dl': ('Deva', np.float64(1.0)), 'mh': ('Deva', np.float64(1.0))}
+mutual information script;state = 1.520 nats (script entropy 1.522)
+ambiguous India SX with an Indic name (owner in set): 128; twins' states differ enough for a unique best: 67; best-state twin is the owner 0.672 ± 0.057 (uniform 0.203)
