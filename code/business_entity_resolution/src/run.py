@@ -549,7 +549,7 @@ def france31() -> dict:
         k = (q1.astype(np.int64) << 32) | qx.astype(np.int64)
         rk = pd.concat([seed_keys(WORK / VETO[1], id1, idx), pd.read_parquet(cache)]).drop_duplicates("k")
         veto = (VETO[0], pd.Series(rk.r.to_numpy(np.float32), index=rk.k.to_numpy()).reindex(k).to_numpy(np.float32))
-    learn = pd.read_parquet(B.P3 / "cands_test_France.parquet", columns=["s1", "sx"])
+    learn = pd.read_parquet(B.P3 / "cands_test_France.parquet", columns=["s1", "sx"])   # main P3 list, as P31
     p = FR.post(q1, qx, id1, idx, p, pm, t, v, learn, veto)
     del learn
     hn = lambda side: S.hn_of("test", side, "France", id1 if side == "s1" else idx, q1 if side == "s1" else qx,

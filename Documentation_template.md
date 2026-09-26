@@ -27,12 +27,18 @@ The pipeline has six stages. Every model in it runs locally, is MIT or Apache-2.
 6. **US house-number stacker, then the decision.** A residual LightGBM for the US knows the data generator's
    "sibling" house-number offsets. Then each Source 2/3 record goes to its single best Source 1, kept if p ≥ t.
 
-**France** is 15% of the test set and has no labels. It uses the same matcher on candidates re-blocked with an IDF that
-includes France's own text, then the bge cross-encoder with label-free (out-of-domain) blend weights. Its threshold
-was validated with diagnostic leaderboard uploads.
+**France** is 15% of the test set and has no labels, so every France step is label-free:
+- its candidates are re-blocked with an IDF that includes France's own text;
+- its records are rebuilt: `(520) RUE X` house numbers and the generator's French name fillers (`& Fils`, `& Cie`);
+- a house-number-aware matcher (`c_hn`, the same LightGBM recipe + 5 house-number features) scores them;
+- the bge cross-encoder blends in with out-of-domain weights;
+- three address rules run at the threshold: a unique-key tier, a same-address rule and a per-S1 cap.
+
+France's threshold was validated with diagnostic leaderboard uploads.
 
 - **Holdout F0.5: 0.98990** (report half 0.98956), against 0.7708 for an exact-key rule baseline.
-- **Best public leaderboard so far: 0.984072** (#9ab: France IDF fix + bge for France, t 0.985).
+- **Best public leaderboard so far: 0.9856** (#31, the final France chain, t 0.9868; France ≈ 0.962). Before it:
+  0.984072 (#9ab: France IDF fix + bge for France, t 0.985).
 - The whole gap between holdout and leaderboard is France: the leaderboard implies India + US ≈ 0.989 and France ≈ 0.93.
 
 ## 2. Methodology
@@ -124,7 +130,12 @@ shared ledger; nothing was merged without its number.
   22,446 test Source 1 have no candidate, and all of them are among the empty answers.
   - In #9ab France's candidates come from its IDF-fixed blocking: 1,305,341 pairs, 5.03 per Source 1. The total is
     8,343,618 (4.82 / S1).
-- **Optional smaller set** (`output/sub9ab_small`: 7,527,148 pairs, **4.34 per Source 1**; France 3.97 / India 4.75 /
+  - In #31 France's candidates are the rebuild's kept pairs: 1,332,223, 5.13 per Source 1. The total is 8,370,500
+    (4.83 / S1).
+- **Optional smaller set, #31** (`output/sub31_small`: 7,658,125 pairs, **4.42 per Source 1**; France 4.48 / India 4.75 /
+  US 4.00; matching identical to `sub31`). Only the sibling-decoy stage below, on all three countries (France drops
+  170,057 decoys, 5.13 → 4.48).
+- **Optional smaller set, #9ab** (`output/sub9ab_small`: 7,527,148 pairs, **4.34 per Source 1**; France 3.97 / India 4.75 /
   US 4.00). Two cascade stages:
   - **Sibling-decoy stage before the final decision.** A pair at a generator sibling offset
     (hn_x − hn_1 ∈ {3, 4, 5, 7, 9, 11, 13, 21}) survives only if it is its Source 2/3 record's best pair above t.
@@ -260,8 +271,27 @@ shared ledger; nothing was merged without its number.
 | `sub9d` | train-only IDF fallback: 158 French domain words at US street-type IDF | 0.98 | ~40% of the label-free profile shift of `sub9a` | spare (only if test statistics are ruled out) |
 | **`sub9ab`** | **IDF fix + bge.** `sub9a`'s candidates, then `sub9b`'s blend (P19). 63,393 of the 378,445 band pairs were new and were scored on AWS ($0.13) | 0.985 | the two France changes combined; t at D4's empty-S1 rate | **0.984072 (best)** |
 
-**Best France option so far: `sub9ab`** (the default recipe). `--t-country France=0.975` / `0.99` give its t
-variants.
+`sub9ab` was the best France option until #31 (section 4.7), which starts from its candidates.
+
+### 4.7 France's final chain (#31, recipe `sub31`, `france.py`)
+Every step is label-free and changes France only. India / US stay #8c byte for byte.
+
+| step | what | effect on France test |
+|---|---|---|
+| rebuild (P29) | house numbers re-parsed where an address segment opens with `(n)` (`(520) RUE X`) | 23,250 S2/S3 gain or change their house number |
+| R1 (P20) | the generator's French name fillers `fils, cie, associes, freres, frs` leave the name core. Label-free evidence: an SX core that adds one keeps the S1's house number 81–88% of the time, and takes a sibling offset only 2–5% | #9ab's X rescored: record-derived features, rule pairs and the rule-only extra pairs recomputed |
+| c_hn (P26) | m2_big's recipe + 5 house-number features over each S1's full candidate list: class (equal / sibling offset / digit drop-add / small / far), signed delta, other SX sharing this SX's number, their best name cosine, other SX carrying the S1's number. Fitted on India / US folds 2–5 | LOCO +1.8–2.0 pt over m2_big; India / US holdout alone +0.0015 / +0.0032 (not used there: +0.00009 after the CE) |
+| bge blend | #9ab's out-of-domain w on the 0.02 < p < 0.98 band; 1,974 new band pairs scored on AWS ($0.11) | 1,332,223 kept pairs, 5.13 per S1 |
+| key tier (P29) | the SX's argmax pair with equal R1 core, house number and city, the core unique among France S1, p ≥ 0.5 → p := 1 | +6,088 accepted pairs |
+| bxneg (P28) | equal house number, name equal or one word inserted / dropped (not a sibling word: a word whose pairs take a generator offset ≥ 50% of the time on the blocked list), a shared place and the same street, the SX's argmax or matched nowhere → p := max(p, 0.99) | +9,647 accepted pairs |
+| cap (P29) | an SX that would give an S1 more than 5 S2 / 6 S3 matches (the train maximum) loses every pair | −21 pairs |
+| threshold | t 0.9868: #9ab's empty-S1 rate (6.71%) on the blended file, before the rules | final: 6.46% empty, 3.117 matches per S1 |
+
+- Against #9ab, 42,468 France S1 change (+36,547 / −10,860 pairs). The added pairs are 89% house-number-equal; the
+  dropped ones are 7.6% sibling offsets, against 0.15% of the added.
+- Spares on the same chain: `sub31 --t-country France=0.9818` (6.31% empty) and `sub31_veto` (P30: a pair the matcher
+  is sure of, p ≥ 0.98, loses it when bge scores it below 0.1, unless a rule raised it; LOCO +0.0283 / +0.0056;
+  −6,142 accepted pairs).
 
 ## 5. Results & Error Analysis
 
@@ -271,7 +301,7 @@ variants.
   - The holdout's competing (non-holdout) band pairs keep the e5 blend, since bge scores were computed only for the
     holdout's own band.
   - Two independent audits (at #3) found no label leakage. The threshold-tuning optimism is at most 0.00003.
-  - **Public leaderboard: best 0.984072 (#9ab, 26 Sep). The final submission's score is TBD.**
+  - **Public leaderboard: best 0.9856 (#31, 26 Sep). The final submission's score is TBD.**
 
 ### 5.1 Ablation — every step on the same full-corpus holdout
 
@@ -310,7 +340,8 @@ The public leaderboard is a subset of test (all three countries).
 | #9a — 26 Sep | #8c + France IDF fix, t 0.975 | TBD | Δ vs #8c = the IDF fix alone |
 | #9b — 26 Sep | #8c + bge France, t 0.98 | TBD | Δ vs #8c = bge on France alone |
 | #9s — 26 Sep | #8c + France sibling rule, t 0.95 | TBD | Δ vs #8c = the rule alone |
-| #9ab — 26 Sep 14:31 | #8c + France IDF fix + bge France, t 0.985 | **0.984072** | best: +0.0029 vs D4 |
+| #9ab — 26 Sep 14:31 | #8c + France IDF fix + bge France, t 0.985 | 0.984072 | +0.0029 vs D4 |
+| #31 — 26 Sep | #8c + France chain (section 4.7): rebuild + c_hn + bge + tier / bxneg / cap, t 0.9868 | **0.9856** | best: +0.0015 vs #9ab, France ≈ 0.962 |
 | final — 26/27 Sep | #8c + the winning France option(s) | TBD | — |
 
 Every France test sits on the same India/US files, so each leaderboard delta measures one France change.
@@ -381,8 +412,9 @@ Every France test sits on the same India/US files, so each leaderboard delta mea
 
 - **Entry point:** `python src/run.py --split test --stage model --out output/` writes both TSVs, asserts the format
   rules and runs the official validator.
-  - The default recipe is `sub9ab`. `--recipe sub8c|sub9a|sub9b|sub9s|sub9d` gives the France options, and
-    `--recipe sub7|sub6|sub5|sub4` gives earlier submissions.
+  - The default recipe is `sub31` (#31). `--recipe sub31_veto|sub31_small` gives its spares,
+    `--recipe sub9ab|sub8c|sub9a|sub9b|sub9s|sub9d` the earlier France options, and `--recipe sub7|sub6|sub5|sub4`
+    earlier submissions.
   - Each recipe reproduces its staged files byte for byte.
   - Options:
     - `--t-country France=<t>`;
@@ -402,13 +434,15 @@ Every France test sits on the same India/US files, so each leaderboard delta mea
   - `train_matcher.py` + `model.py`: m2_big.
   - `rerank.py`: e5 / bge cross-encoder scoring and the blend.
   - `stack.py`: the US house-number stacker and France's sibling rule.
+  - `france.py`: #31's France chain (rebuild, R1 rescore, c_hn's house-number features, tier / bxneg / veto / cap).
   - `submit_probs.py`: scored pairs → TSVs.
   - `metric.py`: macro F0.5.
 - **Guards:** `test_pipeline.py` (end to end, including an injected unseen country), `test_rules*.py`, and each module's
   self-check. `package.py` builds this zip.
 - **Artefacts.**
   - Rebuilt from the training data when absent: the transliteration table, place frequencies, vectorisers, pruner,
-    m2_big, the e5 CE and the US stacker.
+    m2_big, the e5 CE, the US stacker and c_hn (`train_matcher.py --hn`; the shipped c_hn was trained on AWS in
+    float32 because it needs ~20 GB RAM, so a local retrain is equivalent but not the same file).
   - The bge CE checkpoint (`ce_bge_pool.pt`, 624 MB) was fine-tuned on SageMaker and is loaded, not retrained, by
     `run.py`. With cached cross-encoder scores the default run takes ~4 min plus the validator.
   - Downloaded once: the MIT / Apache-2.0 base weights of e5-small and bge-reranker-v2-m3.
@@ -422,6 +456,7 @@ Every France test sits on the same India/US files, so each leaderboard delta mea
 | matcher (m2_big) | LightGBM 4.7 | MIT | 4,930 trees × 127 leaves |
 | pruner | LightGBM | MIT | 300 trees × 31 leaves |
 | US stacker | LightGBM | MIT | 200 trees × 31 leaves |
+| France matcher (c_hn, #31) | LightGBM | MIT | 3,579 trees × 127 leaves, 70 features |
 | cross-encoder (final, #8a+) | BAAI/bge-reranker-v2-m3, fine-tuned | Apache-2.0 | 568M params |
 | cross-encoder (history, #4–#7) | intfloat/multilingual-e5-small, fine-tuned | MIT | 118M params |
 | transliteration | learned token table (no model) | — | 1,518-word vocabulary |

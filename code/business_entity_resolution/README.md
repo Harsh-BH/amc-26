@@ -7,9 +7,10 @@ Face:
   (`probes/P13-aws-rerank`), and `run.py` loads its checkpoint rather than retraining it.
 - `intfloat/multilingual-e5-small` (MIT, 118M parameters) is #4–#7's cross-encoder and is fine-tuned by `rerank.py train`.
 
-Every other artefact is fitted on the train data and rebuilt when absent. The one exception is France's
-département → région map: it is learned from confident pairs among the unlabelled test France rows, which the
-organisers allow. There is no geo table.
+Every other artefact is fitted on the train data and rebuilt when absent. The exceptions use unlabelled test rows
+only, which the organisers allow: France's département → région map (learned from confident pairs among test France),
+#9ab / #31's France IDF (its own S2/S3 text at its 14.4% share) and #31's sibling-word table for bxneg (learned from
+test France's blocked candidate list). There is no geo table.
 
 ## 1. Setup
 
@@ -43,22 +44,42 @@ order (training included), except the bge cross-encoder: its checkpoint `data/wo
 downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when it is missing. With the caches present
 it only scores, decides and writes.
 
-**The default recipe is `sub9ab`** (public LB **0.984072**, our best):
-- the pruner, then m2_big on the kept pairs;
-- **P13's bge-reranker-v2-m3 cross-encoder** on India / US (w fit on holdout half 0), then **P17's house-number
-  stacker on US only** (India / US = #8c);
-- t 0.71 for India / US;
-- **France:** P14's IDF-fixed candidates (`idf144`), then the bge CE on France's band with P13's out-of-domain w
-  [0.9245, 0.2595, 0.0515], t 0.985 (P19).
+**The default recipe is `sub31`** (public LB **0.9856**, our best; France ≈ 0.962):
+- **India / US = #8c:** the pruner, then m2_big on the kept pairs, **P13's bge-reranker-v2-m3 cross-encoder** on the
+  band (w fit on holdout half 0), then **P17's house-number stacker on US only**; t 0.71.
+- **France = `france.py`'s chain** (`--france fr31`, t 0.9868), every step label-free:
+  1. **rebuild** (P29): #9ab's IDF-fixed France world (`idf144`), with house numbers re-parsed where an address
+     segment opens with `(n)` (`(520) RUE X`: 23,272 S2/S3), and **R1** (P20): the generator's French name fillers
+     `fils, cie, associes, freres, frs` leave the name core. #9ab's X is rescored with them (P20's rescore: blocking
+     and context columns stay; `features.strings`, `rule_acc` and the rule-only extra pairs are recomputed).
+  2. **c_hn** (P26): m2_big's recipe + 5 house-number features over each S1's full candidate list (hn class / signed
+     delta / other SX sharing its hn / their best name_cos / other SX carrying the S1's hn), on the pruner's kept pairs
+     (1,332,223, 5.13 per France S1).
+  3. **bge blend** on the band with P13's out-of-domain w [0.9245, 0.2595, 0.0515] (#9ab's).
+  4. **post-rules at t** (P31's order): **key tier** (P29: the SX's argmax pair with equal R1 core, hn and city, the
+     core unique among France S1, p ≥ 0.5 → p := 1; +6,088 pairs) → **bxneg** (P28: equal hn, name equal or one word
+     inserted / dropped that is not a learned sibling word, a shared place and the same street, the SX's argmax or
+     matched nowhere → p := max(p, 0.99); +9,647) → **cap** (P29: an SX that would give an S1 more than 5 S2 / 6 S3
+     matches loses every pair; 21 pairs).
 
-With the cached bge scores it needs no GPU and reproduces `output/sub9ab` byte for byte, in 4 min plus the validator.
-The scores are seeded into `p9/r_*` on first use:
-- `data/work/p13/r/`: P13;
-- `data/work/p19/r/`: the 63,393 France band pairs that are new on the idf144 candidates.
+With the caches it needs no GPU and reproduces `output/sub31` byte for byte (both files). The bge scores are seeded
+into `p9/r_*` on first use, first file wins: `data/work/p13/r/` (P13), then the France top-ups of `p19/r/` (idf144's
+new band pairs), `p26/bge/r/`, `p29/r/` and `p31/r/` (c_hn's and the rebuild's). `p9/r_*.seeds` lists what a cache took.
 
-The t variants:
-- `--t-country France=0.975` reproduces `output/sub9ab_t975`;
-- `--t-country France=0.99` reproduces `output/sub9ab_t990`.
+| recipe / flag | France | staged | LB |
+|---|---|---|---|
+| **`sub31`** (default) | the chain above, t 0.9868 | `output/sub31` | **0.9856** |
+| `sub31 --t-country France=0.9818` | the same at t 0.9818 (the rules act at that t: 6.31% empty, 3.161 per S1) | `output/sub31_t9818` | — |
+| `sub31_veto` | + **P30's bge veto** after bxneg: a pair with c_hn p ≥ 0.98 and bge r < 0.1 gets p := 0 unless tier / bxneg raised it (r: P30's `p30/r/r_pool_France.parquet` first, then the band caches); −6,142 accepted pairs | `output/sub31_veto` | — |
+| `sub31_small` | `sub31`'s matching; the sibling-decoy candidate stage (`--drop-sibling-cands`, below) on all three countries: 8.37M → 7.66M candidate pairs, **4.42 per S1** (France 5.13 → 4.48) | `output/sub31_small` | = `sub31` |
+| `sub9ab` | #9ab: `idf144`'s m2_big p + the bge blend, t 0.985 (`--t-country France=0.975 / 0.99`: `sub9ab_t975 / t990`) | `output/sub9ab` | 0.984072 |
+
+- Cold, the chain builds `data/work/p9/fr31/` (links to `fr_idf144/` + the fixed `rf_test_sx_France.parquet`, 36 MB),
+  then rescores in its own process (`france.py chn`, ~4 min, 2.7 GB) into
+  `p9/fr31/p9/chn_test_France_<c_hn hash>_<pruner hash>_0.03.parquet`. The post-rules take ~1 min (2.7 GB).
+- c_hn is `data/work/p31/c_hn.txt` (50 MB), trained by P26's AWS job (float32, 20 GB RAM). When it is absent,
+  `train_matcher.py --hn` trains the same recipe from the train data (float16, like m2_big): an equivalent model, not
+  the file, so the France lines would move.
 - Scoring the bge band fresh needs the HF base weights (`BAAI/bge-reranker-v2-m3`, 2.3 GB, downloaded once), the
   fine-tuned checkpoint `p13/ckpt/ce_bge_pool.pt` (624 MB) and a GPU.
 - ~1.24M kept band pairs take ~20 min on an A10G and ~2 h on the laptop's RTX 3050.
@@ -72,7 +93,8 @@ The t variants:
 | `sub9a` | `idf144` | P14: France reblocked and refeaturised with its own S2/S3 text in the IDF at its 14.4% share (`block.idf_country`) | 0.975 | `output/sub9a` |
 | `sub9b` | `bge` | the bge CE on France's band, P13's label-free out-of-domain w [0.9245, 0.2595, 0.0515] | 0.98 | `output/sub9b` |
 | `sub9s` | `sib` | P15's sibling rule: p := 0 when hn_x − hn_1 ∈ {3,4,5,7,9,11,13,21} (`stack.sib_mask`) | 0.95 | `output/sub9s` |
-| **`sub9ab`** (default) | `idf144_bge` | `idf144`'s candidates + `bge`'s blend (P19); LB 0.984072 | 0.985 | `output/sub9ab` |
+| `sub9ab` | `idf144_bge` | `idf144`'s candidates + `bge`'s blend (P19); LB 0.984072 | 0.985 | `output/sub9ab` |
+| **`sub31`** (default) | `fr31` | `france.py`: the rebuild + c_hn + the bge blend + tier / bxneg / cap (above); LB 0.9856 | 0.9868 | `output/sub31` |
 | `sub9d` | `idfdom` | P14's train-only fallback: 158 French domain words at US street-type IDF (`block.idf_domain`) | 0.98 | `output/sub9d` |
 
 - `idf144` / `idfdom` build a France-only world, `data/work/p9/fr_<name>/`: links to this one plus the variant
@@ -93,7 +115,7 @@ an earlier submission. Each recipe reproduces its staged files byte for byte, an
 
 | recipe | M2 booster (train folds) | CE | blend w (India / US) | stacker | t (India / US) | France | pruner τ → cands / S1 |
 |---|---|---|---|---|---|---|---|
-| `sub9ab` (default), `sub8c`, `sub9*` | `p4/m2_big.txt` (2–5) | `p13/ckpt/ce_bge_pool.pt` (bge) | [0.59015, 0.63194, 0.29732] | US: `p17/stack_sup-bge-l21.0_US.txt` | 0.71 | see above | 0.03 → 4.83 |
+| `sub31` (default), `sub31_*`, `sub9ab`, `sub8c`, `sub9*` | `p4/m2_big.txt` (2–5; France `fr31`: `p31/c_hn.txt`) | `p13/ckpt/ce_bge_pool.pt` (bge) | [0.59015, 0.63194, 0.29732] | US: `p17/stack_sup-bge-l21.0_US.txt` | 0.71 | see above | 0.03 → 4.83 |
 | `sub7` | `p4/m2_big.txt` (2–5) | `p11/ce_s2P.pt` (e5, 2 epochs) | [0.617, 0.666, 0.261] | — | 0.71 | m2, 0.95 | 0.03 → 4.83 |
 | `sub6` | `p4/m2_big.txt` (2–5) | `p4b/ce.pt` (e5, 1 epoch) | [0.678, 0.715, 0.338] | — | 0.69 | m2, P6 rule: 0.78 | 0.03 → 4.83 |
 | `sub5` | `p4/m2_big.txt` (2–5) | `p4b/ce.pt` (e5, 1 epoch) | [0.678, 0.715, 0.338] | — | 0.69 | m2, P6 rule: 0.78 | none → 15.87 |
@@ -104,7 +126,8 @@ an earlier submission. Each recipe reproduces its staged files byte for byte, an
 - The #8c blend weights are P13's fit at full precision; the documented rounding [0.5901, 0.6319, 0.2973] moves 4 S1
   lines.
 
-**Options on any recipe** (built for #9ab: `output/sub9ab_cap`, `output/sub9ab_small`, both validator PASS):
+**Options on any recipe** (built for #9ab: `output/sub9ab_cap`, `output/sub9ab_small`, both validator PASS; `fr31` has
+its own cap inside the chain, and `sub31_small` = `sub31` + `--drop-sibling-cands`):
 
 | option | what | #9ab test | holdout |
 |---|---|---|---|
@@ -135,7 +158,10 @@ an earlier submission. Each recipe reproduces its staged files byte for byte, an
 | cross-encoder | #8c: bge-reranker-v2-m3 (Apache-2.0, 568M) fine-tuned 2 epochs on the same "name \| addr" pairs (M2-like uncertain bands of train folds 4–9, India, US), on AWS (P13). #7: e5-small, 2 epochs, locally | P13 `solution_p13.py` (bge); `rerank.py band`, `rerank.py train epochs=2` (e5) | `p13/ckpt/ce_bge_pool.pt`; `p11/ce_s2P.pt`, `p4b/ce.pt` |
 | rerank | India / US pairs with 0.02 < p < 0.98: p′ = σ(0.5901 logit p + 0.6319 logit r + 0.2973) (#8c) | `run.rerank` → `rerank.py score … bge` | `p9/r_<split>_<country>_<ce hash>.parquet` (#8c: seeded from `p13/r/`) |
 | stacker (#8c, US) | residual LightGBM (200 × 31) on logit p′ + house-number class / signed delta / equality + support among the S1's other candidates (P15 / P17); fit on the US holdout S1 of half 0 | `stack.X_of`, `stack.stacked`, `run.ensure_stack` | `p17/stack_sup-bge-l21.0_US.txt` |
-| decision | each S2/S3 to its argmax-p S1 among the kept pairs, kept if p ≥ t. India / US: t = 0.71 on p′. France: its scorer (above), t = 0.95 for #8c (fixed, leaderboard-validated). Any other label without training data: M2's p, t from P6's label-free rule (below) | `run.thresholds` | — |
+| France rebuild (#31) | #9ab's idf144 France world with the `(n)` house numbers re-parsed (P29 `paren_hn`) | `france.world` | `p9/fr31/` (links + `rf_test_sx_France.parquet`) |
+| France c_hn (#31) | #9ab's X rescored with R1's cores (P20), pruned, then c_hn = m2_big's recipe + `france.HN` (P26 `hn_feats`, over the full list) | `france.chn`; `train_matcher.py --hn` when `c_hn.txt` is absent | `p31/c_hn.txt`; `p9/fr31/p9/chn_test_France_<c_hn>_<pruner>_<τ>.parquet` |
+| France post-rules (#31) | after the bge blend, at France's t: key tier (P29) → bxneg (P28; sibling words learned on P3's blocked list) → [veto, P30] → cap (P29) | `france.post` | — |
+| decision | each S2/S3 to its argmax-p S1 among the kept pairs, kept if p ≥ t. India / US: t = 0.71 on p′. France: its scorer (above), t fixed per recipe (#31 0.9868, #9ab 0.985, #8c 0.95; leaderboard-validated). Any other label without training data: M2's p, t from P6's label-free rule (below) | `run.thresholds` | — |
 | output | one row per test S1 (all countries); candidates = the kept pairs (what M2 + CE scored) | `run.write_lists` | `output/*.tsv` |
 
 **Unseen-country threshold, label-free** (France until #6, any other unseen label now). France has no labels, and a
@@ -161,6 +187,7 @@ Runtimes and memory (measured, 3 GB cap):
 | pruner + M2 scores, test (the pruner reads all 27.5M pairs; m2_big scores the kept 8.37M) | 3 / 18 / 5 min (France / India / US; India under load) | 1.8 GB |
 | M2 scores without the pruner (`--recipe sub5`, all 27.5M pairs) | 5 / 18 / 43 min (loaded machine) | 2.0 GB |
 | CE rescoring, test (656k India + 583k US kept band pairs; 847k + 702k without the pruner; GPU) | e5 (#7): 5 + 5 min cold. bge (#8c): ~20 min on an A10G, ~2 h on the RTX 3050. 0 with the r cache | 2.1 GB (own process), 3.4 GB VRAM (e5) |
+| #31 France chain, cold (`france.py`: '(n)' fix 20 s; R1 rescore + c_hn in its own process; post-rules) | 7 min (432 s) + 40 s, on top of the `idf144` world | 2.6 GB |
 | decision + writing + validator | 2.5 min | 2.3 GB |
 
 ## 3. Validate on the training data
@@ -191,6 +218,7 @@ scores them instead, ~1 h on an A10G. The US stacker is refit the same way when 
 | `--split holdout --stage model --recipe sub5` | 0.9888 (India 0.9899, US 0.9880; half 0 0.9890, half 1 0.9885; P 0.9977, R 0.9705) | 38 min (loaded machine) / 1 min | 2.1 GB |
 | `--split holdout --stage model --recipe sub4` | 0.9884 (India 0.9894, US 0.9876; half 0 0.9885, half 1 0.9882; P 0.9975, R 0.9697) | 22 min / 1 min | 2.2 GB |
 | `--split dev --stage model` | 0.9949 (plain world) | 1.7 min | 0.8 GB |
+| France (#31) | no labels: c_hn's own holdout (P26, matcher only, half 1) India +0.0015 / US +0.0032 over m2_big; LOCO +1.8–2.0 pt; the rules' LOCO / proxies in P28 / P29 / P30 | — | — |
 | `train_matcher.py eval` M2 alone, fold argmax | 0.9813 (`m2_ladder.txt`) = 0.9813 (retrained, #4 recipe); m2_big 0.9834 (P4, argmax over all S1, no CE) | 7.5 min for two | 2.5 GB |
 | `--split holdout --stage rules` | 0.7708 | 21 min cold | 2.1 GB |
 
@@ -204,7 +232,10 @@ The blend refit on holdout half 0 returns [0.678, 0.715, 0.337] for m2_big (CFG 
 ```bash
 .venv/bin/python code/business_entity_resolution/src/test_pipeline.py      # end to end: every label incl. an unseen one
 .venv/bin/python code/business_entity_resolution/src/test_pipeline.py --ce data/work/p11/ce_s2P.pt --ce-base e5 \
-    [--unseen France --france sib|bge]     # #8c's stages with the local e5 CE (the bge CE needs its HF weights + a GPU)
+    [--recipe sub31_small --unseen France]  # #31's stages with the local e5 CE (the bge CE needs its HF weights + a GPU)
+.venv/bin/python code/business_entity_resolution/src/france.py             # #31 France chain self-check (R1, paren_hn,
+                                                                           # street key, name_rel, hn_feats, cap)
+.venv/bin/python code/business_entity_resolution/src/train_matcher.py --hn --frac 0.02 --rounds 50 --out /tmp/x.txt  # c_hn smoke
 .venv/bin/python code/business_entity_resolution/src/stack.py              # stacker / sibling-rule self-check
 .venv/bin/python code/business_entity_resolution/src/features.py           # feature self-check
 .venv/bin/python code/business_entity_resolution/src/prune.py              # pruner self-check
@@ -229,4 +260,8 @@ The model files are artefacts, not source, so they are not in the zip:
   `data/work/p17/stack_sup-bge-l21.0_US.txt` (0.7 MB) and the e5 CEs (`p11/ce_s2P.pt`, `p4b/ce.pt`, 43 MB each).
   They are rebuilt from the train data by the commands above; the pipeline trains any that is missing.
 - the bge CE `data/work/p13/ckpt/ce_bge_pool.pt` (624 MB). It is fine-tuned on AWS by P13's SageMaker job
-  (`probes/P13-aws-rerank/solution_p13.py`, 76 min on an A10G) and loaded, not retrained, by `run.py`.
+  (`probes/P13-aws-rerank/solution_p13.py`, 76 min on an A10G) and loaded, not retrained, by `run.py`. Its sha1 also
+  names the r caches (`p9/r_*_3bd0b930`), so the file must be present even when every score is cached.
+- #31's France matcher `data/work/p31/c_hn.txt` (50 MB): P26's SageMaker job (`probes/P26-france-da`, float32,
+  ~20 GB RAM, 15 min). `train_matcher.py --hn` retrains the recipe locally when it is absent (equivalent, not the
+  file).
