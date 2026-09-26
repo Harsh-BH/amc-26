@@ -7,6 +7,8 @@ built with LightGBM's default params and constructed before training, as big.py 
     python code/business_entity_resolution/src/train_matcher.py --out data/work/p4/m2_big.txt   # folds 2-5, ~45 min
     python code/business_entity_resolution/src/train_matcher.py --folds 2 --out ...   # #4's fold-2 M2 (m2_ladder was
                                         # float32 + Dataset params: an equivalent model, 0.9813 = 0.9813, not the file)
+    python code/business_entity_resolution/src/train_matcher.py --hn --out data/work/p31/c_hn.txt   # #31's France c_hn
+                                        # (P26 trained it on AWS in float32: an equivalent model, not the file)
     python code/business_entity_resolution/src/train_matcher.py --frac 0.02 --rounds 50 --out /tmp/x.txt   # smoke
     python code/business_entity_resolution/src/train_matcher.py eval a.txt [b.txt ...]   # holdout F0.5, ~4 min each
 
@@ -48,29 +50,41 @@ def prepare():
         F.build("train", c)
 
 
-def load(folds, frac: float = 1.0, seed: int = 0, dtype=np.float32):
+def load(folds, frac: float = 1.0, seed: int = 0, dtype=np.float32, hn: bool = False):
     """(X [n, 65], y, feature names) of the pairs of S1 in `folds`, countries and files in P4's order;
-    frac < 1 keeps an S1-hash sample. Preallocated, so RAM is one copy of X plus one file."""
+    frac < 1 keeps an S1-hash sample. Preallocated, so RAM is one copy of X plus one file. hn: + france.HN, P26's
+    5 house-number features (c_hn); they are per-S1 aggregates and every loaded S1 comes with its whole list."""
+    import france as FR
     files = [p for c in countries() for p in F.xfiles("train", c)]
     cols = M.feats(pd.DataFrame(columns=pq.read_schema(files[0]).names))
+    names = cols + (FR.HN if hn else [])
     def keep(t):
         q1, f = t.column("q1").to_numpy().astype(np.uint64), t.column("fold").to_numpy()
         return np.isin(f, folds) & ((q1 * np.uint64(2654435761) + np.uint64(seed)) % np.uint64(1000) < frac * 1000)
 
     n = sum(int(keep(pq.read_table(p, columns=["q1", "fold"])).sum()) for p in files)
-    X, y, a = np.empty((n, len(cols)), dtype), np.empty(n, bool), 0
-    for p in files:
-        t = pq.read_table(p, columns=ID + cols)
-        d = t.filter(keep(t)).to_pandas()
-        X[a:a + len(d)], y[a:a + len(d)] = d[cols].to_numpy(np.float32).astype(dtype), d.is_true.to_numpy()
-        a += len(d)
-        del t, d
-        F.trim()
+    X, y, a = np.empty((n, len(names)), dtype), np.empty(n, bool), 0
+    for c in countries():
+        a0, q = a, []
+        for p in F.xfiles("train", c):
+            t = pq.read_table(p, columns=ID + cols)
+            d = t.filter(keep(t)).to_pandas()
+            X[a:a + len(d), :len(cols)], y[a:a + len(d)] = d[cols].to_numpy(np.float32).astype(dtype), d.is_true.to_numpy()
+            if hn:
+                q.append((d.q1.to_numpy(np.int32), d.qx.to_numpy(np.int32), d.name_cos.to_numpy(np.float32)))
+            a += len(d)
+            del t, d
+            F.trim()
+        if hn and a > a0:
+            q1, qx, nc = (np.concatenate(z) for z in zip(*q))
+            X[a0:a, len(cols):] = FR.hn_feats(q1, qx, nc, FR.meta("train", c, *F.ids("train", c))).astype(dtype)
+            del q, q1, qx, nc
     assert a == n
-    return X, y, cols
+    return X, y, names
 
 
-def main(out: Path = M.BOOSTER, folds=M.FOLDS, val_frac: float = 0.25, frac: float = 1.0, rounds: int = 8000):
+def main(out: Path = M.BOOSTER, folds=M.FOLDS, val_frac: float = 0.25, frac: float = 1.0, rounds: int = 8000,
+         hn: bool = False):
     import lightgbm as lgb
 
     class Seq(lgb.Sequence):
@@ -86,8 +100,8 @@ def main(out: Path = M.BOOSTER, folds=M.FOLDS, val_frac: float = 0.25, frac: flo
     assert not {0, 1} & set(folds), "never train on folds 0 (holdout) / 1 (early stopping)"
     t0 = time.time()
     prepare()
-    Xtr, ytr, cols = load(folds, frac=frac, dtype=np.float16)
-    Xva, yva, _ = load((1,), frac=val_frac)
+    Xtr, ytr, cols = load(folds, frac=frac, dtype=np.float16, hn=hn)
+    Xva, yva, _ = load((1,), frac=val_frac, hn=hn)
     print(f"train {len(ytr):,} pairs ({ytr.mean():.3f} true) folds {list(folds)}, val {len(yva):,}, {len(cols)} feats, "
           f"load {time.time() - t0:.0f}s, peak {B.peak_gb():.2f} GB", flush=True)
     d = lgb.Dataset([Seq(Xtr)], label=ytr.astype(np.float32), feature_name=cols, free_raw_data=True)
@@ -158,9 +172,10 @@ if __name__ == "__main__":
     ap.add_argument("--folds", default=",".join(map(str, M.FOLDS)), help="train folds, e.g. 2,3,4,5 (#5) or 2 (#4)")
     ap.add_argument("--frac", type=float, default=1.0, help="S1-hash sample of the train folds (smoke tests)")
     ap.add_argument("--rounds", type=int, default=8000)
+    ap.add_argument("--hn", action="store_true", help="c_hn: + P26's 5 house-number features (france.HN)")
     a = ap.parse_args()
     if a.cmd == "eval":
         holdout(a.boosters)
     else:
         assert not a.out.exists(), f"{a.out} exists: pass --out elsewhere (it is the pipeline's booster)"
-        main(a.out, tuple(int(f) for f in a.folds.split(",")), frac=a.frac, rounds=a.rounds)
+        main(a.out, tuple(int(f) for f in a.folds.split(",")), frac=a.frac, rounds=a.rounds, hn=a.hn)

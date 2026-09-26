@@ -30,10 +30,9 @@ ROUNDS = 200
 lg = lambda x: np.log(np.clip(x, 1e-6, 1 - 1e-6) / (1 - np.clip(x, 1e-6, 1 - 1e-6)))
 
 
-def hn_of(split: str, side: str, c: str, ids: pa.Array, q: np.ndarray) -> np.ndarray:
+def hn_of(split: str, side: str, c: str, ids: pa.Array, q: np.ndarray, work: Path = WORK) -> np.ndarray:
     """House number ('' = none) of record rows q of ids (S1 pool or SX corpus), from the rules.feats cache."""
-    import pandas as pd
-    rf = pd.read_parquet(WORK / f"rf_{split}_{side}_{c}.parquet", columns=["id", "hn"])
+    rf = pd.read_parquet(work / f"rf_{split}_{side}_{c}.parquet", columns=["id", "hn"])
     pos = pc.index_in(ids, value_set=pa.array(rf.id.to_numpy())).to_numpy(zero_copy_only=False)
     return rf.hn.fillna("").to_numpy(object)[pos.astype(np.int64)][q]
 

@@ -1,6 +1,6 @@
 """End-to-end pipeline: raw TSVs -> matching_results.tsv + candidate_pairs.tsv. Run from the repo root.
 
-    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # submission #8c (--recipe sub9a|sub9b|sub9s|sub9d|sub7|…|sub4)
+    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # submission #31 (--recipe sub31_veto|sub31_small|sub9ab|sub8c|…|sub4)
     python code/business_entity_resolution/src/run.py --split holdout --stage model   # dense holdout F0.5 -> pipe ledger
     python code/business_entity_resolution/src/run.py --split dev --stage model       # the small dev world
     python code/business_entity_resolution/src/run.py --split test --stage rules      # submission #2 (rules only)
@@ -10,9 +10,10 @@ One country at a time, labels taken from the S1 file (an open set: France and un
   2 cands   P3 blocking (block.py, cached in data/work/p3) ∪ the pairs the rules accept (rules.match by_state)
   3 score   rules: the accept set (v0) | model: M2 LightGBM on 65 features (features.py, model.py) -> p, then for
             the countries the cross-encoder was trained on (India, US) the band 0.02 < p < 0.98 is rescored by
-            rerank.py in its own process under the GPU lock and blended into p
+            rerank.py in its own process under the GPU lock and blended into p. France (#31, FRANCE = "fr31"):
+            france.py's chain -- the rebuilt idf144 world, c_hn, the bge blend, tier / bxneg / [veto] / cap
   4 decide  each S2/S3 only at its argmax-p S1, kept if p >= t: T (0.71) for a country with training labels;
-            France (M2's p) T_FRANCE_OVERRIDE = 0.95, fixed from the leaderboard; any other label P6's label-free
+            France T_FRANCE_OVERRIDE (#31: 0.9868), fixed from the leaderboard; any other label P6's label-free
             rule on M2's p -- the t where its predicted empty-S1 rate equals the labelled countries' rate at M2's
             own optimum T_M2 (0.69), clipped to [T_M2, T_M2 + 0.2]
   5 write   one row per S1, matches ⊆ candidates, only S2-/S3- ids of the split; then the official validator
@@ -25,7 +26,8 @@ Splits:
 Every artifact is rebuilt from the training data when absent: parquet copies, folds and worlds (ensure), the P2
 transliteration table, place_freq, the TF-IDF vectorizers, the P3 texts + candidates (block.split_cands), the
 rules.feats caches (feats), the X feature files (features.build), M2 (train_matcher.py) and the cross-encoder
-(rerank.py band + train). Nothing is downloaded except the e5-small base weights (README).
+(rerank.py band + train), c_hn (train_matcher.py --hn). Nothing is downloaded except the e5-small base weights
+(README); the bge CE is fine-tuned on AWS and its checkpoint downloaded (SETUP.md).
 """
 import argparse
 import gc
@@ -86,23 +88,33 @@ RECIPES = {"sub4": dict(booster="m2_ladder.txt", folds=(2,), w=[0.636, 0.757, 0.
            "sub9s": dict(_BGE, france="sib", t_france=0.95),      # + P15's house-number sibling rule on France
            "sub9d": dict(_BGE, france="idfdom", t_france=0.98),   # + P14's train-only IDF fallback (domain words)
            "sub9ab": dict(_BGE, france="idf144_bge", t_france=0.985)}  # #9a's France candidates + #9b's bge blend
-RECIPE = "sub9ab"           # LB 0.984072 (best); France t variants: --t-country France=0.975 | 0.99
+# #31: France = france.py's chain (P26 c_hn on P29's rebuild, bge blend, P29 tier, P28 bxneg, P29 cap); India / US = #8c.
+# Its band pairs' bge r were scored by P13 / P19 / P26 / P29 / P31 (first file wins, as P31 blended).
+_R31 = {"test": _BGE["r_seed"]["test"] + [f"{p}/r_bge_pool_test_{{c}}.parquet" for p in ("p26/bge/r", "p29/r", "p31/r")],
+        "holdout": _BGE["r_seed"]["holdout"]}
+RECIPES["sub31"] = dict(_BGE, france="fr31", t_france=0.9868, r_seed=_R31)
+RECIPES["sub31_veto"] = dict(RECIPES["sub31"], veto=(0.1, "p30/r/r_pool_France.parquet"))  # + P30's bge veto, tau 0.1
+RECIPES["sub31_small"] = dict(RECIPES["sub31"], drop_sib_cands=True)   # #31's matching, 4.42 candidates per S1
+RECIPE = "sub31"            # LB 0.9856 (best); France t variant: --t-country France=0.9818
+CHN = WORK / "p31" / "c_hn.txt"   # P26's hn-aware matcher (AWS: probes/P26-france-da, SETUP.md), for fr31
 CAP = None                  # --cap 5,6: at most 5 S2 and 6 S3 matches per S1 (the train truth never exceeds them)
 DROP_SIB_CANDS = False      # --drop-sibling-cands: unaccepted decoy-offset pairs leave candidate_pairs.tsv
+VETO = None                 # (tau, r file): fr31's P30 veto (recipe sub31_veto)
 FALLBACK = ("p11/ce_s2P.pt", [0.617, 0.666, 0.261])   # --ce-missing fallback: #7's e5 CE + w for pairs without an r
 CE_MISSING = "score"        # band pairs without a cached r: score them (GPU) | "fallback" (holdout proxy, P17's yardstick)
+                            # | "keep" (their p stays: a CPU box, or a check of how many lack an r)
 GPU_LOCK = "/tmp/amc-gpu.lock"
 
 
 def use(recipe: str):
     """Switch booster, blend weights, thresholds, pruner, CE, stacker and France to one submission's recipe."""
-    global T, T_M2, T_FRANCE_OVERRIDE, RECIPE, FRANCE, W_FRANCE, STACK, R_SEED, W_STACK_FIT
+    global T, T_M2, T_FRANCE_OVERRIDE, RECIPE, FRANCE, W_FRANCE, STACK, R_SEED, W_STACK_FIT, VETO, DROP_SIB_CANDS
     r = RECIPES[recipe]
     M.BOOSTER, M.FOLDS, M.TAU, M._M, RR.CFG["w"] = WORK / "p4" / r["booster"], r["folds"], r["tau"], None, list(r["w"])
     RR.CE, RR.EPOCHS, RR.FAMILY = WORK / r["ce"], r["ce_epochs"], r["ce_base"]
     T, T_M2, T_FRANCE_OVERRIDE, RECIPE = r["t"], r["t_m2"], r["t_france"], recipe
     FRANCE, W_FRANCE, STACK, R_SEED = r["france"], r["w_france"], dict(r["stack"]), dict(r["r_seed"])
-    W_STACK_FIT = r["w_stack_fit"]
+    W_STACK_FIT, VETO, DROP_SIB_CANDS = r["w_stack_fit"], r.get("veto"), r.get("drop_sib_cands", False)
 
 
 def ensure(split: str):
@@ -275,26 +287,34 @@ def assemble(stage: str, f1: pd.DataFrame, fx: pd.DataFrame, load, keep: np.ndar
     return ka, K, pairs
 
 
+def seed_keys(f: Path, id1: pa.Array, idx: pa.Array) -> pd.DataFrame:
+    """A scored (s1, sx, r) file -> k (q1 << 32 | qx over this split's rows), r; pairs of other countries dropped."""
+    t = pq.read_table(f, columns=["s1", "sx", "r"])
+    a = pc.index_in(t.column("s1"), value_set=id1).to_numpy(zero_copy_only=False)
+    b = pc.index_in(t.column("sx"), value_set=idx).to_numpy(zero_copy_only=False)
+    ok = ~(pd.isna(a) | pd.isna(b))                     # a holdout file holds both countries
+    return pd.DataFrame({"k": (a[ok].astype(np.int64) << 32) | b[ok].astype(np.int64),
+                         "r": t.column("r").to_numpy()[ok].astype(np.float32)})
+
+
 def r_cache(split: str, c: str, id1: pa.Array, idx: pa.Array, ce: Path = None) -> Path:
     """The CE-score cache of one split / country / checkpoint (int64 key q1 << 32 | qx, r). A recipe with an r_seed
-    (the bge CE: P13's scores, then P19's for idf144 France) merges every seed file newer than the cache into it,
-    (s1, sx) ids mapped onto this split's rows; a pair already in the cache (or in an earlier seed) keeps its r."""
+    (the bge CE: P13's scores, then P19's / P26's / P29's / P31's top-ups) merges every seed file the cache has not
+    taken yet (listed in <cache>.seeds) into it; a pair already in the cache (or in an earlier seed) keeps its r."""
     ce = ce or RR.CE
     path = M.CACHE / f"r_{split}_{c}_{M.tag(ce)}.parquet"
+    log = path.with_suffix(".seeds")
+    done = set(log.read_text().split()) if log.exists() and path.exists() else set()
     seeds = [WORK / f.format(c=c) for f in R_SEED.get(split, [])] if ce == RR.CE else []
-    new = [f for f in seeds if f.exists() and (not path.exists() or f.stat().st_mtime > path.stat().st_mtime)]
+    new = [f for f in seeds if f.exists() and str(f.relative_to(WORK)) not in done]
     if new:
         parts = [pd.read_parquet(path)] if path.exists() else []
         for f in new:
-            t = pq.read_table(f, columns=["s1", "sx", "r"])
-            a = pc.index_in(t.column("s1"), value_set=id1).to_numpy(zero_copy_only=False)
-            b = pc.index_in(t.column("sx"), value_set=idx).to_numpy(zero_copy_only=False)
-            ok = ~(pd.isna(a) | pd.isna(b))             # a holdout file holds both countries
-            parts.append(pd.DataFrame({"k": (a[ok].astype(np.int64) << 32) | b[ok].astype(np.int64),
-                                       "r": t.column("r").to_numpy()[ok].astype(np.float32)}))
-            print(f"{c}: r cache seeded from {f.parent.parent.name}/{f.name}: {int(ok.sum()):,} pairs", flush=True)
+            parts.append(seed_keys(f, id1, idx))
+            print(f"{c}: r cache seeded from {f.relative_to(WORK)}: {len(parts[-1]):,} pairs", flush=True)
         path.parent.mkdir(parents=True, exist_ok=True)
         pd.concat(parts, ignore_index=True).drop_duplicates("k", keep="first").to_parquet(path, index=False)
+        log.write_text("".join(f"{x}\n" for x in sorted(done | {str(f.relative_to(WORK)) for f in new})))
     return path
 
 
@@ -308,7 +328,7 @@ def rerank(c: str, q1: np.ndarray, qx: np.ndarray, p: np.ndarray, text, cache: P
     proxy P17 used: P13 scored only the holdout S1's own band pairs)."""
     lo, hi = RR.CFG["band"]
     full = np.full(len(p), np.nan, np.float32)
-    w = W_FRANCE if c == "France" and FRANCE in ("bge", "idf144_bge") else RR.CFG["w"] if c in RR.CFG["countries"] \
+    w = W_FRANCE if c == "France" and FRANCE in ("bge", "idf144_bge", "fr31") else RR.CFG["w"] if c in RR.CFG["countries"] \
         else None
     if w is None:
         return p, full
@@ -326,6 +346,9 @@ def rerank(c: str, q1: np.ndarray, qx: np.ndarray, p: np.ndarray, text, cache: P
         print(f"{c}: {int(todo.sum()):,} of {len(b):,} band pairs without an r keep {Path(FALLBACK[0]).name}'s blend "
               f"(--ce-missing fallback)", flush=True)
         return out, full
+    if todo.any() and CE_MISSING == "keep":
+        print(f"{c}: {int(todo.sum()):,} of {len(b):,} band pairs without an r keep p (--ce-missing keep)", flush=True)
+        todo[:] = False
     if todo.any():
         ensure_ce()
         t0 = time.time()
@@ -495,6 +518,46 @@ def france_variant(name: str) -> pd.DataFrame:
     return pd.read_parquet(cache)
 
 
+def france31() -> dict:
+    """#31's France (france.py), one model_parts dict: c_hn's p on P29's rebuild of the idf144 world (its own process,
+    cached in data/work/p9/fr31/p9), #9ab's bge blend (W_FRANCE), then tier / bxneg / [VETO] / cap. The rules
+    decide at France's t, so it must be fixed (T_COUNTRY / T_FRANCE_OVERRIDE). p_m2 = c_hn's p."""
+    import os
+    import france as FR
+    import prune
+    import stack as S
+    t = T_COUNTRY.get("France", T_FRANCE_OVERRIDE)
+    assert t is not None, "fr31's post-rules need France's t"
+    france_variant("idf144")                            # the base world (its P3 texts, blocking and X)
+    v = FR.world(M.CACHE / "fr_idf144")
+    path = v / "p9" / f"chn_test_France_{M.tag(CHN)}_{M.tag(prune.MODEL)}_{M.tau('France')}.parquet"
+    if not path.exists():
+        if not CHN.exists():                            # P26's recipe from the train data (~1 h, > 3 GB): SETUP.md
+            import train_matcher
+            train_matcher.main(CHN, M.FOLDS, hn=True)
+        assert M.tau("France") == prune.TAU, "france.chn prunes at prune.TAU"
+        subprocess.run([sys.executable, str(SRC / "france.py"), "chn", str(CHN), str(path)],
+                       env={**os.environ, "ER_WORK": str(v)}, check=True)
+    d = pd.read_parquet(path)
+    q1, qx, pm = d.q1.to_numpy(), d.qx.to_numpy(), d.p.to_numpy(np.float32)
+    del d
+    id1, idx = F.ids("test", "France")
+    cache = r_cache("test", "France", id1, idx)
+    p, r = rerank("France", q1, qx, pm, lambda a, b: RR.texts("test", "France", a, b), cache)
+    veto = None
+    if VETO:                                            # P30's pool scores first, then the cache (P31's order)
+        k = (q1.astype(np.int64) << 32) | qx.astype(np.int64)
+        rk = pd.concat([seed_keys(WORK / VETO[1], id1, idx), pd.read_parquet(cache)]).drop_duplicates("k")
+        veto = (VETO[0], pd.Series(rk.r.to_numpy(np.float32), index=rk.k.to_numpy()).reindex(k).to_numpy(np.float32))
+    learn = pd.read_parquet(B.P3 / "cands_test_France.parquet", columns=["s1", "sx"])
+    p = FR.post(q1, qx, id1, idx, p, pm, t, v, learn, veto)
+    del learn
+    hn = lambda side: S.hn_of("test", side, "France", id1 if side == "s1" else idx, q1 if side == "s1" else qx,
+                              WORK if side == "s1" else v)      # the fixed '(n)' house numbers on the SX side
+    return {"c": "France", "id1": id1, "idx": idx, "ids": id1, "q1": q1, "qx": qx, "p_m2": pm, "p": p, "r": r,
+            "hn": hn, "truth": None}
+
+
 def ensure_stack(c: str):
     """P17's stacker booster for country c (the recipe's STACK path); fit from the holdout when absent: every
     competing row of the country's holdout list with the recipe's blended p (W_STACK_FIT's w: what the shipped
@@ -563,6 +626,9 @@ def model_parts(split: str, world=None, only=None, stack: bool = True) -> list:
         for c in (x for x in labels if only is None or x in only):
             tc = time.time()
             prepare(xs, c)
+            if c == "France" and FRANCE == "fr31":
+                parts.append(france31())
+                continue
             fv = {"idf144": "idf144", "idf144_bge": "idf144", "idfdom": "idfdom"}.get(FRANCE) if c == "France" else None
             d = france_variant(fv) if fv else M.split_probs(split, c)
             q1, qx, pm = d.q1.to_numpy(), d.qx.to_numpy(), d.p.to_numpy(np.float32)
@@ -662,7 +728,7 @@ def rules_parts(split: str, world=None):
         gc.collect()
 
 
-def run(split: str, stage: str, out: Path, world=None, log=True) -> dict:
+def run(split: str, stage: str, out: Path, world=None, log=True, check=True) -> dict:
     """Run the pipeline on one split (or on injected (s1, sx, truth) frames) and write both files to out
     (out/<split>/ for anything but test). Returns the metrics when the split has truth."""
     t0 = time.time()
@@ -721,7 +787,8 @@ def run(split: str, stage: str, out: Path, world=None, log=True) -> dict:
         assert rows == N_TEST_S1 == pq.ParquetFile(WORK / "test_source1.parquet").metadata.num_rows, rows
         ids = pq.read_table(WORK / "test_source1.parquet", columns=["entity_id"]).column(0)
         assert pc.count_distinct(ids).as_py() == len(ids), "S1 ids unique across countries: no row written twice"
-        validate(out)
+        if check:
+            validate(out)
     if not truth:
         return {}
     tp = sum(len(pred.get(s, set()) & truth[s]) for s in truth)
@@ -762,11 +829,14 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
     ap.add_argument("--stage", choices=["rules", "model"], default="rules")
     ap.add_argument("--out", type=Path, default=Path("output"))
     ap.add_argument("--recipe", choices=sorted(RECIPES), default=RECIPE)
-    ap.add_argument("--france", choices=["m2", "idf144", "idfdom", "bge", "sib", "idf144_bge"],
+    ap.add_argument("--france", choices=["m2", "idf144", "idfdom", "bge", "sib", "idf144_bge", "fr31"],
                     help="France's scorer (default: the recipe's); its t: --t-country France=<t>")
-    ap.add_argument("--ce-missing", choices=["score", "fallback"], default="score",
-                    help="band pairs without a cached CE score: score them (GPU) or take #7's e5 blend (holdout proxy)")
+    ap.add_argument("--ce-missing", choices=["score", "fallback", "keep"], default="score",
+                    help="band pairs without a cached CE score: score them (GPU), take #7's e5 blend (holdout proxy) "
+                         "or keep their p (no GPU)")
     ap.add_argument("--probs-only", metavar="COUNTRY", help=argparse.SUPPRESS)   # france_variant's subprocess
+    ap.add_argument("--no-validate", action="store_true",
+                    help="skip the official validator (~4 GB RAM), e.g. when diffing against a validated staged file")
     ap.add_argument("--cap", help="S2,S3: at most that many matches per S1 (e.g. 5,6), the highest p kept")
     ap.add_argument("--drop-sibling-cands", action="store_true",
                     help="drop unaccepted pairs at a generator sibling offset from candidate_pairs.tsv")
@@ -775,7 +845,7 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
                     help="fixed thresholds per country, e.g. France=0.88 (default: France and unseen labels by P6's rule)")
     a = ap.parse_args()
     use(a.recipe)
-    FRANCE, CE_MISSING, DROP_SIB_CANDS = a.france or FRANCE, a.ce_missing, a.drop_sibling_cands
+    FRANCE, CE_MISSING, DROP_SIB_CANDS = a.france or FRANCE, a.ce_missing, DROP_SIB_CANDS or a.drop_sibling_cands
     CAP = tuple(int(x) for x in a.cap.split(",")) if a.cap else None
     M.TAU_COUNTRY.update({k: float(v) for k, v in (x.split("=") for x in a.tau_country)})
     T_COUNTRY.update({k: float(v) for k, v in (x.split("=") for x in a.t_country)})
@@ -784,4 +854,4 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
         M.split_probs("test", a.probs_only)
         sys.exit()
     assert not (a.stage == "model" and a.split == "holdout-world"), "holdout-world is the rules-only regression link"
-    run(a.split, a.stage, a.out)
+    run(a.split, a.stage, a.out, check=not a.no_validate)
