@@ -3,16 +3,22 @@
 - **The report's idea fails on our holdout. Our own combiner passes the gate in both directions.** Their logistic meta-learner
   is −0.0055 LB-eq vs #34, and their margin rule / risk buckets / SIB3 filter are ≤ +0.00002 or negative. Their "m2 alone → meta"
   jump is +0.0000 (India) / +0.0009 (US) here, against the +0.0021 they claim.
-- **Ours:** a 5-seed bagged a10-style residual over #34's argmax pairs. It adds exclusivity and group context (**sx_psum** =
-  #8c p-mass over the SX's candidate S1; **n_same_src_acc** = other accepted SX of the S1 from the same source) plus two new
-  GBDTs' logits. Holdout LB-eq **+0.000306 ± 0.000048 (6.4 SE)** h0→h1 and **+0.000210 ± 0.000047 (4.5 SE)** on the swap,
-  with India and US positive both ways. Label-free test flip profile PASS (all ratios ≤ 1.09).
-- **Staged:** `output/sub44` = sub46_on43 with India/US replaced (6,453 lines; France and candidates byte-identical);
-  `output/sub44_psumoff` = conservative, without sx_psum. Validator `--check-ids` on SageMaker: see Evidence.
+- **Ours:** a 5-seed bagged a10-style residual over #34's argmax pairs, with exclusivity mass (sx_psum), same-source group
+  counts, S1 rank gaps, hn-corruption features and two new GBDTs' logits. It scores **+0.000306 (6.4 SE) / +0.000210 (4.5 SE)**.
+  With P45's r_all (the bge CE on every pair) added: **+0.000656 ± 0.000062 (10.6 SE) / +0.000505 ± 0.000057 (8.8 SE)**.
+  India and US are positive in both directions, and the label-free test profile passes for every variant.
+- **Staged on sub46_on43** (France and candidates byte-identical), validator `--check-ids` PASS on all three:
+  - **`output/sub44r`: primary**, expected LB ≈ +0.0004;
+  - `output/sub44`: fallback, ≈ +0.0002;
+  - `output/sub44_psumoff`: conservative, ≈ +0.00012.
 
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
-- **Adopt `output/sub44` as the India/US half** (its expected LB gain is in Risks). Keep `output/sub44_psumoff` as the fallback.
-  sub44r (+ P45's r_all) is pending the test r_all file.
+- **Upload `output/sub44r` as the India/US half** (md5 5d64e9e3…, 10,445 India/US lines vs #46_on43).
+  - If it disappoints, fall back to `output/sub44` (a07245ba…), then to `output/sub44_psumoff` (a2657ca9…).
+  - All three are staged on `output/sub46_on43`. To rebase, run `P44_VARIANT={r|""|psumoff} te44.py combine <base> <out>`
+    (≈ 1 min); it asserts the base's India/US lines are #34's decision.
+- sub44r = the model below + column `l_r_all`, boosters `data/work/p44ms/shipr_s{0..4}.txt`. Test r_all = P45's
+  `r_all_test_{c}` for the non-band argmax pairs ∪ the band pairs' own r (the same ce_bge_pool CE; disjoint and complete).
 - Model: `data/work/p44ms/ship_s{0..4}.txt`, five LightGBM residual boosters.
   - Params: a10's (200 rounds × 31 leaves, lr 0.05, min_data_in_leaf 200, λ2 1) + bagging 0.8 / freq 1 / feature 0.8, seeds 0–4,
     deterministic, init_score = logit #8c p.
@@ -59,6 +65,11 @@ Deltas are per-S1 F0.5 vs #34 on the report half, with paired SE. LB-eq = 0.468 
 | ship_psumoff (bag5, no sx_psum) | holdout | +0.000178 ± 0.000039 (4.5 SE) h0→h1 | fallback |
 | test profile (sub44) | test | test/holdout-h1 ratios. India: adds/acc 0.69, adds/unacc 0.36, drops/acc 0.72, S1 changed 0.70, flips/pair 0.62 (no-mass 0.66, mass 0.72). US: 0.73 / 0.45 / 0.86 / 0.77 / 0.71 (0.92, 1.09) | **PASS** |
 | test profile (psumoff) | test | max ratio 1.18 (US no-mass flips) | PASS |
+| ship+r_all_bag5 (sub44r's model) | holdout | **+0.000656 ± 0.000062 (10.6 SE)**: India +0.000813 ± 0.000109, US +0.000719 ± 0.000092. **Swap +0.000505 ± 0.000057 (8.8 SE)**: India +0.000596, US +0.000590 | **keep (gate)** |
+| ship_psumoff_bag5 swap | holdout | +0.000147 ± 0.000046 (3.2 SE) | fallback |
+| sub44r-test-build+profile | test | India: adds/acc 0.71, adds/unacc 0.37, drops/acc 1.19, S1 changed 0.92, flips/pair 0.81. US: 0.74 / 0.45 / **1.33** / 0.95 / 0.87 | **PASS** |
+| loco-ship-combiner | holdout (other country) | India→US +0.000111 ± 0.000063; US→India +0.000173 ± 0.000056 | inconclusive (France proxy) |
+| validator (SageMaker p44-val-0326, p44-val2-0405) | test | sub44 / sub44_psumoff / sub44r: `--check-ids` PASS, 1,732,544 rows (100,593 / 100,639 / 100,731 empty); only India/US lines differ from sub46_on43 | PASS |
 
 2nd GBDTs (SageMaker, folds 2–5, early stopping on fold 1's 25% sample, never fold 0):
 
@@ -103,8 +114,17 @@ Run from the repo root with `probes/P44-meta-stack/py.sh` (a 2.2 GB cap). Work f
   - About a third of the holdout gain comes from pairs whose SX has in-sample competitor mass, and heavy competitor mass is
     1.4× (India) to 2.5× (US) commoner on the holdout than on test.
   - The out-of-fold-only rebuild still passes (+0.000167 / +0.000161), and so does the no-mass slice alone.
-- **Expected LB:** test flip rates are 0.6–0.9× the holdout's, so expect **+0.0002 (range +0.00015 to +0.0003)** over #46_on43,
-  inside the public/private tie band.
+- **Expected LB over #46_on43**, scaled from holdout by test flip rates:
+  - sub44r ≈ +0.0004 (+0.0003 to +0.0006);
+  - sub44 ≈ +0.0002 (test flip rates 0.6–0.9× the holdout's);
+  - sub44_psumoff ≈ +0.00012.
+  sub44 and sub44_psumoff sit inside the public/private tie band.
+- **sub44r reads r_all** from P45's CE run, which is the shipped ce_bge_pool on every pair.
+  - P45's leakage check is clean: the CE trained on folds ≥ 4, the holdout is fold 0, and the gain holds on S1 with no SX
+    text overlap.
+  - On test the CE drops a few more out-of-band pairs than on holdout (US drops per accepted pair 1.33×, under the 1.5× bar).
+  - The zip needs P45's CE-on-every-argmax-pair step ported next to run.py's CE stage.
+- **AWS:** 5 CPU jobs (smoke, hn21, m2hn, 2 validators), < $1.
 - **France / unseen countries:** untouched (byte-identical to sub46_on43).
 - **Assumptions:**
   - The gate is read as LB-eq with P34's weights (0.468 / 0.383).
@@ -115,6 +135,9 @@ Run from the repo root with `probes/P44-meta-stack/py.sh` (a 2.2 GB cap). Work f
   out-of-fold rebuild are independent confirmations.
 
 ## Open questions   (for the master; each with your best guess)
-- sub44r (+ P45's r_all): pending the test file. Best guess: an extra +0.0003, if the test r_all matches the holdout's scale.
+- **Which one in the final file?** Best guess: sub44r. It is +0.0005–0.0007 at ≥ 8.8 SE on both halves, and its profile passes.
+  The 2nd GBDTs (m2hn / hn21) contribute only ~+0.00003 of it; the context features and r_all carry the rest.
+- **A France variant?** Not built. France has no a10 stage and runs on t 0.99 plus tiers; the combiner transfers across
+  India/US at about half strength (LOCO). Best guess: skip.
 - Upload `sub46on43_recipe`-based files instead? `te44.py combine output/sub46on43_recipe output/<out>` works the same
   (≈ 1 min), provided that base's India/US lines are #34's (the combine asserts it).

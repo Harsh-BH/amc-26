@@ -2,7 +2,7 @@
 CE on every argmax pair), fit on holdout half 0 (India + US pooled, a10's params, guard); France byte-identical to SRC.
 
     te45.py fit                 # holdout h0 fit -> data/work/p45/a10r_h0.txt + a10r_cols.json (+ h1 report)
-    te45.py rall                # the three GPU jobs' slices -> data/work/p45/r_all_test_<c>.parquet (+ band r from P13)
+    te45.py rall                # GPU slices + P13 band r -> data/work/p45/oof/r_all_test_<c>.parquet (every argmax pair)
     te45.py probs               # -> data/work/p45/prob_test_<c>_a10r.parquet (s1, sx, p, p34, p8c, am) + flip profile
     te45.py combine SRC OUT     # SRC's India/US matching lines replaced (asserts SRC's India/US = #34's decision)
 Inputs: P34's te_pairs / te_feat / prob_test_<c>_a10 (#8c's test rows, a10 features), P13's band r (te_pairs r).
@@ -22,7 +22,10 @@ import zoo as Z
 A, W = Z.A, Z.W
 P34 = A.W / "p34"
 C = ("India", "US")
-EXTRA = ["sx_psum", "n_same_src_acc", "l_r_all"]
+import os
+VAR = os.environ.get("P45_VAR", "")                       # "psumoff": without sx_psum (partly in-sample on the holdout)
+EXTRA = ["n_same_src_acc", "l_r_all"] if VAR == "psumoff" else ["sx_psum", "n_same_src_acc", "l_r_all"]
+TAG = "a10r" + VAR
 BUCKET = "s3://sagemaker-114872709824-ap-south-1/amc26-p45/results"
 
 
@@ -32,15 +35,15 @@ def fit():
     ref, _ = Z.run_arm(S, [], 0)
     o = Z.paired(S, ps, ref, 0)
     print(f"a10r fit h0 -> h1 vs #34: LB-eq {o['lb']['d']:+.6f} ± {o['lb']['se']:.6f} | India {o['India']['d']:+.6f} | US {o['US']['d']:+.6f}", flush=True)
-    b.save_model(str(W / "a10r_h0.txt"))
+    b.save_model(str(W / f"{TAG}_h0.txt"))
     json.dump({"cols": list(A.COLS) + EXTRA, "t": A.T, "fit": "India+US holdout half 0", "report_h1_vs_34": o},
-              open(W / "a10r_cols.json", "w"), indent=1, default=float)
+              open(W / f"{TAG}_cols.json", "w"), indent=1, default=float)
     # holdout h1 flip profile for the test comparison (adds / drops per #34-accepted pair, by #8c-p region)
     prof = {}
     for s, p, q in zip(S, ps, ref):
         a, rh = s["a"], s["h"][s["a"].g.to_numpy()] == 1
         prof[s["c"]] = flips(a.p.to_numpy()[rh], q[rh], p[rh])
-    json.dump(prof, open(W / "a10r_profile_holdout_h1.json", "w"), indent=1)
+    json.dump(prof, open(W / f"{TAG}_profile_holdout_h1.json", "w"), indent=1)
     print("holdout h1 profile", prof, flush=True)
 
 
@@ -71,16 +74,22 @@ def rall():
         r = pd.concat(got, ignore_index=True)
         keys = pd.read_parquet(W / f"cetest/keys/{c}.parquet", columns=["s1", "sx"])
         assert len(r) == len(keys) and r.merge(keys, on=["s1", "sx"]).shape[0] == len(keys), (c, len(r), len(keys))
-        r.to_parquet(W / f"r_all_test_{c}.parquet", index=False)
-        print(c, len(r), "scored argmax pairs; r mean", float(r.r.mean()), flush=True)
+        pr = pd.read_parquet(P34 / f"prob_test_{c}_a10.parquet", columns=["s1", "sx", "am"])
+        band = pd.read_parquet(P34 / f"te_pairs_{c}.parquet", columns=["r"]).r.to_numpy()
+        m = pr.am.to_numpy()
+        d = pr[m][["s1", "sx"]].assign(r=band[m]).reset_index(drop=True).merge(r.rename(columns={"r": "ra"}), on=["s1", "sx"], how="left")
+        d["r"] = np.where(d.r.isna(), d.ra, d.r).astype(np.float32)
+        assert not d.r.isna().any()
+        d[["s1", "sx", "r"]].to_parquet(W / "oof" / f"r_all_test_{c}.parquet", index=False)    # every argmax pair (P44's input too)
+        print(c, len(d), "argmax pairs;", len(r), "scored by the GPU jobs, the rest = P13 band r", flush=True)
 
 
 def probs():
     import lightgbm as lgb
-    cols = json.load(open(W / "a10r_cols.json"))["cols"]
-    b = lgb.Booster(model_file=str(W / "a10r_h0.txt"))
+    cols = json.load(open(W / f"{TAG}_cols.json"))["cols"]
+    b = lgb.Booster(model_file=str(W / f"{TAG}_h0.txt"))
     b34 = lgb.Booster(model_file=str(P34 / "a10_h0.txt"))
-    prof_h = json.load(open(W / "a10r_profile_holdout_h1.json"))
+    prof_h = json.load(open(W / f"{TAG}_profile_holdout_h1.json"))
     prof = {}
     for c in C:
         pr = pd.read_parquet(P34 / f"prob_test_{c}_a10.parquet")                       # s1, sx, p (= #34 p'), p8c, am
@@ -101,7 +110,7 @@ def probs():
             te.loc[m, "n_same_src_acc"] = np.bincount(g[m], acc[m], minlength=g.max() + 1)[g[m]] - acc[m]
         rr = r[row].astype(np.float64)
         miss = np.isnan(rr)
-        ra = pd.read_parquet(W / f"r_all_test_{c}.parquet")
+        ra = pd.read_parquet(W / "oof" / f"r_all_test_{c}.parquet")
         fill = pd.DataFrame({"s1": pr.s1.to_numpy()[row][miss], "sx": pr.sx.to_numpy()[row][miss]}).merge(
             ra, on=["s1", "sx"], how="left").r.to_numpy()
         assert not np.isnan(fill).any(), f"{c}: argmax pairs without r_all"
@@ -118,17 +127,17 @@ def probs():
         prof[c] = flips(te.p.to_numpy(), te.p_new.to_numpy(), pnew)
         prof[c]["ratio_vs_holdout"] = {k: (prof[c][k] / prof_h[c][k] if prof_h[c][k] else None) for k in ("adds_per_acc", "drops_per_acc")}
         pd.DataFrame({"s1": pr.s1, "sx": pr.sx, "p": p_all.astype(np.float32), "p34": pr.p.to_numpy(np.float32),
-                      "p8c": pr.p8c.to_numpy(np.float32), "am": am}).to_parquet(W / f"prob_test_{c}_a10r.parquet", index=False)
+                      "p8c": pr.p8c.to_numpy(np.float32), "am": am}).to_parquet(W / f"prob_test_{c}_{TAG}.parquet", index=False)
         print(c, {"am_pairs": len(te), "r_from_band": int((~miss).sum()), "r_from_gpu": int(miss.sum()),
                   "acc34": int((am & (pr.p.to_numpy() >= A.T)).sum()), "acc45": int((am & (p_all >= A.T)).sum()), **prof[c]}, flush=True)
-    json.dump(prof, open(W / "a10r_profile_test.json", "w"), indent=1)
+    json.dump(prof, open(W / f"{TAG}_profile_test.json", "w"), indent=1)
 
 
 def combine(src: Path, out: Path):
     s1 = pd.read_parquet(A.W / "test_source1.parquet", columns=["entity_id", "country"])
     new, base = {}, {}
     for c in C:
-        d = pd.read_parquet(W / f"prob_test_{c}_a10r.parquet", columns=["s1", "sx", "p", "p34", "am"])
+        d = pd.read_parquet(W / f"prob_test_{c}_{TAG}.parquet", columns=["s1", "sx", "p", "p34", "am"])
         acc = d[d.am & (d.p >= A.T)]
         assert acc.sx.is_unique
         new |= acc.groupby("s1").sx.agg(lambda s: ",".join(sorted(s))).to_dict()

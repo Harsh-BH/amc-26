@@ -273,7 +273,7 @@ def evaluate(only: str = ""):
         arms = {k: v for k, v in arms.items() if k in only.split(",")}
     import os
     base = [x for x in os.environ.get("P45_BASE", "").split(",") if x]   # e.g. P44's sx_psum,n_same_src_acc
-    arms = {k: base + v for k, v in arms.items()}
+    arms = {k: list(dict.fromkeys(base + v)) for k, v in arms.items()}
     res = {}
     for fh in (0, 1):
         t0 = time.time()
