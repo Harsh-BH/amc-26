@@ -241,3 +241,16 @@ so a learned pruning stage (meta-blocking) before the matcher legitimately shrin
    mapping learned from the data (allowed by ruling 2).
 7. The private split uses the same test files: same three countries, France in both splits.
 8. Final zip: README.md + requirements.txt inside code/business_entity_resolution/; top level = output/, code/, the doc.
+
+## Organiser rulings (Query Form export of 27 Sep 00:02, new since 26 Sep 12:35)
+1. **No model > 8B anywhere, not even as a teacher** for distillation, synthetic data or labels, with or without APIs/MCP
+   ("Using any model larger than 8B parameters is prohibited even for teacher model"). We comply: the pipeline uses
+   only bge-reranker-v2-m3, e5-small, LightGBM, and Qwen3-Reranker-4B (P38, 4.02B). Claude is used as an AI coding
+   assistant (allowed) to read data and write rules; it produces no labels, pairs or training data.
+2. **A stricter threshold for countries "unseen in training" is allowed** (asked as a rule defined by "unseen in
+   training", not by naming a country: answer "Yes"). → run.py still branches on `c == "France"` in ~15 places; the
+   final zip should branch on `c in UNSEEN` (test S1 labels absent from train S1). Same behaviour, compliant wording.
+3. Repeated: test-side unsupervised stats, self-training/pseudo-labels, synthetic pairs from provided records, and
+   HF pretrained weights (MIT/Apache, ≤ 8B) are allowed; best public score decides the final entry.
+Still unanswered: daily-cap reset time, where/when the final zip goes, and the final deadline (a team asked whether it
+is 27 Sep 21:00 IST; we plan the last upload by 21:00 to be safe, not 22:00).
