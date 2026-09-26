@@ -34,3 +34,11 @@
 
 ## Open questions   (for the master; each with your best guess)
 - **Does this fully subsume P46?** Yes, it should recover the single-word swaps for `developpement` and `groupe` (since swapping 1 word means 1 word dropped and 1 phrase gained), while also capturing the multi-token fillers (`et fils`, `& associes`) and cases where descriptive words are dropped alongside a filler addition.
+
+## MASTER VERDICT (04:55) — CLOSED: covered by existing rules; do not stage
+- R1 (P20) strips & Fils / & Cie / Associés / Frères from the core, so "drop a word + gain a filler" is a pure core drop1.
+  P53 (master, probes/P53-fr-drop1-sameaddr/p53_master.py) counted ALL France drop1 pairs at an IDENTICAL address that
+  are free, argmax, unaccepted and not taken by hn-extra (p>=0.8, non-empty) or gc: **1,026**; of them only 1 has
+  "fils", 15 "cie", 3 "associ", 9 "groupe", 3 "développement" (223 "services"). The v1 "19,587 flips" were counted on
+  the P31 proxy base and are almost all already added by hn-extra / P28 / P46 in the current base.
+- The GPT-OSS rerun's holdout table (loose lens cell 63 pairs, precision ≈ 0.08) does not support staging either.
