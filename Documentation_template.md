@@ -409,7 +409,11 @@ Every France test sits on the same India/US files, so each leaderboard delta mea
 
 - Libraries: numpy, pandas, scipy, scikit-learn, torch (BSD-3); pyarrow, sparse_dot_topn, transformers, tokenizers,
   safetensors, huggingface_hub (Apache-2.0); rapidfuzz, duckdb, lightgbm (MIT); anyascii (ISC).
-- No external data, APIs, geocoding, registries or hosted models are used. The AWS SageMaker jobs were rented compute
+- No external data, APIs, geocoding, registries or hosted models are used. The only geography is hand-written
+  state names and codes (US, India, the 13 French régions), which the organisers allow. France's
+  département → région map is not a table: `normalize.fr_departements` learns it from confident pairs among the
+  unlabelled test rows. It keeps an S2/S3 segment that stands in the région's slot and that S1 never names, when
+  ≥ 95% of ≥ 20 unique-name anchors agree on the région. That yields 4 départements. The AWS SageMaker jobs were rented compute
   for our own training code: bge fine-tuning $4.70, the 8-fold matcher test $0.63.
 
 **Label-free France profile at each operating point** (test, argmax per Source 2/3):
