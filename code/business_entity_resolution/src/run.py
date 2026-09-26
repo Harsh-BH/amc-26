@@ -442,9 +442,8 @@ def france_variant(name: str) -> pd.DataFrame:
     cache = v / "p9" / M.probs_path("test", "France").name
     if not cache.exists():
         env = {**__import__("os").environ, "ER_WORK": str(v)}
-        subprocess.run([sys.executable, str(SRC / "run.py"), "--split", "test", "--probs-only", "France", "--recipe", RECIPE],
-                       env=env,
-                       check=True)
+        subprocess.run([sys.executable, str(SRC / "run.py"), "--split", "test", "--probs-only", "France",
+                        "--recipe", RECIPE], env=env, check=True)
     return pd.read_parquet(cache)
 
 

@@ -1,16 +1,73 @@
 # P9-integrate — RESULT
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
-- **#7 = `run.py --split test --stage model` (default recipe `sub7`)** → `output/sub7`, validator PASS. The recipe:
-  pruner → m2_big → P11's 2-epoch CE (w [0.617, 0.666, 0.261], t 0.71) → France fixed at 0.95.
-  - Against `sub6c`, 12,791 S1 lines differ (0.74%): India 7,402, US 5,389, France 0; `candidate_pairs` is identical.
-- **Holdout 0.98881** (#6 0.98852). On the report half: 0.98869 vs 0.98831 = **+0.00038**, P11's +0.00039.
-  - `--recipe sub6 --t-country France=0.95` still gives sub6c byte for byte, because each CE has its own score cache.
-  - `test_pipeline` passes.
-- **Recommendation:** merge, and upload `output/sub7` (worktree path below) when #7 is due. `rerank.train(epochs=2)`
-  retrain: only partly checked. Same 778,520 pairs, and epoch 0 matches P11 (val band AUC 0.9286 vs 0.9275). The full
-  2-epoch run was killed twice: by the 00:31 power loss, then by the GPU clamped at 210 MHz after it.
+- **Every staged submission of 26 Sep comes out of `run.py --split test --stage model` byte for byte, both files**
+  (`cmp`), each with validator PASS:
+  - `--recipe sub8c` (the new default): bge CE + P17's US stacker;
+  - `--recipe sub9a`: France IDF fix; `sub9b`: bge France; `sub9s`: sibling rule; `sub9d`: train-only IDF.
+- **Holdout sub8c 0.98990** (half 1 0.98956). Per country on half 1, India 0.99004 and US 0.98924 equal P17's numbers
+  to the 5th decimal.
+  - The US stacker refit (`run.ensure_stack`) is bit-identical to P17's booster.
+  - `test_pipeline` passes with #8c's stages.
+- **Recommendation:** merge. `--recipe <winner>` then produces whichever LB winner becomes the final. The bge CE scores
+  come from P13's cache: fresh bge scoring needs the HF base weights (not on the laptop) and a GPU.
 
-## #7 — P11's 2-epoch cross-encoder, France t 0.95 by default
+## #8c / #9 — bge CE, US stacker, France options
+**Change:**
+- **`rerank.py`:**
+  - `load_bge(ckpt)` / `score_bge`: P13's `Job.load('bge')` + `restore` + `score` — bge-reranker-v2-m3 fp32,
+    checkpoint loaded over it, max_len 96, token-length-sorted batches, bf16.
+  - `score_file(in, out, ce, base)`: the subprocess gets the CE family.
+- **`stack.py`** (new): P15's `hn_cls` / `support`, P17's `X_of` / `train` / `stacked` (200 × 31, lambda_l2 1,
+  init_score = logit p), P15's `sib_mask`, `hn_of` (house numbers from the rules.feats caches).
+- **`block.py`:** P14's `idf_country` (France's own S2/S3 text in the IDF at share 0.144) and `idf_domain`
+  (the train-only domain-word fallback).
+- **`run.py`:**
+  - Recipes `sub8c`, `sub9a`, `sub9b`, `sub9s`, `sub9d` (default `sub8c`); `--france {m2,idf144,idfdom,bge,sib}` +
+    `--t-country France=<t>`; `--ce-missing {score,fallback}`.
+  - `r_cache()` seeds a CE's score cache from P13's `p13/r/r_bge_pool_*` files (ids → rows).
+  - `rerank()`: per-country weights (France: `W_FRANCE` when France = bge), with the fallback option.
+  - `after_ce()`: the US stacker and France's sibling rule; `ensure_stack()` fits the stacker when absent.
+  - `france_variant()`: a France-only world (`data/work/p9/fr_<name>`: links + the variant vectorizers) where a
+    subprocess reblocks France, rebuilds X, prunes and runs M2 — P14's own method, ported.
+- **`model.probs_path`:** split out of `split_probs`. **`test_pipeline.py`:** `--recipe`, `--ce`, `--unseen`, `--france`.
+
+| check | result |
+|---|---|
+| `--recipe sub8c` vs `output/sub8c` | **byte-identical, both files**; US 2,245,739 matches (= P17). 4 min from caches + validator PASS |
+| `--recipe sub9a` (France idf144, t 0.975) vs `output/sub9a` | **byte-identical, both files**. France reblocked in its variant world: 4,041,182 P3 pairs, 1,305,341 kept; 47 min (33 of it blocking at 15 threads); validator PASS |
+| `--recipe sub9b` (bge France, w [0.9245, 0.2595, 0.0515], t 0.98) vs `output/sub9b` | **byte-identical, both files**; France r seeded from `r_bge_pool_test_France` (490,033 pairs); validator PASS |
+| `--recipe sub9s` (sibling rule, t 0.95) vs `output/sub9s` | **byte-identical, both files**; 170,752 France pairs zeroed; validator PASS |
+| `--recipe sub9d` (France idfdom, t 0.98) vs `output/sub9d` | **byte-identical, both files**; 1,311,346 kept; 46 min; validator PASS |
+| `--split holdout --recipe sub8c --ce-missing fallback` (pipe p9-model) | **F0.5 0.98990** (India 0.9905, US 0.9895); half 0 0.99024, **half 1 0.98956**: India 0.99004 / US 0.98924, both = P17's `holdout_sup-bge-l21.0-t0.71.json`. P 0.9983, R 0.9726; 5 min |
+| `--recipe sub7` vs `output/sub7` (regression: the generalised `rerank()` on an e5 recipe) | **byte-identical, both files** |
+| `ensure_stack('US')` refit into a scratch path | **bit-identical to `p17/stack_sup-bge-l21.0_US.txt`** (`cmp`), using `w_stack_fit` = the rounded w P17 fit on |
+| `test_pipeline.py --recipe sub8c --ce p11/ce_s2P.pt --ce-base e5` | **pass**: model 0.9968, US stacked, Xland P6 rule. `--unseen France --france sib`: 0.9965 (France t 0.95, sibling rule applied). `--france bge`: 0.9968 |
+
+**Two numerics that had to match exactly:**
+- **#8c's blend w are P13's fit at full precision:** [0.5901490903244407, 0.6319357246516834, 0.29732167912424273].
+  - The documented [0.5901, 0.6319, 0.2973] moves every band pair by up to 2.4e-5 and flips 4 S1 lines (1 India,
+    3 US).
+  - The staged `p13/prob_test_*_blend` files used the unrounded fit of `eval_bge_poolck_holdout_vs_p11s2P_plain.json`.
+  - With it, my blend equals P13's p on all 7.04M India + US rows.
+- **The stacker was fit on holdout p blended with the rounded w** (P17's `WB`). `ensure_stack` therefore fits with
+  `w_stack_fit`, and it is bit-identical only that way. With the full-precision w the refit differs slightly.
+
+**What was not run:**
+- **Fresh bge scoring.** The laptop has the bge tokenizer (checked offline) but not the 2.3 GB base weights, and its
+  GPU is still stuck at 210 MHz.
+  - Every bge score in these checks is P13's cached one: test India / US / France, and the holdout S1's own band pairs.
+  - `load_bge` / `score_bge` follow P13's `Job` code line for line but are untested here.
+  - The holdout's 570k competitor band pairs use `--ce-missing fallback`, P17's yardstick. A true all-bge holdout
+    needs `--ce-missing score` on a GPU with the weights (~1 h on an A10G).
+- **Retraining the bge CE.** It is AWS-only (P13); `run.ensure_ce` stops with instructions if the checkpoint is
+  missing.
+
+**Where:** all outputs were cmp'd and then deleted. They are identical to the staged
+`/home/harsh1/github-repos/amc-26/output/{sub8c,sub9a,sub9b,sub9s,sub9d}`.
+- Caches: `data/work/p9/r_*_<bge hash>` (seeded), `data/work/p9/fr_idf144/`, `fr_idfdom/` (the France variant
+  worlds, ~0.5 GB, reusable).
+
+## #7 — P11's 2-epoch cross-encoder, France t 0.95 by default   (history)
 **Change (smallest):**
 - `rerank.CE = data/work/p11/ce_s2P.pt`, `rerank.EPOCHS = 2`, `rerank.CFG["w"] = [0.617, 0.666, 0.261]`.
   `rerank.train(epochs, out=…)` writes wherever the recipe points.

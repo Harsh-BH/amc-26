@@ -33,7 +33,10 @@ amc26-offload/
 ├── models/                          our trained models (step 5)                    ~110 MB
 │   ├── p4/m2_big.txt                  LightGBM matcher (the "main judge")
 │   ├── p4b/ce.pt                      fine-tuned e5-small cross-encoder, 1 epoch (#4-#6; the "second opinion")
-│   ├── p11/ce_s2P.pt                  the same cross-encoder trained 2 epochs (#7, the default)
+│   ├── p11/ce_s2P.pt                  the same cross-encoder trained 2 epochs (#7)
+│   ├── p13/ckpt/ce_bge_pool.pt        bge-reranker-v2-m3 cross-encoder, fine-tuned on AWS (#8c / #9, the default)
+│   ├── p13/r/r_bge_pool_*             its cached scores (test India / US / France band, holdout) -- the byte check
+│   ├── p17/stack_sup-bge-l21.0_US.txt house-number stacker, US only (#8c)
 │   └── p10/pruner.txt                 candidate pruner (shrinks shortlists 15.9 → 4.8 per business)
 └── work/                            cached test-side intermediate files (step 6)    ~4.6 GB
 ```
@@ -92,10 +95,19 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `models/p4b/ce.pt` | `data/work/p4b/ce.pt` | 42 MB | `16013613bbef1c9548a7d91b73978e0be6f833a6007ab45f2460644e1b55c789` |
 | `models/p10/pruner.txt` | `data/work/p10/pruner.txt` | 1 MB | `02ab27da2fca67220fc8377eb881c858aa4871c0eaeacd9efa75bed4eb885a52` |
 | `models/p11/ce_s2P.pt` (#7; upload pending) | `data/work/p11/ce_s2P.pt` | 43 MB | `4dc0d8826a9efb3a3d1d956130b5c9af139af6941b77596fc1a5719196c3b9af` |
+| `models/p13/ckpt/ce_bge_pool.pt` (#8c; upload pending, also on S3 `amc26-p13/results/p13-rerank-0925-2257/ckpt/`) | `data/work/p13/ckpt/ce_bge_pool.pt` | 624 MB | `36a946769b50322fda057f3693c7e5577e5f476f28ae95e2c4343fa267b72de7` |
+| `models/p13/r/` (#8c; its cached scores; upload pending) | `data/work/p13/r/r_bge_pool_test_{India,US,France}.parquet`, `r_bge_poolck_holdout.parquet` | 39 MB | — |
+| `models/p17/stack_sup-bge-l21.0_US.txt` (#8c; upload pending) | `data/work/p17/stack_sup-bge-l21.0_US.txt` | 0.7 MB | `46116715d9821b8a143d05c1ba6c35c40ada7a93dc1ae9523c7fc6cceb15d184` |
+
+**bge needs a GPU to score fresh.** With P13's cached scores above, #8c / #9 need no GPU at all. Scoring the bge band
+anew needs two things:
+- the HF base `BAAI/bge-reranker-v2-m3` (2.3 GB, downloaded once; >1 GB pulls go through AWS);
+- a GPU: ~20 min on an A10G, ~2 h on the laptop's RTX 3050 for the ~1.24M pruned band pairs.
 
 ```bash
 rclone copy gdrive:amc26-offload/models data/work/     # or copy the three files by hand into those paths
-sha256sum data/work/p4/m2_big.txt data/work/p4b/ce.pt data/work/p10/pruner.txt data/work/p11/ce_s2P.pt   # must match
+sha256sum data/work/p4/m2_big.txt data/work/p4b/ce.pt data/work/p10/pruner.txt data/work/p11/ce_s2P.pt \
+    data/work/p13/ckpt/ce_bge_pool.pt data/work/p17/stack_sup-bge-l21.0_US.txt   # must match
 ```
 
 ## 6. Cached test features — path A only (the run takes minutes)
@@ -214,8 +226,15 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
-- The command now produces **submission #7**: the pruner (4.83 candidates per business), m2_big, the 2-epoch
-  cross-encoder (India / US t 0.71) and France fixed at t 0.95. Holdout 0.9888 (#6: 0.9885).
-- `--recipe sub6` gives #6 byte for byte, and `--recipe sub6 --t-country France=0.95` gives #6c (leaderboard
-  0.980954). `--recipe sub5` gives #5 (leaderboard 0.980017).
+- The command now produces **submission #8c** (the default recipe `sub8c`): the pruner, m2_big, P13's bge
+  cross-encoder (India / US, t 0.71), P17's house-number stacker on US, and France (m2_big p) fixed at t 0.95.
+  Holdout 0.98990 (half 1 0.98956; India 0.99004 / US 0.98924 = P17's numbers; competitor band pairs without a
+  bge score keep #7's e5 blend, `--ce-missing fallback`). #7: 0.98881.
+- The France variants on the same base, each byte for byte:
+  - `--recipe sub9a`: France IDF fix, t 0.975;
+  - `--recipe sub9b`: bge France, t 0.98;
+  - `--recipe sub9s`: sibling rule, t 0.95;
+  - `--recipe sub9d`: train-only IDF, t 0.98.
+- `--recipe sub7`, `sub6`, `sub5`, `sub4` still give #7 / #6 / #5 / #4; `--recipe sub6 --t-country France=0.95` gives
+  #6c (leaderboard 0.980954).
 - Best leaderboard so far: **0.981142** (D4: #5 with France t 0.95; France 0.88 scored 0.981024).
