@@ -1,17 +1,50 @@
 # P9-integrate — RESULT
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
-- **Every staged submission of 26 Sep comes out of `run.py --split test --stage model` byte for byte, both files**
-  (`cmp`), each with validator PASS:
-  - `--recipe sub8c` (the new default): bge CE + P17's US stacker;
-  - `--recipe sub9a`: France IDF fix; `sub9b`: bge France; `sub9s`: sibling rule; `sub9d`: train-only IDF.
-- **Holdout sub8c 0.98990** (half 1 0.98956). Per country on half 1, India 0.99004 and US 0.98924 equal P17's numbers
-  to the 5th decimal.
-  - The US stacker refit (`run.ensure_stack`) is bit-identical to P17's booster.
-  - `test_pipeline` passes with #8c's stages.
-- **Recommendation:** merge. `--recipe <winner>` then produces whichever LB winner becomes the final. The bge CE scores
-  come from P13's cache: fresh bge scoring needs the HF base weights (not on the laptop) and a GPU.
+- **#9ab = the new default recipe `sub9ab`:** `run.py --split test --stage model` reproduces `output/sub9ab`, our best LB
+  0.984072, byte for byte (both files). `--t-country France=0.975|0.99` reproduces `sub9ab_t975` / `sub9ab_t990`.
+- **Built, validator PASS:**
+  - `output/sub9ab_cap`: ≤ 5 S2 / 6 S3 per S1; 86 S1 change.
+  - `output/sub9ab_small`: candidates 4.82 → **4.34 per S1**. India / US matching identical; France changes on 225 S1
+    (0.087%) from its stricter pruner.
+- **Recommendation:** merge. The cap and `sub9ab_small` are safe by their own measures (see below). Whether to upload
+  either is the master's call.
+  - The cap is +0.0000019 on the holdout.
+  - The small set's decoy drop leaves matching unchanged; its France τ 0.1 moves 225 France S1 in an unknown direction
+    (≤ 0.00013 of the test score).
 
-## #8c / #9 — bge CE, US stacker, France options
+## #9ab — France IDF fix + bge, the cap, a smaller candidate set
+**Changes:**
+- **`run.py`:**
+  - Recipe `sub9ab` (default): `_BGE` + `france="idf144_bge"`, t_france 0.985. France's candidates, X and M2 come from
+    the `idf144` world (`france_variant`), then the bge blend with `w_france` on its band.
+  - `r_seed` takes a list: P13's files, then `p19/r/`. Any seed file newer than the cache is merged into it; a pair
+    already present keeps its r.
+  - `--cap S2,S3` (`cap()`), `--drop-sibling-cands` (`drop_sib_cands()`), `--tau-country C=τ` (→ `model.TAU_COUNTRY`,
+    passed to the France world's subprocess).
+  - Each part carries an `hn` accessor for the decision-time stage.
+- **`model.py`:** `tau(c)`, `kept(X, c)`; the cache key uses the country's τ.
+- **`test_pipeline.py`:** `--cap`, `--drop-sibling-cands`, `--france idf144_bge`.
+
+| check | result |
+|---|---|
+| `run.py --split test --stage model` (sub9ab) vs `output/sub9ab` | **byte-identical, both files**; validator PASS. France: 1,305,341 kept pairs, 783,035 matches at t 0.985; 65,393 r merged from `p19/r` (P19's AWS scores); no GPU |
+| `--t-country France=0.975` / `0.99` vs `output/sub9ab_t975` / `sub9ab_t990` | **byte-identical, both files**, validator PASS (copies deleted) |
+| **cap** `--cap 5,6` → `output/sub9ab_cap` | train truth max per S1 = 5 S2 (24,154 S1) / 6 S3 (2,816 S1). Test: **86 S1** lose **90** matches (France 17 S1 / 18, India 26 / 27, US 43 / 45); candidates identical; validator PASS. Holdout: 4 scored S1 change, all from F0.5 sum 3.58 to 4.00, **+0.0000019**; F0.5 0.98990 unchanged at 5 dp |
+| **sibling-decoy candidates** `--drop-sibling-cands` | holdout candidates per S1: **US 4.24 → 3.92**, India 4.38 → 4.31; candidate recall 0.9874 → 0.9872; F0.5 unchanged. Test (on top of τ below): US 4.63 → 4.00, India 4.90 → 4.75, France 4.37 → 3.97. Matching identical to the run without it (`cmp`) |
+| **France τ 0.1** `--tau-country France=0.1` | France 5.03 → **4.37** per S1 (1,305,341 → 1,134,863 pairs); matches 783,035 → 782,804. **225 France S1 (0.087%) change their answer** (gate ≤ 0.1%: passes); India / US untouched |
+| `output/sub9ab_small` (τ France 0.1 + decoy drop) | **7,527,148 pairs, 4.34 per S1** (France 3.97 / India 4.75 / US 4.00) vs #9ab 8,343,618 = 4.82 (5.03 / 4.90 / 4.63). Matching = #9ab except those 225 France S1. Validator PASS |
+| `test_pipeline.py` (sub9ab, e5 CE, `--cap 5,6 --drop-sibling-cands`; and `--unseen France --france idf144_bge`) | **pass**: 0.9968 / 0.9965 |
+| P21 learned région map: a France `idf144` world rebuilt from raw under the current normalize.py (`probes/P9-integrate/p21check.py`) | **#9ab's France unchanged**. The rebuild covers texts, rules.feats, the learned département map, IDF, blocking, X, pruner and M2. Kept pairs identical (1,305,341; 0 only-old / 0 only-fresh); 22 M2 p move (max 0.053, = P21's report); the band is identical (378,445, all with cached bge r). **0 of 259,452 France matching lines and 0 candidate lines differ** from `output/sub9ab`; 11 min |
+
+**How to read these:**
+- **Decoy drop.** It is a cascade stage before the final decision: a sibling-offset pair survives only if it is its
+  SX's best pair above t. That keeps `candidate_pairs.tsv` = the input of the last decision and makes matching
+  unchanged by construction. The organisers' ruling allows a pruned later stage.
+- **France τ 0.1.** Its 225 changes cannot be signed without France labels. On India / US holdout P10 measured
+  τ 0.1 at −0.00076 (e5 CE). The worst case on France is 225 / 1.73M = 0.00013 of the test score.
+- **Cap.** It only removes pairs beyond the train maximum. Its holdout effect is positive but negligible.
+
+## #8c / #9 — bge CE, US stacker, France options   (history)
 **Change:**
 - **`rerank.py`:**
   - `load_bge(ckpt)` / `score_bge`: P13's `Job.load('bge')` + `restore` + `score` — bge-reranker-v2-m3 fp32,
