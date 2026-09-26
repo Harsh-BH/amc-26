@@ -10,10 +10,13 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - Harsh is running P44 (meta stack, India/US), P45 (stage ensembles), P47 (France shape matching). Don't duplicate.
 
 ## Log
-- 03:30 P40's "Bayes floor" re-checked with raw names (twin_raw.py): SX copies the true twin's raw name 4.3% vs the
+- 03:10 P40's "Bayes floor" re-checked with raw names (twin_raw.py): SX copies the true twin's raw name 4.3% vs the
   other twin's 5.3% → no surface leak; floor holds. DROP.
-- 03:45 Unique-core address-less SX (al_core*.py): train 96.6% US / 97.7% India true for the unique-core S1, but the
+- 03:13 Unique-core address-less SX (al_core*.py): train 96.6% US / 97.7% India true for the unique-core S1, but the
   in-domain model already accepts 96%; leftovers at p<0.5 are mostly false (word-drop variants of other S1s). DROP.
-- 04:05 Read 45 unaccepted France argmax pairs (P31 base, p 0.3–0.99). Launched agy (gemini-3.1-pro-high) probes:
+- 03:18 Read 45 unaccepted France argmax pairs (P31 base, p 0.3–0.99). Launched agy (gemini-3.1-pro-high) probes:
   P48 filler-phrase tier (same address, "& Fils"/"Cie"/"& Associés"... beyond P46), P49 fuzzy street (elision /
   abbreviation / typo with equal name + hn), P50 exact-name at a different address. Common rules: AGY_COMMON.md.
+- 03:25 P48 + P50 OOM-killed in 3 min (full pairs_France in pandas); agy died with them (scope OOMPolicy=stop). Relaunched with MemoryHigh/OOMPolicy=continue + MEMORY GOTCHAS in AGY_COMMON; P50 queued after P49 (RAM).
+- 03:50 merged origin/main (P44 sub44 India/US combiner +0.0003 staged on sub46_on43). P48 v1 rejected (loose lens unvalidated) → REVIEW1.md, rerun queued. P49/P50 running; their python children get OOM-killed and retried (agy survives).
+- 04:00 P49 fuzzy street: NEGATIVE (holdout pred==False precision US 2.4% / India 0.8%; neighbouring-branch decoys). Only 2,487 France pairs are true normalisation bugs (space after elision). DROP. P50 relaunched with OOM-preferred children (BASH_ENV/ZDOTDIR oom_score_adj 1000).

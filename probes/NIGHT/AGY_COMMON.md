@@ -45,3 +45,10 @@ candidate_pairs.tsv, adds France pairs only (India/US lines byte-identical), onl
 only pairs present in candidate_pairs.tsv, caps 5 S2 / 6 S3 per S1, writes out_dir with the same two files. Include a
 `selftest` on a tiny synthetic base. Write a draft RESULT.md within your first 30 minutes and keep it updated.
 Work autonomously; never ask questions — decide, note the assumption, continue. Finish with RESULT.md final.
+
+MEMORY GOTCHAS (two probes were OOM-killed in their first 3 minutes):
+- data/work/p31/pairs_France.parquet with all columns is ~2 GB in pandas. ALWAYS pass columns=[...]; filter to
+  argmax rows (argmax==True) with pyarrow filters or duckdb BEFORE pulling the raw name/address strings.
+- Raw train sources are 5–6M rows each: never load them whole in pandas; filter by country in duckdb and select 2–3 cols.
+- Only ONE python job of yours at a time (no parallel background python). If your python gets killed (137), your agent
+  survives: shrink and rerun.
