@@ -122,6 +122,9 @@ RECIPES["sub40x"] = dict(RECIPES["sub41"], noaddr=0.90)
 RECIPES["sub40x_t70"] = dict(RECIPES["sub41"], noaddr=0.70)
 # #43_r90's levers in one sequential recipe (the staged file is a union of P42 / P41 / P40 pair sets)
 RECIPES["sub43_r90"] = dict(RECIPES["sub42_both"], rescue=0.90, brand=0.30, noaddr=0.70)
+# P46's noise-word swap tier on top (france.swap_mask; lens s <= 0.05, 'g' variant 0.09)
+RECIPES["sub46_on43"] = dict(RECIPES["sub43_r90"], swap=0.05)
+RECIPES["sub46g_on43"] = dict(RECIPES["sub43_r90"], swap=0.09)
 RECIPE = "sub37"            # LB 0.986304 (best); later bars: --rescue / --gc / --hn-extra / --veto / --t-country
 CHN = WORK / "p31" / "c_hn.txt"   # P26's hn-aware matcher (AWS: probes/P26-france-da, SETUP.md), for fr31
 CAP = None                  # --cap 5,6: at most 5 S2 and 6 S3 matches per S1 (the train truth never exceeds them)
@@ -129,6 +132,7 @@ DROP_SIB_CANDS = False      # --drop-sibling-cands: unaccepted decoy-offset pair
 VETO = None                 # (tau, r file): fr31's P30 veto (recipe sub31_veto)
 A10 = None                  # P34's a10 booster (data/work-relative) for the CE countries (recipe sub34 / sub37)
 RESCUE = GC = HN_EXTRA = None   # the unseen country's decision-time bars (france.complete; recipe sub37: 0.90 / 0.70)
+SWAP = None                 # --swap: P46's noise-word swap tier, its lens s_max (france.swap_mask), the last stage
 NOADDR = None               # --noaddr: P40's address-less exact-name bar (france.noaddr_mask), after the brand stage
 BRAND = None                # --brand: P41's synthetic-brand recovery bar (france.brand_mask), after the others
 T_POST = None               # --t-post: fr31's post-rules at this t, the decision at its own (P42's #42_both: 0.9868 / 0.99)
@@ -141,7 +145,7 @@ GPU_LOCK = "/tmp/amc-gpu.lock"
 def use(recipe: str):
     """Switch booster, blend weights, thresholds, pruner, CE, stacker and France to one submission's recipe."""
     global T, T_M2, T_FRANCE_OVERRIDE, RECIPE, FRANCE, W_FRANCE, STACK, R_SEED, W_STACK_FIT, VETO, DROP_SIB_CANDS, \
-        A10, RESCUE, GC, HN_EXTRA, T_POST, BRAND, NOADDR
+        A10, RESCUE, GC, HN_EXTRA, T_POST, BRAND, NOADDR, SWAP
     r = RECIPES[recipe]
     M.BOOSTER, M.FOLDS, M.TAU, M._M, RR.CFG["w"] = WORK / "p4" / r["booster"], r["folds"], r["tau"], None, list(r["w"])
     RR.CE, RR.EPOCHS, RR.FAMILY = WORK / r["ce"], r["ce_epochs"], r["ce_base"]
@@ -149,7 +153,7 @@ def use(recipe: str):
     FRANCE, W_FRANCE, STACK, R_SEED = r["france"], r["w_france"], dict(r["stack"]), dict(r["r_seed"])
     W_STACK_FIT, VETO, DROP_SIB_CANDS = r["w_stack_fit"], r.get("veto"), r.get("drop_sib_cands", False)
     A10, RESCUE, GC, HN_EXTRA, T_POST = r.get("a10"), r.get("rescue"), r.get("gc"), r.get("hn_extra"), r.get("t_post")
-    BRAND, NOADDR = r.get("brand"), r.get("noaddr")
+    BRAND, NOADDR, SWAP = r.get("brand"), r.get("noaddr"), r.get("swap")
 
 
 @functools.cache
@@ -852,20 +856,25 @@ def run(split: str, stage: str, out: Path, world=None, log=True, check=True) -> 
             acc = am & (d["p"] >= ts[d["c"]])
             if CAP:
                 acc = cap(d, acc)
-            if d["c"] in unseen() and len(acc) and any(x is not None for x in (RESCUE, GC, HN_EXTRA, BRAND, NOADDR)):
+            if d["c"] in unseen() and len(acc) and any(x is not None for x in (RESCUE, GC, HN_EXTRA, BRAND, NOADDR, SWAP)):
                 import france as FR
                 FR.C, qx = d["c"], d["K"] & 0xFFFFFFFF
                 is2 = pc.starts_with(d["idx"].take(pa.array(qx)), "S2-").to_numpy(zero_copy_only=False)
-                brand = noaddr = None
-                if BRAND is not None or NOADDR is not None:     # full scale: the test sources + the fr31 world
-                    assert FRANCE == "fr31", "--brand / --noaddr run on the fr31 chain"
+                brand = noaddr = swap = None
+                if (BRAND, NOADDR, SWAP) != (None, None, None):   # full scale: the test sources + the fr31 world
+                    assert FRANCE == "fr31", "--brand / --noaddr / --swap run on the fr31 chain"
                     ids = lambda a, q: a.take(pa.array(q)).to_numpy(zero_copy_only=False)
                     s1i, sxi = ids(d["id1"], d["K"] >> 32), ids(d["idx"], qx)
                     brand = (BRAND, FR.brand_mask(s1i, sxi, M.CACHE / "fr31")) if BRAND is not None else None
                     noaddr = (NOADDR, FR.noaddr_mask(s1i, sxi)) if NOADDR is not None else None
+                    if SWAP is not None:                # P46 learns its sibling words on P3's blocked list
+                        learn = pd.read_parquet(B.P3 / f"cands_test_{d['c']}.parquet", columns=["s1", "sx"])
+                        t_rule = T_POST or T_COUNTRY.get(d["c"], T_FRANCE_OVERRIDE)
+                        swap = (SWAP, FR.swap_mask(s1i, sxi, np.asarray(d["p"], np.float64), t_rule, learn, SWAP))
+                        del learn
                     del s1i, sxi
                 acc = FR.complete(d["K"] >> 32, qx, is2, d["p"], am, acc, d["hn"]("s1"), d["hn"]("sx"), RESCUE, GC,
-                                  HN_EXTRA, brand, noaddr)
+                                  HN_EXTRA, brand, noaddr, swap)
             if DROP_SIB_CANDS:
                 acc = drop_sib_cands(d, acc)              # d["K"] loses the unaccepted decoys; acc realigned
             d["km"] = d["K"][acc]
@@ -961,7 +970,8 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
                     help="drop unaccepted pairs at a generator sibling offset from candidate_pairs.tsv")
     ap.add_argument("--tau-country", nargs="*", default=[], metavar="C=tau", help="per-country pruner tau")
     for flag, what in (("--rescue", "empty-S1 rescue"), ("--gc", "group completion"), ("--hn-extra", "hn-equal extras"),
-                       ("--brand", "synthetic-brand recovery"), ("--noaddr", "address-less exact-name")):
+                       ("--brand", "synthetic-brand recovery"), ("--noaddr", "address-less exact-name"),
+                       ("--swap", "noise-word swap (its lens s_max)")):
         ap.add_argument(flag, type=float, help=f"unseen country's {what} bar on p (recipe's by default; 0 = off)")
     ap.add_argument("--veto", type=float, metavar="TAU", help="fr31's bge veto tau (recipe's file; 0 = off)")
     ap.add_argument("--t-post", type=float, metavar="T", help="fr31's post-rules (tier / bxneg / veto / cap) at T, the "
@@ -974,7 +984,7 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
     CAP = tuple(int(x) for x in a.cap.split(",")) if a.cap else None
     bar = lambda x, dflt: dflt if x is None else x or None      # 0 turns a bar off
     RESCUE, GC, HN_EXTRA, T_POST = bar(a.rescue, RESCUE), bar(a.gc, GC), bar(a.hn_extra, HN_EXTRA), a.t_post or T_POST
-    BRAND, NOADDR = bar(a.brand, BRAND), bar(a.noaddr, NOADDR)
+    BRAND, NOADDR, SWAP = bar(a.brand, BRAND), bar(a.noaddr, NOADDR), bar(a.swap, SWAP)
     if a.veto is not None:
         VETO = (a.veto, (VETO or RECIPES["sub31_veto"]["veto"])[1]) if a.veto else None
     M.TAU_COUNTRY.update({k: float(v) for k, v in (x.split("=") for x in a.tau_country)})
