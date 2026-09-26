@@ -36,3 +36,5 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - 04:50 N54 smoke test on local #31-era output: ruled removes 1,075 pairs (base predates hn-extra), 1 s, official validator PASS (system python3; .venv validator > 2.2 GB gets killed by rsswatch).
 - 04:55 Profiled simulated hn-extra (35.9k) and gc (10.1k) adds: apart from N54's decoy-word swaps, they are name-equal / noise-word / brand pairs — clean. N54 is the only FP family in the add rules.
 - 05:10 **N55 FOUND** (and N48 closure was wrong): ≈12.7k France same-address noise-word swaps (fils/cie/associés/groupe) still rejected; in-domain analogue 0.998/0.997; France lens ≈1% decoy for fils/associés. Script n55.py (strict/all); chained N54→N55 smoke test PASS. Est. +0.0004–0.0007. Pushed.
+- 05:20 N55 fuzzy-street extension: US analogue 0.80 true, India 0.92; France +2,726 → ≈ +0.00004. DROP (keep identical-address only).
+- 05:30 Same-address France space mapped: gib p-floor relax = +165 only (P41 grid); website names at identical address +777 (≈ +0.00003) — both DROP. N54 (−decoy words) + N55 (+noise words) are the two levers.
