@@ -41,3 +41,21 @@ Scripts: probes/NIGHT/decoyword_fp.py, decoyword_ho.py, decoy_mates.py; probes/N
   ≈ neutral-to-positive for `ruled`; `all` is riskier.
 - US→India LOCO of P37's hn90 rule was −0.0014 ("India's hn misleads"): consistent with this cell being the culprit.
 - p comes from data/work/p31/pairs_France.parquet (P31 chain); the base's post-veto p may differ slightly near 0.9868.
+
+## Addendum (05:45) — label-free admixture test: the pairs N54 removes look ≈ 90–100% decoy
+Decoys REPLACE the S1's org word (dropped word ∈ decoy-word set D); true France noise variants drop an S1 word and add
+a noise word (développement / groupe / fils / cie / associés). Share of pairs whose DROPPED word ∈ D (France sub1 argmax):
+pure decoys (swap to a D word at a SIBLING offset) 0.964 (n 24,343); true-noise cell (noise word, hn equal) 0.877
+(n 28,979). Mixture estimate of the true share in the same-hn decoy-word cell, by matcher p:
+| p band | n | dropped∈D | est. true share |
+|---|---|---|---|
+| 0–0.3 | 14,945 | 0.948 | ≈ 0.18 |
+| 0.3–0.6 | 4,645 | 0.967 | ≈ 0 |
+| 0.6–0.8 | 3,271 | 0.967 | ≈ 0 |
+| 0.8–0.9 | 2,057 | 0.956 | ≈ 0.09 |
+| 0.9–0.9868 | 2,945 | 0.965 | ≈ 0 |
+| ≥ 0.9868 | 724 | 0.961 | ≈ 0.03 |
+The matcher does NOT concentrate the few trues at high p (they sit at p < 0.3, never accepted). In the band N54 removes
+(p ≥ 0.8 via hn-extra / gc / rescue, and ≥ 0.9868 for `all`) the profile equals pure decoys (SE ≈ ±0.02 on the share).
+⇒ expected LB for `ruled` ≈ +0.0004–0.0005, for `all` ≈ +0.0005–0.0006. Script: in this file's commit message folder,
+probes/NIGHT (inline; reproduce with the dropped/gained word split of P20 name_rel 'sub1').

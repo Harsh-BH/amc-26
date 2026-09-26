@@ -7,7 +7,7 @@ is 0/65 true (US holdout) and 1/759 (India). France's lens for these 83 words mi
 accepts ≈ 5.4k of them, ≈ 4.7k via post-threshold rules (mostly P42 hn-extra p ≥ 0.8, which has no word check).
   .venv/bin/python probes/N54-fr-decoyword-removal/p54.py cells
   .venv/bin/python probes/N54-fr-decoyword-removal/p54.py build output/<best> output/sub54r ruled   # then validator
-Expected +0.0002–0.0005 LB (break-even at 29% of removed pairs false). One upload measures it cleanly (France-only diff).
+Expected +0.0004–0.0006 LB (break-even at 29% false; a label-free admixture test puts the removed pairs at ≈ 90–100% decoy — see the N54 addendum). One upload measures it cleanly (France-only diff).
 Also worth adding the same word guard inside hn-extra / gc in run.py.
 
 ## 2. Already-run answers for P49-twin-prior (save its time)
