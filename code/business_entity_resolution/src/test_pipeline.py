@@ -4,8 +4,13 @@
 S2-/S3- ids of the input, of the S1's own country, without duplicates, spaces or quotes. The model stage runs the
 real M2 + cross-encoder (GPU, under the lock) and gives Xland P6's unseen-country threshold. ~4 min.
 
-    python code/business_entity_resolution/src/test_pipeline.py
+    python code/business_entity_resolution/src/test_pipeline.py [--recipe R] [--ce PATH --ce-base e5|bge]
+                                                                [--unseen France --france sib|bge|m2]
+--ce swaps the recipe's cross-encoder (e.g. #8c's bge CE needs its HF base weights and a GPU; the e5 CE runs anywhere),
+so every other stage of the recipe (pruner, blend, P17's stacker, France's scorer) is still exercised. --unseen names
+the injected unseen label (France: its fixed t and --france scorer apply to it).
 """
+import argparse
 import sys
 import tempfile
 from pathlib import Path
@@ -17,7 +22,7 @@ import run
 from worlds import load_world
 
 
-def world(n: int = 1500, seed: int = 0):
+def world(n: int = 1500, seed: int = 0, unseen: str = "Xland"):
     s1, sx, truth = load_world("dev")
     s1 = s1.groupby("country").sample(n=n, random_state=seed)
     kids = set().union(*(truth[s] for s in s1.entity_id))
@@ -26,8 +31,8 @@ def world(n: int = 1500, seed: int = 0):
     xkids = set().union(*(truth[s] for s in xs1.entity_id))
     relabel = lambda d, tag, c: d.assign(entity_id=d.entity_id + tag, country=c)
     ys1 = relabel(s1.head(3), "y", "Yland")
-    S1 = pd.concat([s1, relabel(xs1, "x", "Xland"), ys1], ignore_index=True)
-    SX = pd.concat([sx, relabel(sx[sx.entity_id.isin(xkids)], "x", "Xland")], ignore_index=True)
+    S1 = pd.concat([s1, relabel(xs1, "x", unseen), ys1], ignore_index=True)
+    SX = pd.concat([sx, relabel(sx[sx.entity_id.isin(xkids)], "x", unseen)], ignore_index=True)
     T = ({s: truth[s] for s in s1.entity_id} | {s + "x": {k + "x" for k in truth[s]} for s in xs1.entity_id}
          | {s: set() for s in ys1.entity_id})
     return S1, SX, T
@@ -53,13 +58,26 @@ def check(out: Path, s1: pd.DataFrame, sx: pd.DataFrame):
         got.append({s: set(v) for s, v in lists.items()})
     m, c = got
     assert all(m[s] <= c[s] for s in m), "matches ⊆ candidates"
-    assert any(m[s] for s in m if c1[s] == "Xland"), "the unseen label is matched, not only listed"
+    assert any(m[s] for s in m if s.endswith("x")), "the unseen label is matched, not only listed"
     assert not any(c[s] for s in c if c1[s] == "Yland"), "a label with no S2/S3 gets empty rows"
     return m
 
 
 if __name__ == "__main__":          # forkserver workers (rules.feats) re-import this file
-    s1, sx, truth = world()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--recipe", default=run.RECIPE, choices=sorted(run.RECIPES))
+    ap.add_argument("--ce", type=Path)
+    ap.add_argument("--ce-base", choices=["e5", "bge"])
+    ap.add_argument("--unseen", default="Xland")
+    ap.add_argument("--france", choices=["m2", "bge", "sib"])
+    a = ap.parse_args()
+    run.use(a.recipe)
+    if a.ce:
+        run.RR.CE, run.RR.FAMILY = a.ce.resolve(), a.ce_base or run.RR.FAMILY
+    run.FRANCE = a.france or run.FRANCE
+    print(f"recipe {a.recipe}: CE {run.RR.CE.name} ({run.RR.FAMILY}), stack {list(run.STACK)}, France {run.FRANCE}, "
+          f"unseen label {a.unseen}", flush=True)
+    s1, sx, truth = world(unseen=a.unseen)
     with tempfile.TemporaryDirectory() as d:
         for stage in ("rules", "model"):
             met = run.run("pipeline-test", stage, Path(d), world=(s1, sx, truth), log=False)
