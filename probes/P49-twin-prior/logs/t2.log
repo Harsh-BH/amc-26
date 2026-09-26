@@ -1,0 +1,12 @@
+India report h1: small components 3,732 of 9,660 (0.139 of rows)
+US report h1: small components 7,841 of 13,262 (0.253 of rows)
+India report h0: small components 3,732 of 9,660 (0.139 of rows)
+US report h0: small components 7,841 of 13,262 (0.253 of rows)
+h1 oracle                     India +0.002414 ± 0.000132 | US +0.002836 ± 0.000114 | LB-eq +0.002216 ± 0.000076
+h1 per-SX argmax              India +0.000010 ± 0.000019 | US +0.000004 ± 0.000027 | LB-eq +0.000006 ± 0.000014
+h1 joint EF + size prior      India +0.000049 ± 0.000043 | US +0.000007 ± 0.000034 | LB-eq +0.000026 ± 0.000024
+h1 joint EF, no size factor   India +0.000052 ± 0.000043 | US -0.000007 ± 0.000033 | LB-eq +0.000022 ± 0.000024
+h0 oracle                     India +0.002099 ± 0.000105 | US +0.002812 ± 0.000113 | LB-eq +0.002059 ± 0.000065
+h0 per-SX argmax              India -0.000012 ± 0.000038 | US +0.000005 ± 0.000020 | LB-eq -0.000004 ± 0.000019
+h0 joint EF + size prior      India -0.000012 ± 0.000035 | US +0.000020 ± 0.000035 | LB-eq +0.000002 ± 0.000021
+h0 joint EF, no size factor   India -0.000018 ± 0.000035 | US +0.000002 ± 0.000037 | LB-eq -0.000008 ± 0.000021

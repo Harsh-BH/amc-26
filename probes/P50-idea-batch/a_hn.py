@@ -87,3 +87,13 @@ tab("any_range", (s1rng != "") | (sxrng != ""))
 end_eq = ((s1rng != "") & (s1rng == HX) & (H1 != HX)) | ((sxrng != "") & (sxrng == H1) & (H1 != HX))
 tab("range_other_end_eq", end_eq)
 json.dump({"records": res, "pairs": rows}, open("data/work/p50/a_hn.json", "w"), indent=1, default=str)
+
+# 3. which suffix combos (S1, SX) sit on hn-equal pairs, with accept rate and p band shares
+m = z["hn_eq"] & ((s1suf != "") | (sxsuf != ""))
+cb = pd.DataFrame({"s1": s1suf[m], "sx": sxsuf[m], "acc": a_[m], "hi": p[m] >= 0.97, "lo": p[m] < 0.5})
+t = cb.groupby(["s1", "sx"]).agg(n=("acc", "size"), acc=("acc", "mean"), hi=("hi", "mean"), lo=("lo", "mean")).sort_values("n", ascending=False)
+print(t.head(30).round(3).to_string())
+# baseline: hn-equal pairs with no suffix on either side
+m0 = z["hn_eq"] & (s1suf == "") & (sxsuf == "")
+print("no-suffix hn_eq pairs", int(m0.sum()), "acc", round(a_[m0].mean(), 3), "hi", round((p[m0] >= 0.97).mean(), 3), "lo", round((p[m0] < 0.5).mean(), 3))
+t.reset_index().to_csv("data/work/p50/a_combos.csv", index=False)
