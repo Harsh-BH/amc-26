@@ -1,0 +1,74 @@
+== US: core-eq & SX hn '' argmax pairs 42,144; +S1 hn & city eq 19,269; newly parsed by lstrip('#(') 0 (-> eq 0, sib 0, other 0); legal ok 0.972; street eq 0.964; uniq 0.978; nsame==1 1.000; M 17,641
+   M p[0,0.3): n 0
+   M p[0.3,0.5): n 0
+   M p[0.5,0.71): n 0
+   M p[0.71,0.9): n 0
+   M p[0.9,0.95): n 0
+   M p[0.95,0.985): n 9 true 1.0000 (se 0.0000)
+   M p[0.985,1.01): n 17,632 true 1.0000 (se 0.0000)
+   M p[0.5,0.985): n 9 true 1.0000 (se 0.0000)
+   M legal=same p[.5,.985): n 0 true nan
+   M legal=dropadd p[.5,.985): n 8 true 1.0000
+   M legal=none p[.5,.985): n 1 true 1.0000
+   M_no_street p[0,0.3): n 6 true 0.0000 (se 0.0000)
+   M_no_street p[0.3,0.5): n 0
+   M_no_street p[0.5,0.71): n 0
+   M_no_street p[0.71,0.9): n 0
+   M_no_street p[0.9,0.95): n 0
+   M_no_street p[0.95,0.985): n 9 true 1.0000 (se 0.0000)
+   M_no_street p[0.985,1.01): n 18,286 true 1.0000 (se 0.0000)
+   M_no_street p[0.5,0.985): n 9 true 1.0000 (se 0.0000)
+   M_no_street legal=same p[.5,.985): n 0 true nan
+   M_no_street legal=dropadd p[.5,.985): n 8 true 1.0000
+   M_no_street legal=none p[.5,.985): n 1 true 1.0000
+== India: core-eq & SX hn '' argmax pairs 85,841; +S1 hn & city eq 15,712; newly parsed by lstrip('#(') 6,515 (-> eq 4,085, sib 183, other 2,247); legal ok 0.600; street eq 0.285; uniq 0.689; nsame==1 0.998; M 643
+   M p[0,0.3): n 12 true 0.0000 (se 0.0000)
+   M p[0.3,0.5): n 0
+   M p[0.5,0.71): n 0
+   M p[0.71,0.9): n 0
+   M p[0.9,0.95): n 0
+   M p[0.95,0.985): n 3 true 1.0000 (se 0.0000)
+   M p[0.985,1.01): n 628 true 1.0000 (se 0.0000)
+   M p[0.5,0.985): n 3 true 1.0000 (se 0.0000)
+   M legal=same p[.5,.985): n 0 true nan
+   M legal=dropadd p[.5,.985): n 2 true 1.0000
+   M legal=none p[.5,.985): n 1 true 1.0000
+   M_no_street p[0,0.3): n 172 true 0.0058 (se 0.0058)
+   M_no_street p[0.3,0.5): n 1 true 0.0000 (se 0.0000)
+   M_no_street p[0.5,0.71): n 0
+   M_no_street p[0.71,0.9): n 3 true 1.0000 (se 0.0000)
+   M_no_street p[0.9,0.95): n 4 true 1.0000 (se 0.0000)
+   M_no_street p[0.95,0.985): n 51 true 1.0000 (se 0.0000)
+   M_no_street p[0.985,1.01): n 3,732 true 0.9995 (se 0.0004)
+   M_no_street p[0.5,0.985): n 58 true 1.0000 (se 0.0000)
+   M_no_street legal=same p[.5,.985): n 19 true 1.0000
+   M_no_street legal=dropadd p[.5,.985): n 28 true 1.0000
+   M_no_street legal=none p[.5,.985): n 11 true 1.0000
+== France: core-eq & SX hn '' argmax pairs 88,926; +S1 hn & city eq 30,551; newly parsed by lstrip('#(') 12,539 (-> eq 10,117, sib 1,579, other 843); legal ok 0.964; street eq 0.799; uniq 0.707; nsame==1 0.975; M 10,136
+   M p[0,0.3): n 1
+   M p[0.3,0.5): n 4
+   M p[0.5,0.71): n 10
+   M p[0.71,0.9): n 91
+   M p[0.9,0.95): n 81
+   M p[0.95,0.985): n 206
+   M p[0.985,1.01): n 9,743
+   M p[0.5,0.985): n 388
+   M t_key 0.95: +206 pairs, 200 S1, 11 empty S1 filled
+   M t_key 0.9: +287 pairs, 274 S1, 13 empty S1 filled
+   M t_key 0.71: +378 pairs, 364 S1, 23 empty S1 filled
+   M t_key 0.5: +388 pairs, 374 S1, 23 empty S1 filled
+   M_no_street p[0,0.3): n 46
+   M_no_street p[0.3,0.5): n 18
+   M_no_street p[0.5,0.71): n 28
+   M_no_street p[0.71,0.9): n 180
+   M_no_street p[0.9,0.95): n 145
+   M_no_street p[0.95,0.985): n 402
+   M_no_street p[0.985,1.01): n 12,065
+   M_no_street p[0.5,0.985): n 755
+   M_no_street t_key 0.95: +402 pairs, 384 S1, 16 empty S1 filled
+   M_no_street t_key 0.9: +547 pairs, 515 S1, 19 empty S1 filled
+   M_no_street t_key 0.71: +727 pairs, 682 S1, 30 empty S1 filled
+   M_no_street t_key 0.5: +755 pairs, 707 S1, 32 empty S1 filled
+   M legal=same p[.5,.985): n 38
+   M legal=dropadd p[.5,.985): n 326
+   M legal=none p[.5,.985): n 24

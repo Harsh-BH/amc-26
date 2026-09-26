@@ -1,0 +1,6 @@
+argmax pairs 1,163,643; cores differ only by FR suffix words: 17,684
+ +hn eq                       n 14,596 accepted@0.985 0.420  p bands <.3 0.037 .3-.7 0.118 .7-0.985 0.426; would flip 8,470 (S1 touched 8,044)
+ +hn eq +unique               n 13,465 accepted@0.985 0.400  p bands <.3 0.037 .3-.7 0.123 .7-0.985 0.439; would flip 8,077 (S1 touched 7,689)
+ +hn eq +city eq +unique      n 13,419 accepted@0.985 0.401  p bands <.3 0.036 .3-.7 0.123 .7-0.985 0.440; would flip 8,040 (S1 touched 7,658)
+ hn missing +city eq +unique  n    693 accepted@0.985 0.322  p bands <.3 0.176 .3-.7 0.180 .7-0.985 0.322; would flip 470 (S1 touched 461)
+ contrast core-equal +hn +city +unique: n 575,790 accepted@0.985 0.974

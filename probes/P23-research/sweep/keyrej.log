@@ -1,0 +1,3 @@
+France p19/prob_test_France_idf144_bge.parquet t 0.985: argmax key+city pairs 513,436; rejected (p < t) 0.0265; p < 0.95 0.0114
+US p17/prob_test_US_bge.parquet t 0.71: argmax key+city pairs 949,738; rejected (p < t) 0.0025; p < 0.95 0.0025
+India p17/prob_test_India_bge.parquet t 0.71: argmax key+city pairs 759,529; rejected (p < t) 0.0298; p < 0.95 0.0303

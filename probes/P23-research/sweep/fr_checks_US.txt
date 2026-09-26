@@ -1,0 +1,15 @@
+== US: S1 663,106  SX sample 800,000
+A websites 31,417: exact core hit folded 0.667  deleted 0.666  deleted-only 0.000  either 0.667
+B alias markers per 10k SX: {'d.b.a': np.float64(9.1), 'f.k.a': np.float64(0.0), 'a.k.a': np.float64(0.0), 't.a': np.float64(0.0), 'dba': np.float64(27.0), 'f/k/a': np.float64(14.5), 'formerly known as': np.float64(7.2), 'doing business as': np.float64(8.9), 'trading as': np.float64(9.2), 'anciennement': np.float64(0.0), 'dite': np.float64(0.0), 'ex-': np.float64(0.0), 'sous le nom': np.float64(0.0), 'enseigne': np.float64(0.0), 'nee': np.float64(7.3), 'sys': np.float64(5.6)}
+   dotted alias not resolved by name_norm (share of SX): 0.00091
+C elision apostrophe: S1 0.0000 SX 0.0000; SX tokens = d/l + S1 word, token unseen in S1: 18 of 2,763,737 (0.00001)
+D (n)      :     0.0 per 10k SX, house_number empty among them 0.000
+D h.no     :     0.0 per 10k SX, house_number empty among them 0.000
+D d.no     :     0.0 per 10k SX, house_number empty among them 0.000
+D plt/pl   :     0.0 per 10k SX, house_number empty among them 0.000
+D zero-pad :   497.4 per 10k SX, house_number empty among them 0.000
+D #        :   648.2 per 10k SX, house_number empty among them 0.000
+D n deg    :     1.0 per 10k SX, house_number empty among them 0.000
+D bis/ter  :     0.1 per 10k SX, house_number empty among them 0.000
+E first-token SX-over: llc 1.50%/0.00%, inc 0.98%/0.00%, corp 0.35%/0.00%, group 0.31%/0.00%, ltd 0.28%/0.00%, partners 0.29%/0.00%, holdings 0.28%/0.00%, center 0.20%/0.00%, services 0.14%/0.00%, pllc 0.07%/0.00%, service 0.07%/0.00%, incorporated 0.07%/0.00%, co 0.31%/0.00%, and 0.03%/0.00%, pc 0.11%/0.00%, corporation 0.02%/0.00%, associates 0.01%/0.00%, lp 0.05%/0.00%, the 1.46%/0.15%, of 0.02%/0.00%, care 0.02%/0.01%, navarro 0.01%/0.01%, delgado 0.01%/0.01%, grant 0.02%/0.02%, hart 0.01%/0.01%
+   in HONORIFIC: ['the']
