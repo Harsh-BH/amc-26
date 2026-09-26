@@ -9,6 +9,9 @@ accepts ≈ 5.4k of them, ≈ 4.7k via post-threshold rules (mostly P42 hn-extra
   .venv/bin/python probes/N54-fr-decoyword-removal/p54.py build output/<best> output/sub54r ruled   # then validator
 Expected +0.0004–0.0006 LB (break-even at 29% false; a label-free admixture test puts the removed pairs at ≈ 90–100% decoy — see the N54 addendum). One upload measures it cleanly (France-only diff).
 Also worth adding the same word guard inside hn-extra / gc in run.py.
+**P47 (shape matching) MUST apply this guard**: the same-hn decoy-word cell holds ≈ 7.9k free argmax France pairs at
+p 0.3–0.8 whose profile is pure decoy (N54 addendum); a descending-p fill would take them. Exclude
+data/work/p54/cells.parquet pairs (after `p54.py cells`) from any France add rule.
 
 ## 2. Already-run answers for P49-twin-prior (save its time)
 - Test 3 (raw-string channel): train US, twins by normalised core, address-less true SX: SX raw name == true twin's raw
