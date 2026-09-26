@@ -90,6 +90,8 @@ features take 4.5 / 1.6 min for India / US).
 | `sub37_hn90` (`--hn-extra 0.9`) | + two-sided extras: a free argmax non-sibling SX with p ≥ 0.90 and the S1's house number joins a group that has both sources | `output/sub37_gc70_hn90` | slot (27 Sep) |
 | `sub37 --rescue 0.7` | the rescue at p ≥ 0.70 | `output/sub37_gc70_r70` | slot (27 Sep) |
 | `sub41` (= `sub37 --brand 0.3`), `sub41_hn90` | + P41's synthetic-brand recovery: a free argmax non-sibling SX whose name is one bare generator brand (a single token spelled by ≥ 2 of the 44 syllables P36 learns label-free from the test names) joins a non-empty group of the only S1 with its exact hn + street + city key, p ≥ 0.30 (+5,742 pairs to 5,641 S1) | `output/sub41`, `output/sub41_hn90` | slot (27 Sep) |
+| `sub40x`, `sub40x_t70` (= `sub41 --noaddr 0.9 / 0.7`) | + P40's address-less exact-name variants: a free argmax non-sibling SX with an empty address whose full normalised name (legal form kept) equals its S1's, a name no other S1 of the country carries; any S1, empty ones too | `output/sub40x`, `output/sub40x_t70` (same ID sets; P40's builder leaves new IDs unsorted) | slot (27 Sep) |
+| `sub43_r90` (= `sub42_both --rescue 0.9 --brand 0.3 --noaddr 0.7`) | #43_r90's levers applied in order. The staged `output/sub43_r90` is a union of pair sets and lacks 507 pairs that #37_gc70 accepts (p ≥ 0.9868, brand / address-less guards): the union's brand and address-less pairs were computed on #37_gc70, so pairs that t 0.99 dropped were never offered to them again | `output/sub43r90_recipe` | slot (27 Sep) |
 | `sub42_both` (= `sub37 --t-country France=0.99 --t-post 0.9868 --rescue 0.97 --hn-extra 0.8`) | P42's joint re-tune: the decision at t 0.99 on the post-rules of t 0.9868, rescue 0.97, gc 0.70, hn extras 0.80 | `output/sub42_both` | slot (27 Sep) |
 | `sub34_veto` = `sub37 --rescue 0 --gc 0` | no decision-time additions | `output/sub34_veto` | 0.985647 |
 | `sub34` | India / US + a10, the unseen country = `sub31` (no veto) | `output/sub34` | — |
@@ -98,7 +100,7 @@ features take 4.5 / 1.6 min for India / US).
 | `sub31_veto`, `sub31_small` | `sub31` + the veto; `sub31` with the decoy stage (4.42 per S1) | `output/sub31_veto`, `output/sub31_small` | — |
 | `sub9ab` | #9ab: `idf144`'s m2_big p + the bge blend, t 0.985 (`--t-country France=0.975 / 0.99`: `sub9ab_t975 / t990`) | `output/sub9ab` | 0.984072 |
 
-The unseen country's bars are flags on any recipe: `--rescue T`, `--gc T`, `--hn-extra T`, `--brand T` (0 turns one off),
+The unseen country's bars are flags on any recipe: `--rescue T`, `--gc T`, `--hn-extra T`, `--brand T`, `--noaddr T` (0 turns one off),
 `--veto TAU` (0 = off), `--t-country <label>=T`, and `--t-post T` (the post-rules at T, the decision at the country's
 t). Add `--drop-sibling-cands` for the 4.42-per-S1 candidate file of any of them.
 
@@ -193,7 +195,7 @@ its own cap inside the chain, and `sub31_small` / `sub37_small` = `sub31` / `sub
 | France rebuild (#31) | #9ab's idf144 France world with the `(n)` house numbers re-parsed (P29 `paren_hn`) | `france.world` | `p9/fr31/` (links + `rf_test_sx_France.parquet`) |
 | France c_hn (#31) | #9ab's X rescored with R1's cores (P20), pruned, then c_hn = m2_big's recipe + `france.HN` (P26 `hn_feats`, over the full list) | `france.chn`; `train_matcher.py --hn` when `c_hn.txt` is absent | `p31/c_hn.txt`; `p9/fr31/p9/chn_test_France_<c_hn>_<pruner>_<τ>.parquet` |
 | France post-rules (#31) | after the bge blend, at France's t: key tier (P29) → bxneg (P28; sibling words learned on P3's blocked list) → [veto, P30] → cap (P29) | `france.post` | — |
-| France additions (#34v, #37) | after the decision: empty-S1 rescue (p ≥ 0.90), group completion of one-sided groups (p ≥ 0.70), optional hn-equal extras (hn90) and brand recovery (P41); free argmax non-sibling pairs only | `france.complete` (`rescue`, `gc_add`, `brand_mask`) | `p36/morph_test.json` (the brand syllables) |
+| France additions (#34v, #37) | after the decision: empty-S1 rescue (p ≥ 0.90), group completion of one-sided groups (p ≥ 0.70), optional hn-equal extras (hn90), brand recovery (P41) and address-less exact names (P40); free argmax non-sibling pairs only | `france.complete` (`rescue`, `gc_add`, `brand_mask`, `noaddr_mask`) | `p36/morph_test.json` (the brand syllables) |
 | decision | each S2/S3 to its argmax-p S1 among the kept pairs (a10's countries: #8c's argmax), kept if p ≥ t. India / US: t = 0.71 on p′. The unseen label(s) (`run.unseen()`: France): its scorer (above), t fixed per recipe (#31 / #37 0.9868, #9ab 0.985, #8c 0.95; leaderboard-validated). Any other label without training data: M2's p, t from P6's label-free rule (below) | `run.thresholds` | — |
 | output | one row per test S1 (all countries); candidates = the kept pairs (what M2 + CE scored) | `run.write_lists` | `output/*.tsv` |
 

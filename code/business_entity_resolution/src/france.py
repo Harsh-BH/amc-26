@@ -416,16 +416,17 @@ def rescue(q1, p, am, acc, sib, t: float) -> np.ndarray:
     return _best_per(q1, p, am & ~sib & ~has & ~acc & (p >= t))
 
 
-def gc_add(q1, qx, is2, p, am, acc, sib, t: float, guard: np.ndarray | None = None) -> np.ndarray:
+def gc_add(q1, qx, is2, p, am, acc, sib, t: float, guard: np.ndarray | None = None, empty: bool = False) -> np.ndarray:
     """P37's group completion: an S1 whose accepted group holds one source only (S2s or S3s) gets every free (SX
     accepted nowhere) argmax, non-sibling pair of the missing source with p >= t, best p first, up to CAP per source.
     guard (per pair, e.g. hn equal): a pair of a two-sided group that passes it joins too (#37_gc70_hn90). In the
-    train truth 81% of S1 hold both sources and 14% one; France's predictions were one-sided for 20.7% of its S1."""
+    train truth 81% of S1 hold both sources and 14% one; France's predictions were one-sided for 20.7% of its S1.
+    empty: guarded pairs may also join an S1 with no members (P40's xf_noaddr)."""
     free = np.bincount(qx[acc], minlength=int(qx.max()) + 1)[qx] == 0
     ns = int(q1.max()) + 1
     n2, n3 = (np.bincount(q1[acc & m], minlength=ns)[q1] for m in (is2, ~is2))
     miss = np.where(is2, (n2 == 0) & (n3 > 0), (n3 == 0) & (n2 > 0))       # this row's source is the missing one
-    c = am & ~acc & free & ~sib & (p >= t) & (miss if guard is None else miss | ((n2 + n3 > 0) & guard))
+    c = am & ~acc & free & ~sib & (p >= t) & (miss if guard is None else miss | (((n2 + n3 > 0) | empty) & guard))
     o = np.flatnonzero(c)
     k = q1 * 2 + is2
     o = o[np.lexsort((-p[o], k[o]))]
@@ -437,9 +438,10 @@ def gc_add(q1, qx, is2, p, am, acc, sib, t: float, guard: np.ndarray | None = No
     return out
 
 
-def complete(q1, qx, is2, p, am, acc, h1, hx, rescue_t=None, gc_t=None, hn_t=None, brand=None) -> np.ndarray:
+def complete(q1, qx, is2, p, am, acc, h1, hx, rescue_t=None, gc_t=None, hn_t=None, brand=None, noaddr=None) -> np.ndarray:
     """acc (the decision: am & p >= t) plus, in the staged files' order, the rescue (rescue_t), the group completion
-    (gc_t), the hn-equal two-sided extras (hn_t) and the brand recovery (brand = (t, brand_mask per pair)); None = off.
+    (gc_t), the hn-equal two-sided extras (hn_t), the brand recovery (brand = (t, brand_mask per pair)) and the
+    address-less exact-name variants (noaddr = (t, noaddr_mask per pair), any S1, empty ones too); None = off.
     p is compared in float64, as P37 / P41 built them. Siblings (stack.sib_mask on h1 / hx, the house numbers of q1 /
     qx) never join."""
     import stack as S
@@ -458,7 +460,33 @@ def complete(q1, qx, is2, p, am, acc, h1, hx, rescue_t=None, gc_t=None, hn_t=Non
     if brand is not None:                               # any non-empty group, guarded pairs only (P41)
         acc = add("brand recovery", brand[0], gc_add(q1, qx, is2, p, am, acc, sib | ~brand[1], brand[0],
                                                      np.ones(len(p), bool)))
+    if noaddr is not None:                              # any S1, guarded pairs only (P40)
+        acc = add("address-less exact names", noaddr[0], gc_add(q1, qx, is2, p, am, acc, sib | ~noaddr[1], noaddr[0],
+                                                                np.ones(len(p), bool), empty=True))
     return acc
+
+
+def fkey(s: str) -> str:
+    """P40's full normalised name, legal forms kept: accents stripped, lower case, '&' -> 'and', word tokens."""
+    s = unicodedata.normalize("NFKD", s or "")
+    s = "".join(ch for ch in s if not unicodedata.combining(ch)).lower().replace("&", " and ")
+    return " ".join(re.findall(r"\w+", s))
+
+
+def noaddr_mask(s1: np.ndarray, sx: np.ndarray) -> np.ndarray:
+    """P40's xf_noaddr per pair (s1 / sx ids): the SX has an empty address and its full normalised name (fkey, legal
+    form kept) equals the S1's, a name >= 5 characters that no other S1 of the country carries."""
+    raw = lambda k, cols: pq.read_table(WORK / f"test_source{k}.parquet", columns=["entity_id", *cols],
+                                        filters=[("country", "==", C)]).to_pandas()
+    a = raw(1, ["business_name"])
+    k1 = pd.Series([fkey(n) for n in a.business_name], index=a.entity_id.to_numpy())
+    n = k1.value_counts()
+    k1 = k1[(k1.str.len() >= 5) & (k1.map(n) == 1)]                    # unique, long enough
+    x = pd.concat([raw(k, ["business_name", "business_address"]) for k in (2, 3)], ignore_index=True)
+    x = x[x.business_address.fillna("").str.strip() == ""]
+    kx = pd.Series([fkey(n) for n in x.business_name], index=x.entity_id.to_numpy())
+    print(f"{C}: {len(kx):,} address-less SX, {len(k1):,} unique S1 full names", flush=True)
+    return (kx.reindex(sx).to_numpy(object) == k1.reindex(s1).to_numpy(object)) & pd.notna(k1.reindex(s1)).to_numpy()
 
 
 # ---------------------------------------------------------------- P41: synthetic-brand ("gib") recovery (P36's detector)
@@ -579,6 +607,10 @@ def _check():
     assert [n_syll(t, ms) >= 2 for n in ["Zephcalonex", "QÚOLYRASOL", "Ke1ozeph", "Zeph", "Solar"] for t in btoks(n)] == \
         [True, True, True, False, False]
     assert btoks("M/s Brixpyra Pvt") == ["m", "s", "brixpyra", "pvt"] and n_syll("zephcalobrix", {"zeph", "calo", "brix"}) == 3
+    assert fkey("Club des Africa & Fils SARL") == "club des africa and fils sarl" and fkey("Maison Léts") == "maison lets"
+    e = np.r_[False, acc[1:]]                                                                 # xf: an empty S1 0 may take it
+    assert complete(q1, qx, is2, p, am, e, np.array([""] * 7, object), np.array([""] * 7, object),
+                    noaddr=(.9, np.r_[no[:6], True])).tolist() == e.tolist()[:6] + [True]
     g = np.r_[no[:6], True]                                                                   # brand: only row 6 may join
     assert complete(q1, qx, is2, p, am, acc, h := np.array([""] * 7, object), h, brand=(.9, g)).tolist() == \
         acc.tolist()[:6] + [True]
