@@ -7,7 +7,9 @@ Face:
   (`probes/P13-aws-rerank`), and `run.py` loads its checkpoint rather than retraining it.
 - `intfloat/multilingual-e5-small` (MIT, 118M parameters) is #4–#7's cross-encoder and is fine-tuned by `rerank.py train`.
 
-Every other artefact is fitted on the train data and rebuilt when absent.
+Every other artefact is fitted on the train data and rebuilt when absent. The one exception is France's
+département → région map: it is learned from confident pairs among the unlabelled test France rows, which the
+organisers allow. There is no geo table.
 
 ## 1. Setup
 
@@ -98,6 +100,7 @@ an earlier submission. Each recipe reproduces its staged files byte for byte, an
 | data | TSV → parquet, read with `QUOTE_NONE` and `keep_default_na=False` | `io_tsv.convert` | `{train,test}_source{1,2,3}.parquet` |
 | folds | ground-truth pairs; 10 hashed folds of train S1 (0 = holdout, 1 = dev / early stopping, 2–9 = fitting) | `worlds.build_base` | `gt_pairs`, `s1_folds` |
 | transliteration | Indic → Latin word table, learned from train folds 2–9 true pairs | `translit.table` | `p2_xlit_table.parquet` |
+| région map | France S1 always names its région, and the 13 région names are the only hand-written French place words. An S2/S3 segment is learned as a département of région r when it stands in the région's slot (≤ 5% of its rows also name a région), S1 never names it, and ≥ 95% of ≥ 20 confident anchors put their S1 in r. An anchor is an S2/S3 whose name core equals exactly one S1's and which shares an address segment with it. Test France learns nord and pas de calais → hauts de france, gironde → nouvelle aquitaine, loire atlantique → pays de la loire | `normalize.fr_departements` | `fr_regions.json` |
 | record features | `to_latin` → `name_core`, `website_core`, `address_fields` (state, city, house number, places) | `run.feats` → `rules.feats` | `rf_<split>_{s1,sx}_<country>.parquet` |
 | vectorizers | hashed TF-IDF (name char-3-grams, address words) on a seeded 1M-row sample of train S2/S3 | `block.vecs` | `p3/vecs_hash.pkl` |
 | blocking | per country, within state group: each S2/S3 → its top-2 S1 (top-10 if it has no address) ∪ each S1's top-10 S2/S3 | `block.split_cands` | `p3/txt*/`, `p3/cands_<split>_<country>.parquet` |
