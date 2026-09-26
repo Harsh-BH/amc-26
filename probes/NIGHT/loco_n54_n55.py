@@ -46,7 +46,7 @@ def run(src, tgt):
     ia = np.flatnonzero(am & hn_eq)
     g = [[w for w in b.split() if w not in set(a.split())] for a, b in zip(c1[ia], cx[ia])]
     dr = [[w for w in a.split() if w not in set(b.split())] for a, b in zip(c1[ia], cx[ia])]
-    sub1 = np.array([len(x) == 1 and len(z) == 1 for x, z in zip(g, dr)])
+    sub1 = np.array([len(x) == 1 and len(z) <= 1 for x, z in zip(g, dr)])   # sub1 or add1
     wD = np.array([len(x) == 1 and x[0] in D for x in g])
     n54 = np.zeros(len(d), bool); n54[ia[sub1 & wD]] = True
     def rep(name, pred):

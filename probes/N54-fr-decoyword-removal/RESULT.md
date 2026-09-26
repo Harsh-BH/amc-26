@@ -83,3 +83,13 @@ Every other flagged word is 0% true (US: smith, johnson, brand syllables …; In
 France has one word in (0.2, 0.25] ("in", 22 pairs), so the France removal is unchanged. **Recommend `all`** (positive in
 both directions), `ruled` as the conservative fallback. N55's template does not exist in the LOCO targets (0 / 4 flips,
 4/4 true) — like P46, LOCO confirms precision but cannot size the gain.
+
+## Addendum 4 (05:15) — add1 decoy words included (India→US LOCO decomposition showed the family)
+US→India LOCO: simulated hn-extra's false adds include add1 + decoy word (lens s > .25): 1,578 pairs, 0% true.
+cells() now takes sub1 AND add1 with the single gained word in the decoy set. LOCO (s > 0.25, sub1 + add1):
+| direction | ruled | all |
+|---|---|---|
+| US→India | **+0.0050 / +0.0050 ± 0.00016** (2,165 removed, 0.2% true) | **+0.0102 / +0.0101 ± 0.0003** (4,152, 1.2% true) |
+| India→US | +0.000002 (2) | **+0.00007 / +0.00011 ± 0.00003** (49, 6% true) |
+France cells: sub1 29,664 + add1 4,132 candidate pairs. Other hn-extra false families in US→India (rare words n < 20:
+26% true) are NOT removed — US→India and India→US disagree there (0.26 vs 0.90).

@@ -27,11 +27,18 @@ def cells() -> pd.DataFrame:
     am = fr.argmax.astype(bool).to_numpy()
     lt = p46.lens_table(fr.loc[am, ["s1", "sx"]].reset_index(drop=True), "test", "France")      # label-free, France argmax
     dec = lt[(lt.n >= N_MIN) & (lt.s > S_MIN)]
-    x = fr[(fr.name_rel == "sub1") & (fr.hn_cls == 0) & (fr.hn_1 != "")].reset_index(drop=True)
-    x["w"] = p46.swap_words(x[["s1", "sx"]], "test", "France")
+    x = fr[fr.name_rel.isin(["sub1", "add1"]) & (fr.hn_cls == 0) & (fr.hn_1 != "")].reset_index(drop=True)
+    sub = (x.name_rel == "sub1").to_numpy()
+    x["w"] = ""
+    x.loc[sub, "w"] = p46.swap_words(x.loc[sub, ["s1", "sx"]].reset_index(drop=True), "test", "France")
+    r1 = p46.R._rf(W / "rf_test_s1_France.parquet", pd.unique(x.s1[~sub]), ["core"])      # add1: the single added word
+    rx = p46.R._rf(W / "rf_test_sx_France.parquet", pd.unique(x.sx[~sub]), ["core"])
+    c1, cx = r1.core.reindex(x.s1[~sub]).fillna("").to_numpy(), rx.core.reindex(x.sx[~sub]).fillna("").to_numpy()
+    x.loc[~sub, "w"] = [(g[0] if len(g) == 1 else "") for g in ([t for t in b.split() if t not in set(a.split())] for a, b in zip(c1, cx))]
     x = x[x.w.isin(dec.index)].merge(dec[["s", "e", "n"]], left_on="w", right_index=True)
+    print(x.name_rel.value_counts().to_dict())
     OUT.mkdir(parents=True, exist_ok=True)
-    x[["s1", "sx", "p", "w", "s", "e", "n"]].to_parquet(OUT / "cells.parquet", index=False)
+    x[["s1", "sx", "p", "w", "s", "e", "n", "name_rel"]].to_parquet(OUT / "cells.parquet", index=False)
     dec.to_csv(OUT / "decoy_words.csv")
     print(f"decoy words {len(dec)}; cell pairs {len(x)} (p >= {T_BASE}: {(x.p >= T_BASE).sum()})")
     return x
