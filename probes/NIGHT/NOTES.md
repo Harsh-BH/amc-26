@@ -33,3 +33,4 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - 04:33 **N54 FOUND**: France same-hn org-word-swap decoys (comite/ecole/amicale/club…, lens s>0.2 n≥20) — in-domain cell 0/65 US, 1/759 India true; France accepts ≈5.4k (4.7k via rules p<0.9868, mostly hn-extra). Removal script p54.py (ruled/all). Expected +0.0002–0.0005; break-even 29% false. → push branch for Harsh.
 - 04:36 Renamed night probes N48–N54 (Harsh launched P48-fr-ce-all / P49-twin-prior). Merged origin/main. PUSHED branch night/aditya (N54 + FOR_HARSH.md).
 - 04:40 N54 admixture test: removed band ≈ 90–100% decoy → est. +0.0004–0.0006. Warned in FOR_HARSH that P47's fill must exclude the cell. Pushed.
+- 04:50 N54 smoke test on local #31-era output: ruled removes 1,075 pairs (base predates hn-extra), 1 s, official validator PASS (system python3; .venv validator > 2.2 GB gets killed by rsswatch).

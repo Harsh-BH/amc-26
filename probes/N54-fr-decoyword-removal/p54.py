@@ -45,7 +45,7 @@ def build(base: str, out: str, variant: str = "ruled", cell: pd.DataFrame = None
     for s1, sx in zip(c.s1, c.sx):
         drop.setdefault(s1, set()).add(sx)
     out.mkdir(parents=True, exist_ok=True)
-    n = 0
+    n, touched = 0, 0
     with open(base / "matching_results.tsv", encoding="utf-8") as f, open(out / "matching_results.tsv", "w", encoding="utf-8") as g:
         g.write(f.readline())
         for line in f:
@@ -53,13 +53,14 @@ def build(base: str, out: str, variant: str = "ruled", cell: pd.DataFrame = None
             if s1 in drop and ids:
                 keep = [x for x in ids.split(",") if x not in drop[s1]]
                 n += len(ids.split(",")) - len(keep)
+                touched += len(keep) < len(ids.split(","))
                 g.write(f"{s1}\t{','.join(keep)}\n")
             else:
                 g.write(line if line.endswith("\n") else line + "\n")
     for name in ("candidate_pairs.tsv", "code.zip"):
         if (base / name).exists() and not (out / name).exists():
             os.link(base / name, out / name)
-    print(f"{variant}: removed {n} France pairs ({len(drop)} S1 touched) -> {out}")
+    print(f"{variant}: removed {n} France pairs from {touched} S1 -> {out}")
     return n
 
 def selftest():
