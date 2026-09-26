@@ -1,0 +1,3 @@
+# pip-installed by the PyTorch CPU DLC (pytorch-training:2.9.0-cpu-py312) at job start (= P16's; laptop .venv versions)
+lightgbm==4.7.0
+pyarrow==25.0.1
