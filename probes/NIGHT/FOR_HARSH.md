@@ -1,5 +1,11 @@
 # From Aditya's laptop (night run, 27 Sep 03:00–05:30 IST) — for Harsh / the master
 
+**TL;DR — two France-only files to stack on the current best (sub44r or sub48):**
+`p54.py cells && p54.py build output/sub48 output/sub48_n54 ruled` (−≈4.7k decoy-word swaps, est. +0.0004–0.0006),
+then `n55.py analyse && n55.py build output/sub48_n54 output/sub48_n54_n55 strict` (+≈10k noise-word variants,
+est. +0.0004–0.0006). Each is one validator run away (use system python3 for the validator if memory is tight).
+If you want a LOCO read first: both are cell rules, so P42's solution_p42.py analogue can score them.
+
 ## 1. Upload candidate: N54 — remove France same-address org-word-swap decoys (France-only REMOVAL)
 probes/N54-fr-decoyword-removal/RESULT.md. Decoys that swap one org word (comite / ecole / amicale / club / parents …)
 and KEEP the house number. In-domain the cell (sub1 swap, swapped-in word lens n_hn ≥ 20 & s > 0.2, hn equal, argmax)
