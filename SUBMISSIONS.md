@@ -72,6 +72,26 @@ overstated precision (0.994 vs 0.912 for the rules).
 **P42 ranking (27 Sep 01:40):** #42_both is expected at +0.0005 against #41's +0.0002, #37_gc70_hn90's +0.0003 and #39_ind80's +0.0003. It passes both LOCO directions on both analogues, and it contains 75% of #41's pairs and all of hn90's kind of extras. Upload order: **#42_both** (or #42_both_on41 if only one France slot is left) → #42_both_on41 or #41 → #42_r90. If #42_both loses: rebuild `t=0.99,r=0.97` without the hn stage (LOCO +0.0028 / +0.0005). #37_gc70_hn90 is superseded: 18,162 of its 18,180 extras are inside #42_both. #41_hn90 is superseded with it. #39_ind80 ranks below: 59% of its adds are inside #42_both, and it fails US→India by −0.06. Details: `probes/P42-fr-joint-tune/RESULT.md`.
 
 **Upload next (27 Sep, base = #37_gc70 LB 0.986304):** 1) **#41** (P41: gc70 + synthetic-brand recovery; passes the plain LOCO both ways at precision 0.98–0.99, expected +0.0002). 2) **#41_hn90** (= #41 ∪ #37_gc70_hn90, so it tests hn90's 14,974 non-brand extras on top of #41). If it loses, keep #41. (Alternative order: #37_gc70_hn90 first, then #41_hn90 if it gains or #41 if it loses.) 2) #37_gc70_r70. Not staged (LOCO fails both ways or ≈ 0): gc at 0.6 / 0.5 (US→India −0.00012 / −0.00026, India→US +0.00013 / +0.00023 vs gc70); retrieval for no-candidate one-sided S1 (ceiling ≤ 1.7k S1, junk-like precision). Rebuild any P37 file in 15 s: `P37_BASE=<base dir> .venv/bin/python probes/P37-fr-complete/p37.py build <mode> <t> <out>`.
+**Final zip (P43, 27 Sep).** `output/final/Yeti_submission.zip` = `output/sub37_final_small` (matching_results.tsv =
+#37_gc70 byte for byte; candidate_pairs.tsv 7,658,102 pairs = 4.42 per S1; official validator `--check-ids` PASS) +
+`code/business_entity_resolution/` (src, README, requirements) + the filled `Documentation_template.md`. Backup:
+`s3://sagemaker-114872709824-ap-south-1/amc26-offload/final/`. **The zip must hold the best-public upload's matching
+file**, rebuilt by its code. Which staged folders `run.py --split test --stage model` rebuilds:
+
+| staged folder | run.py flags | checked |
+|---|---|---|
+| `sub37_gc70` (LB 0.986304) | `--recipe sub37` (default) | byte-identical, both files |
+| `sub37_final_small` | `--recipe sub37_small` | matching = `sub37_gc70`; validator `--check-ids` PASS |
+| `sub37_gc70_hn90` | `--recipe sub37_hn90` (= `--hn-extra 0.9`) | byte-identical, both files |
+| `sub41`, `sub41_hn90` | `--recipe sub41` / `sub41_hn90` (= `--brand 0.3`) | byte-identical, both files |
+| `sub42_both` | `--recipe sub42_both` (= `--t-country France=0.99 --t-post 0.9868 --rescue 0.97 --hn-extra 0.8`) | byte-identical, both files (flag form) |
+| `sub37_gc70_r70`, `sub42_r90`, `sub42_ius` | `--recipe sub37 --rescue 0.7`; `--recipe sub42_both --rescue 0.9` / `--gc 0.6` | same code paths, not re-run |
+| `sub42_both_on41`, `sub43_*`, `sub44_*`, `sub40x*` | P42's pair-set unions, P40's xf_noaddr, P44's tier: **not in src yet** | — |
+
+Swap in a winner (≈ 7 min + validator): `run.py --split test --stage model --recipe <r> --drop-sibling-cands --out
+output/<r>_small`, `cmp` its matching file with the uploaded one, validate (`probes/P43-final-package/solution_p43.py`
+runs `--check-ids` on SageMaker in 1 min), then `package.py --team Yeti --out output/<r>_small --dest output/final`.
+
 #7, #7s, #8a, #8b, #8p are superseded (same tests on a weaker base).
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.
