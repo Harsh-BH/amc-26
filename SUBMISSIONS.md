@@ -50,7 +50,7 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 31_m2 | staged, validator PASS | `output/sub31_m2/…` | = #31 | #31 without the P26 matcher (backup) |
 | 34 | staged, validator PASS (P34, --check-ids) | `output/sub34/…` | India/US +0.0002 LB-eq (India +0.0002, US +0.0004 holdout) | #31 with India/US from P23/P34's a10 residual stacker (p2-masked, sibling guard); France = #31 |
 | 34_veto | **uploaded 26 Sep 22:54 — LB 0.985647 (+0.00005 vs #31, ≈ flat)** | `output/sub34_veto/…` | as #34 | India/US = #34 + France = #31_veto (bge veto τ 0.1). Everything that passed its checks |
-| 34v_r90 | staged, validator PASS | `output/sub34v_rescue90/…` | = #34_veto | #34_veto + **France empty-S1 rescue**: an S1 left empty gets its best (argmax, non-sibling) candidate if p ≥ 0.90 — fills 1,205 of 16,892 empty France S1 (6.51% empty vs ~5.7% true singletons) |
+| 34v_r90 | **uploaded 26 Sep 23:00 — LB 0.98596 (BEST, +0.00031 vs #34_veto)** | `output/sub34v_rescue90/…` | = #34_veto | #34_veto + **France empty-S1 rescue**: an S1 left empty gets its best (argmax, non-sibling) candidate if p ≥ 0.90 — fills 1,205 of 16,892 empty France S1 (6.51% empty vs ~5.7% true singletons) |
 | 34v_r70 | staged, validator PASS | `output/sub34v_rescue70/…` | = #34_veto | same at p ≥ 0.70 — fills 1,958 |
 
 **Upload next (26 Sep, last 2 slots before midnight):** 1) **#34v_r90** (France empty-S1 rescue); 2) #34v_r70 if r90 gains, else #34 (isolates the veto).
