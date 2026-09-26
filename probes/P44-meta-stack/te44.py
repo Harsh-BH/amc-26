@@ -134,15 +134,20 @@ def derive(A: pd.DataFrame) -> pd.DataFrame:
 
 
 def attach_r_all(c: str, A: pd.DataFrame) -> pd.DataFrame:
-    """P45's test r_all (bge CE on every argmax pair) onto T by (s1, sx) of te_pairs' rows."""
+    """r_all on test = P45's CE score for the non-band argmax pairs (r_all_test_{c}: s1, sx, r) + the band pairs' own r
+    (the same ce_bge_pool CE, already in te_feat). The two cover disjoint pairs; asserted complete."""
     f = pd.read_parquet(E.W / f"p45/r_all_test_{c}.parquet")
-    k = "p_r_all" if "p_r_all" in f else [x for x in f.columns if x not in ("s1", "sx")][0]
     tp = pd.read_parquet(P34 / f"te_pairs_{c}.parquet", columns=["s1", "sx"]).iloc[A.row.to_numpy()]
-    m = tp.reset_index(drop=True).merge(f[["s1", "sx", k]].drop_duplicates(["s1", "sx"]), on=["s1", "sx"], how="left")
-    A["p_r_all"] = m[k].to_numpy(np.float64)
-    assert A.p_r_all.notna().all(), f"r_all missing for {A.p_r_all.isna().sum()} argmax pairs"
+    m = tp.reset_index(drop=True).merge(f.drop_duplicates(["s1", "sx"]), on=["s1", "sx"], how="left").r.to_numpy(np.float64)
     band = A.r.notna().to_numpy()
-    print(c, f"r_all: max |r_all - band r| {np.abs(A.p_r_all.to_numpy()[band] - A.r.to_numpy()[band]).max():.4f}", flush=True)
+    assert not (band & ~np.isnan(m)).any(), "P45's test r_all overlaps the band"
+    A["p_r_all"] = np.where(band, A.r.to_numpy(), m)
+    assert A.p_r_all.notna().all(), f"r_all missing for {A.p_r_all.isna().sum()} argmax pairs"
+    H, _ = E.load(c)
+    hb = H.r.notna().to_numpy()
+    q = [0.1, 0.25, 0.5, 0.75, 0.9]
+    print(c, "non-band r_all quantiles  test", np.quantile(m[~band], q).round(4), " holdout",
+          np.quantile(H.p_r_all.to_numpy()[~hb], q).round(4), flush=True)
     return A
 
 
