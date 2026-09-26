@@ -27,11 +27,12 @@ The pipeline has six stages. Every model in it runs locally, is MIT or Apache-2.
 6. **US house-number stacker, then the decision.** A residual LightGBM for the US knows the data generator's
    "sibling" house-number offsets. Then each Source 2/3 record goes to its single best Source 1, kept if p ≥ t.
 
-**France** is 15% of the test set and has no labels. It uses the same matcher with a label-free threshold. The operating
-point was validated with four diagnostic leaderboard uploads.
+**France** is 15% of the test set and has no labels. It uses the same matcher on candidates re-blocked with an IDF that
+includes France's own text, then the bge cross-encoder with label-free (out-of-domain) blend weights. Its threshold
+was validated with diagnostic leaderboard uploads.
 
 - **Holdout F0.5: 0.98990** (report half 0.98956), against 0.7708 for an exact-key rule baseline.
-- **Best public leaderboard so far: 0.981142.**
+- **Best public leaderboard so far: 0.984072** (#9ab: France IDF fix + bge for France, t 0.985).
 - The whole gap between holdout and leaderboard is France: the leaderboard implies India + US ≈ 0.989 and France ≈ 0.93.
 
 ## 2. Methodology
@@ -121,6 +122,16 @@ shared ledger; nothing was merged without its number.
 
   `candidate_pairs.tsv` is exactly the set the matcher and the cross-encoder score (130 MB, down from 377 MB).
   22,446 test Source 1 have no candidate, and all of them are among the empty answers.
+  - In #9ab France's candidates come from its IDF-fixed blocking: 1,305,341 pairs, 5.03 per Source 1. The total is
+    8,343,618 (4.82 / S1).
+- **Optional smaller set** (`output/sub9ab_small`: 7,527,148 pairs, **4.34 per Source 1**; France 3.97 / India 4.75 /
+  US 4.00). Two cascade stages:
+  - **Sibling-decoy stage before the final decision.** A pair at a generator sibling offset
+    (hn_x − hn_1 ∈ {3, 4, 5, 7, 9, 11, 13, 21}) survives only if it is its Source 2/3 record's best pair above t.
+    - Matching is unchanged by construction.
+    - US holdout candidates go 4.24 → 3.92 per S1, and candidate recall 0.9874 → 0.9872.
+  - **Stricter pruner for France (τ 0.1):** France goes 5.03 → 4.37 per S1, and 225 France S1 (0.087%) change
+    their answer. France has no labels to sign that change: at most 0.00013 of the test score.
 - **How we ensured true matches were not lost:**
   - The recall of every blocker variant was measured against the whole train corpus, not a sample (a small world
     overstates recall by ~2 points).
@@ -247,8 +258,10 @@ shared ledger; nothing was merged without its number.
 | `sub9b` | **bge cross-encoder for France** with out-of-domain weights [0.9245, 0.2595, 0.0515] | 0.98 | LOCO +0.0028 / +0.0015 | TBD (26 Sep) |
 | `sub9s` | **sibling rule.** p := 0 when hx − h1 ∈ {3, 4, 5, 7, 9, 11, 13, 21} (170,752 pairs, 4,367 accepted matches) | 0.95 | US holdout +0.00097 on m2 p; India −0.0017. France's regime is decided by the LB | TBD (26 Sep) |
 | `sub9d` | train-only IDF fallback: 158 French domain words at US street-type IDF | 0.98 | ~40% of the label-free profile shift of `sub9a` | spare (only if test statistics are ruled out) |
+| **`sub9ab`** | **IDF fix + bge.** `sub9a`'s candidates, then `sub9b`'s blend (P19). 63,393 of the 378,445 band pairs were new and were scored on AWS ($0.13) | 0.985 | the two France changes combined; t at D4's empty-S1 rate | **0.984072 (best)** |
 
-**Final France option: TBD by 26 Sep LB.**
+**Best France option so far: `sub9ab`** (the default recipe). `--t-country France=0.975` / `0.99` give its t
+variants.
 
 ## 5. Results & Error Analysis
 
@@ -258,7 +271,7 @@ shared ledger; nothing was merged without its number.
   - The holdout's competing (non-holdout) band pairs keep the e5 blend, since bge scores were computed only for the
     holdout's own band.
   - Two independent audits (at #3) found no label leakage. The threshold-tuning optimism is at most 0.00003.
-  - **Public leaderboard: best 0.981142 (D4). The final submission's score is TBD (26–27 Sep uploads).**
+  - **Public leaderboard: best 0.984072 (#9ab, 26 Sep). The final submission's score is TBD.**
 
 ### 5.1 Ablation — every step on the same full-corpus holdout
 
@@ -297,6 +310,7 @@ The public leaderboard is a subset of test (all three countries).
 | #9a — 26 Sep | #8c + France IDF fix, t 0.975 | TBD | Δ vs #8c = the IDF fix alone |
 | #9b — 26 Sep | #8c + bge France, t 0.98 | TBD | Δ vs #8c = bge on France alone |
 | #9s — 26 Sep | #8c + France sibling rule, t 0.95 | TBD | Δ vs #8c = the rule alone |
+| #9ab — 26 Sep 14:31 | #8c + France IDF fix + bge France, t 0.985 | **0.984072** | best: +0.0029 vs D4 |
 | final — 26/27 Sep | #8c + the winning France option(s) | TBD | — |
 
 Every France test sits on the same India/US files, so each leaderboard delta measures one France change.
@@ -367,9 +381,14 @@ Every France test sits on the same India/US files, so each leaderboard delta mea
 
 - **Entry point:** `python src/run.py --split test --stage model --out output/` writes both TSVs, asserts the format
   rules and runs the official validator.
-  - The default recipe is `sub8c`. `--recipe sub9a|sub9b|sub9s|sub9d` gives the France options, and
+  - The default recipe is `sub9ab`. `--recipe sub8c|sub9a|sub9b|sub9s|sub9d` gives the France options, and
     `--recipe sub7|sub6|sub5|sub4` gives earlier submissions.
   - Each recipe reproduces its staged files byte for byte.
+  - Options:
+    - `--t-country France=<t>`;
+    - `--cap 5,6`: at most 5 Source 2 / 6 Source 3 matches per Source 1, the highest p kept. The train truth never
+      has more; this touches 86 test S1, and on the holdout +0.0000019;
+    - `--drop-sibling-cands` and `--tau-country France=0.1`: the smaller candidate set above.
   - `--split holdout` prints the full-corpus holdout score.
 - **Modules** (in pipeline order):
   - `io_tsv.py`: TSV ↔ parquet with `QUOTE_NONE`.
