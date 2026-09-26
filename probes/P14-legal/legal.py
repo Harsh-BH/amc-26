@@ -111,7 +111,7 @@ def countries() -> list:
 
 
 def cols65() -> list:
-    return M.feats(pd.DataFrame(columns=pq.read_schema(F.xfiles("train", countries()[0])[0]).names))
+    return [c for c in M.feats(pd.DataFrame(columns=pq.read_schema(F.xfiles("train", countries()[0])[0]).names)) if c not in EXTRA]
 
 
 def load(folds, frac: float = 1.0, seed: int = 0):

@@ -69,7 +69,11 @@ RECIPES = {"sub4": dict(booster="m2_ladder.txt", folds=(2,), w=[0.636, 0.757, 0.
            "sub6": dict(booster="m2_big.txt", folds=(2, 3, 4, 5), w=[0.678, 0.715, 0.338], t=0.69, t_m2=0.69, tau=0.03,
                         **_P4B),
            "sub7": dict(booster="m2_big.txt", folds=(2, 3, 4, 5), w=[0.617, 0.666, 0.261], t=0.71, t_m2=0.69, tau=0.03,
-                        ce="p11/ce_s2P.pt", ce_epochs=2, t_france=0.95)}
+                        ce="p11/ce_s2P.pt", ce_epochs=2, t_france=0.95),
+           # P14-legal: #7 + the 7 legal-form features (m2_legal_big, folds 2-5); w, t, t_m2 tuned on holdout half 0;
+           # France t = the one giving m2_big-at-0.95's empty-S1 rate on test (probes/P14-legal/france_t.py)
+           "sub7L": dict(booster="m2_legal_big.txt", folds=(2, 3, 4, 5), w=[0.6239, 0.641, 0.2264], t=0.65, t_m2=0.72,
+                         tau=0.03, ce="p11/ce_s2P.pt", ce_epochs=2, t_france=0.96)}
 RECIPE = "sub7"
 GPU_LOCK = "/tmp/amc-gpu.lock"
 

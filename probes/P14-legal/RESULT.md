@@ -1,19 +1,32 @@
 # P14-legal — RESULT
 ## TL;DR
-Canonicalising legal forms ("Private Limited" = "Pvt. Ltd." = "Pirvate Limted" → `pvt ltd`) and adding 7 label-free
-features raises the full-corpus holdout F0.5 of the fold-2 M2 from **0.9814 to 0.9838 (+0.0024 ± 0.0001, paired SE,
-half 1; 3,105 S1 up, 945 down)**. India +0.0032, US +0.0019. Recall and precision both improve.
-Measured **without** the cross-encoder: confirm on top of the #5 recipe (folds 2–5 + CE blend) before promoting.
+In the full #7 pipeline (pruner + m2 on folds 2-5 + 2-epoch CE), the 7 legal-form features move the full-corpus
+holdout F0.5 from **0.98867 to 0.98880 (+0.00013 ± 0.00006, half 1)**, below the +0.0005 bar. The cross-encoder
+already fixes most of what they fix. Without the CE the gain is large and stable: **+0.00175** on folds 2-5 and
++0.0024 on fold 2. France is scored without a CE, so a leaderboard upload is the only way to see its effect.
+`output/sub_legal/` holds the test files (recipe `sub7L`).
 
 ## Recommendation
-- Next: the same A/B with the cross-encoder blend and on folds 2–5. The bar is still +0.001. More training folds
-  gained +0.0019 without the CE but only +0.0004 with it (P4 improvement round), because the CE fixes the same
-  uncertain band. The CE also reads the legal words, so expect some shrinkage here too.
-- If it holds, promote `canon` / `extras` into `src/features.py` as 7 columns after the 65. Then rebuild the X files
-  (train + test) and retrain M2. Refit the blend weights, T and T_M2. Recompute France's threshold with P6's rule.
-- France is only measurable on the leaderboard: 69% of French S1 names carry SARL/SAS/…, and those forms are in
-  `N.LEGAL`.
+- India / US: no measurable gain through the CE (India +0.0003, US +0.00003). Keeping the features costs nothing,
+  but they do not justify a submission on their own.
+- France is the open question. It is where the LB gap is, it has 69% legal forms in S1 names, and it is scored by
+  M2 alone, the regime where the features gain +0.0018 on the labelled countries. `output/sub_legal/` =
+  `run.py --split test --stage model --recipe sub7L`. France t is 0.96, the threshold giving #7-France's empty-S1
+  rate: 6.80% vs 6.85%. Upload it if the team wants the France answer (Harsh's call). Compare it with #7's LB score.
 
+## Full pipeline (holdout, full corpus; tuning on half 0, F0.5 on half 1) — `full.py`, pipe ledger p14-*-sub7
+| arm | w (refit) | t | F0.5 half 1 | India | US | all fold 0 |
+|---|---|---|---|---|---|---|
+| #7 as shipped (w, t of the recipe) | [0.617, 0.666, 0.261] | 0.71 | 0.98869 | | | **0.98881** (= #7's number) |
+| base: m2_big | [0.6236, 0.6702, 0.2674] | 0.63 | **0.98867** | 0.98964 | 0.98802 | 0.98883 |
+| legal: m2_legal_big | [0.6239, 0.641, 0.2264] | 0.65 | **0.98880** | 0.98993 | 0.98806 | 0.98895 |
+| base, M2 alone (no CE) | — | 0.71 | 0.98329 | 0.98274 | 0.98366 | 0.98334 |
+| legal, M2 alone (no CE) | — | 0.72 | 0.98504 | 0.98512 | 0.98499 | 0.98506 |
+
+legal − base on half 1: **+0.00013 ± 0.00006** (paired SE; 367 S1 up, 364 down, n = 110,362).
+m2_legal_big: 3,571 trees, fold-1 val logloss 0.02049 (m2_big: 4,930 trees, 0.02285), fit in 20 min at a 4.35 GB peak.
+
+## Fold-2 experiment (no CE) — `legal.py`
 ## Evidence
 | ledger name | world | key metrics | verdict |
 |---|---|---|---|

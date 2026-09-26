@@ -10,8 +10,12 @@ Word lists are MINED from train true pairs (US/India) unless tagged `# domain:` 
 states that never occur in train) come from domain knowledge and are unvalidated.
 """
 import re
+from functools import lru_cache
+
+import numpy as np
 import pandas as pd
 from anyascii import anyascii
+from rapidfuzz.distance import Indel
 from rapidfuzz.fuzz import ratio
 
 # ---------------------------------------------------------------- folding
@@ -126,6 +130,52 @@ def name_core(s: pd.Series, country: pd.Series | None = None) -> pd.Series:
 def acronym(core: pd.Series) -> pd.Series:
     """First letters of a name_core with >= 2 tokens, else ''. Pass name_core output."""
     return core.map(lambda x: "".join(t[0] for t in x.split()) if len(x.split()) >= 2 else "")
+
+
+# ---------------------------------------------------------------- legal forms, canonical (P14-legal)
+# "Private Limited" = "Pvt. Ltd." = "Pirvate Limted" -> {pvt, ltd}: the tokens name_core strips (_is_legal), every
+# spelling of a form mapped to one code, so two records can agree or conflict on their legal form.
+_CANON = {"private": "pvt", "pvt": "pvt", "prvt": "pvt", "limited": "ltd", "ltd": "ltd", "incorporated": "inc",
+          "inc": "inc", "corporation": "corp", "corp": "corp", "company": "co", "co": "co",
+          "etablissement": "ets", "etablissements": "ets"}
+_LONG = {"private": "pvt", "limited": "ltd", "incorporated": "inc", "corporation": "corp", "company": "co"}
+LEGAL_CODES = sorted(set(_CANON.values()) | {_CANON.get(t, t) for t in LEGAL})
+_BIT = {c: 1 << i for i, c in enumerate(LEGAL_CODES)}
+assert len(LEGAL_CODES) < 63
+
+
+def _legal_code(t: str, nxt: str) -> str:
+    """Canonical code of token t (nxt = the token after it), '' if t is no legal form. _is_legal's cheap tests
+    first, so only long p/l/i/c words reach the cached typo match."""
+    if t in LEGAL:
+        return _CANON.get(t, t)
+    if t == "p":                                           # "P. Ltd."
+        return "pvt" if nxt in ("ltd", "limited") else ""
+    if len(t) < 5 or t[0] not in "plic" or t.isdigit():
+        return ""
+    return _legal_typo(t, nxt in ("ltd", "limited"))
+
+
+@lru_cache(maxsize=1 << 20)
+def _legal_typo(t: str, before_ltd: bool) -> str:
+    if not _is_legal(t, "ltd" if before_ltd else ""):
+        return ""
+    return _LONG[max(_LONG, key=lambda w: Indel.normalized_similarity(t, w))]      # its closest long form
+
+
+def legal_form(names) -> tuple:
+    """Cleaned names (block.texts' `name`) -> (int64 bitmask over LEGAL_CODES, each name with its legal tokens
+    replaced by their codes). ~320k names/s."""
+    ms, cs = np.zeros(len(names), np.int64), [""] * len(names)
+    for k, s in enumerate(names):
+        toks = [_tok_fix(t) for t in _merge_letters((s or "").split())]
+        m, out = 0, []
+        for i, t in enumerate(toks):
+            c = _legal_code(t, toks[i + 1] if i + 1 < len(toks) else "")
+            m |= _BIT[c] if c else 0
+            out.append(c or t)
+        ms[k], cs[k] = m, " ".join(out)
+    return ms, cs
 
 
 _WEB = r"^\s*(?:https?://)?(?:www\.)?[a-z0-9][a-z0-9_.-]*\.(?:com|net|org|in|co|biz|info|io|us|fr|co\.in)\s*$" \
@@ -415,6 +465,11 @@ def _check():
     assert list(postcode(S("Jayanagar Bangalore 560082", "Raleigh, NC 27601", "12345 Oak St, Austin, TX",
                            "3 Rue X, 33000 Bordeaux"), S("India", "US", "US", "France"))) == \
         ["560082", "27601", "", "33000"]
+    m, cn = legal_form(["shivam investments pvt ltd", "shivam investments private limited", "shivam pirvate limted",
+                        "shivam investments llp", "twisted deli l l c", "lifewood p ltd", "sunrise 1td", "delhi public school"])
+    assert [" ".join(c for c in LEGAL_CODES if v & _BIT[c]) for v in m] == \
+        ["ltd pvt"] * 3 + ["llp", "llc", "ltd pvt", "ltd", ""], m
+    assert cn[0] == cn[1] == "shivam investments pvt ltd" and cn[2] == "shivam pvt ltd", cn
     print("normalize self-check ok")
 
 

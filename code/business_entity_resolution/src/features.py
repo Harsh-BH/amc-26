@@ -1,4 +1,5 @@
-"""Pair features of the M2 matcher (P4-match): 65 label-free float32 columns per candidate pair. Record fields are
+"""Pair features of the M2 matcher (P4-match): 72 label-free float32 columns per candidate pair (65 + P14-legal's 7
+legal-form columns). Record fields are
 computed once per record (rec), pair features are vectorised over aligned row arrays: rapidfuzz cpdist for string
 similarities, sparse row-wise products for TF-IDF cosines and token / place overlaps, numpy group stats for the
 candidate-list context. No per-pair Python loop. Country is never a feature (France is unseen).
@@ -72,6 +73,8 @@ def assemble(rf: pd.DataFrame, txt: pd.DataFrame, raw_name: pd.Series) -> pd.Dat
     f["acro"] = N.acronym(f.core).astype("str").array
     f["sq"] = f.core.str.replace(" ", "", regex=False)
     f["indic"] = raw_name.fillna("").str.contains(_INDIC, regex=True).to_numpy()
+    f["lmask"], cname = N.legal_form(txt.name.tolist())            # P14-legal: canonical legal form of the name
+    f["cname"] = pd.Series(cname, dtype="string").array
     return f
 
 
@@ -211,6 +214,16 @@ def strings(r1: pd.DataFrame, rx: pd.DataFrame, i: np.ndarray, j: np.ndarray, co
     o["chain_x"] = kx.map(counts).fillna(0).to_numpy(np.float32)
     o["indic_x"] = rx.indic.to_numpy(bool)[j].astype(np.float32)
     o["is_s3"] = np.char.startswith(np.array(_take(rx, "id", j), dtype="U3"), "S3").astype(np.float32)
+    # legal forms, canonical (P14-legal): agree / conflict / overlap, and the names with one spelling per form
+    m1, mx = r1.lmask.to_numpy()[i], rx.lmask.to_numpy()[j]
+    n1, nx = np.bitwise_count(m1), np.bitwise_count(mx)
+    both = (n1 > 0) & (nx > 0)
+    o["legal_n1"], o["legal_nx"] = n1.astype(np.float32), nx.astype(np.float32)
+    o["legal_eq"], o["legal_diff"] = (both & (m1 == mx)).astype(np.float32), (both & (m1 != mx)).astype(np.float32)
+    o["legal_jacc"] = np.where(both, np.bitwise_count(m1 & mx) / np.maximum(np.bitwise_count(m1 | mx), 1),
+                               np.nan).astype(np.float32)
+    a, b = _take(r1, "cname", i), _take(rx, "cname", j)
+    o["cname_ratio"], o["cname_tset"] = _fz(fuzz.ratio, a, b), _fz(fuzz.token_set_ratio, a, b)
     return pd.DataFrame(o)
 
 
@@ -313,9 +326,63 @@ def xfiles(split, c) -> list:
 
 def ctx_step(split, c):
     """S1-side context over the whole candidate table (an S1's pairs span every SX file), rows re-cut by SX file
-    -> data/work/p4/ctx/. The SX side is computed per file in feat_step: a file holds every pair of its SX."""
+    -> data/work/p4/ctx/. The SX side is computed per file in feat_step: a file holds every pair of its SX.
+    Bounded memory (P14-legal; US train is 18.6M pairs): block.finalize writes the candidates sorted by (q1, qx), so
+    the S1 context is computed over whole runs of S1 at a time; rows are bucketed by SX file and each bucket stably
+    sorted by qx -- the same files as one global stable sort (verified row for row on India train)."""
     CTX.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
+    p4 = WORK / "p4" / f"cands_train_full_{c}.parquet"
+    src = p4 if split == "train" and p4.exists() else (B.P3 / f"cands_{split}_{c}.parquet")
+    if not src.exists():
+        B.split_cands(split, c)
+    if src == p4 and (np.diff(pq.read_table(p4, columns=["q1"]).column(0).to_numpy()) < 0).any():
+        return _ctx_all(split, c, t0)                   # P4's export in another row order: the in-memory path
+    id1, idx = ids(split, c)
+    files, offs = sx_files(split, c)
+    buckets, carry, n = [[] for _ in files], None, 0
+
+    def emit(d):
+        for k, v in _group_ctx(d.q1.to_numpy(), np.nan_to_num(d.block_score.to_numpy(np.float32)), "s1").items():
+            d[k] = v
+        fk = np.searchsorted(offs, d.qx.to_numpy(), side="right") - 1
+        for k in np.unique(fk):
+            buckets[k].append(d[fk == k])
+
+    pf = pq.ParquetFile(src)
+    cols = ["q1", "qx"] if "q1" in pf.schema_arrow.names else ["s1", "sx"]
+    for rb in pf.iter_batches(2_000_000, columns=cols + BLOCK):
+        t = pa.Table.from_batches([rb])
+        if cols == ["q1", "qx"]:
+            q1, qx = t.column("q1").to_numpy().astype(np.int32), t.column("qx").to_numpy().astype(np.int32)
+        else:
+            a, b = pc.index_in(t.column("s1"), value_set=id1), pc.index_in(t.column("sx"), value_set=idx)
+            assert a.null_count == 0 and b.null_count == 0, "every candidate id is a record of the split"
+            q1, qx = a.to_numpy().astype(np.int32), b.to_numpy().astype(np.int32)
+        d = t.select(BLOCK).to_pandas().assign(q1=q1, qx=qx)
+        d = pd.concat([carry, d], ignore_index=True) if carry is not None else d
+        tail = d.q1.to_numpy() == d.q1.iloc[-1]                 # the last S1 may continue in the next batch
+        carry, d = d[tail].reset_index(drop=True), d[~tail].reset_index(drop=True)
+        assert (np.diff(d.q1.to_numpy()) >= 0).all(), "candidates sorted by S1"
+        n += len(d)
+        if len(d):
+            emit(d)
+    if carry is not None and len(carry):
+        n += len(carry)
+        emit(carry)
+    for k, f in enumerate(files):
+        d = pd.concat(buckets[k], ignore_index=True) if buckets[k] else None
+        buckets[k] = None
+        if d is None:
+            continue
+        d = d.iloc[np.argsort(d.qx.to_numpy(), kind="stable")].reset_index(drop=True)
+        d["via"] = d.via.astype("category")
+        d.to_parquet(CTX / f"{split}_{f.stem}.parquet", index=False)
+    print(f"ctx {split} {c}: {n:,} pairs in {time.time() - t0:.0f}s, peak {B.peak_gb():.2f} GB", flush=True)
+
+
+def _ctx_all(split, c, t0):
+    """ctx_step for a candidate file not sorted by S1: the whole table in memory (the pre-P14 implementation)."""
     d = cands(split, c)
     d["via"] = d.via.astype("category")
     s1c = _group_ctx(d.q1.to_numpy(), np.nan_to_num(d.block_score.to_numpy(np.float32)), "s1")
@@ -332,7 +399,7 @@ def ctx_step(split, c):
 
 
 def feat_step(split, c, only=None, out=XDIR, chunk=250_000):
-    """All features per SX file -> out/<split>_<c>_sx_NNN.parquet: q1, qx, [is_true, fold on train], 65 features.
+    """All features per SX file -> out/<split>_<c>_sx_NNN.parquet: q1, qx, [is_true, fold on train], 72 features.
     Needs ctx_step's files and the rules.feats caches rf_<split>_{s1,sx}_<c>. only = file stems to (re)build."""
     out.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
@@ -429,7 +496,7 @@ def _check():
                           "block_rank_s1": [1, 0, 0, 0, np.nan], "block_rank_sx": [0, 0, 1, 0, np.nan]})
     i, j = np.array([0, 0, 1, 2, 1]), np.array([0, 1, 1, 2, 3])
     X = featurize(pairs, rec(s1), rec(sx), i, j, rule_acc=np.array([0, 1, 0, 0, 1]))
-    assert len(X) == 5 and X.dtypes.eq(np.float32).all() and X.shape[1] == 65, X.shape
+    assert len(X) == 5 and X.dtypes.eq(np.float32).all() and X.shape[1] == 72, X.shape
     assert X.core_eq.tolist() == [0, 1, 0, 0, 1] and X.rule_acc.tolist() == [0, 1, 0, 0, 1], X[["core_eq", "rule_acc"]]
     assert X.web_eq[0] == 1 and X.hn_eq[1] == 1 and X.hn_eq[2] == 0 and X.city_eq[1] == 1
     assert X.name_cos[1] > X.name_cos[2] and X.addr_cos[1] > 0.5 > X.addr_cos[2]
@@ -438,6 +505,7 @@ def _check():
     assert X.blocked.tolist() == [1, 1, 1, 1, 0] and X.iloc[4][["s1_n", "sx_n", "via_r"]].isna().all()
     assert X.indic_x.tolist() == [0, 0, 0, 1, 0] and X.is_s3.tolist() == [0, 1, 1, 0, 1]
     assert X.core_ratio[3] > 0.5, "P2 to_latin maps the Indic name before similarity"
+    assert X.legal_n1.tolist() == [1, 1, 1, 2, 1] and not X.legal_nx.any() and not X.legal_diff.any(), X.legal_n1
     print("features self-check ok", X.shape)
 
 
