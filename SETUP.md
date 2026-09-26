@@ -252,6 +252,10 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
   - Holdout (India / US, = #8c): 0.98990 (half 1 0.98956). France has no labels.
 - Needs, beyond #9ab's files: `data/work/p31/c_hn.txt` and the France r top-ups `p26/bge/r`, `p29/r`, `p31/r`
   (`p30/r/r_pool_France.parquet` for `sub31_veto`); see step 5.
+- Cold check: France rebuilt from the raw data under the current code (P21's learned région map included) gives
+  `sub31`'s France lines exactly: 0 of 259,452 differ (`probes/P9-integrate/cold31.py`, 20 min). With the model and
+  score files of step 5 present, a cold run needs ~3 h on the laptop; with step 6's caches (`p9/fr_idf144/`,
+  `p9/fr31/` included) it takes ~5 min.
 - `--recipe sub9ab`, `sub8c`, `sub9a`, `sub9b`, `sub9s`, `sub7`, `sub6`, `sub5`, `sub4` were each verified byte for byte
   against their staged files. `sub9d` predates P21's learned région map, which moves 1,039 of its France rows by
   design: delete `data/work/p9/fr_idfdom/` to rebuild it under the map.

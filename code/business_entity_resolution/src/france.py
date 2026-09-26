@@ -63,10 +63,11 @@ def world(base: Path) -> Path:
         a = pd.concat([pq.read_table(WORK / f"test_source{k}.parquet", columns=["entity_id", "business_address", "country"],
                                      filters=[("country", "==", C)]).to_pandas() for k in (2, 3)], ignore_index=True)
         a = a.set_index("entity_id").reindex(r.id)
-        m = a.business_address.str.contains(PAREN, regex=True).fillna(False).to_numpy()
+        fixed = paren_hn(a.business_address)
+        m = (fixed != a.business_address.fillna("").astype(str)).to_numpy()     # the address has a '(n)' segment
         old = N.house_number(a.business_address[m], a.country[m]).to_numpy()
         assert (old == r.hn.to_numpy()[m]).all(), "rf hn is not normalize.house_number of the raw address"
-        r.loc[m, "hn"] = N.house_number(paren_hn(a.business_address[m]), a.country[m]).to_numpy()
+        r.loc[m, "hn"] = N.house_number(fixed[m], a.country[m]).to_numpy()
         r.to_parquet(rf.with_suffix(".tmp"), index=False)
         rf.with_suffix(".tmp").rename(rf)
         print(f"{C}: '(n)' house numbers re-parsed on {int(m.sum()):,} S2/S3, {int((old != r.hn.to_numpy()[m]).sum()):,} "

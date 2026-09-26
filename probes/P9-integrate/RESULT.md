@@ -8,7 +8,8 @@
   every post-rule count matches P31's log.
 - **A cold run** needs the model files (bge ckpt, m2_big, pruner, US stacker, **c_hn**) and the bge score files
   (P13 / P19 / P26 / P29 / P31, + P30 for the veto); it recomputes everything else from the raw TSVs (#31 section:
-  what it needs, what it rebuilds, and what a from-raw France rebuild changes).
+  what it needs, what it rebuilds). **A from-raw France rebuild under the current src reproduces #31's France lines
+  exactly** (0 of 259,452 differ, both files; `probes/P9-integrate/cold31.py`, 20 min).
 
 ## #31 — the final France chain (P26 + P28 + P29 + P30 + P31)
 **Changes:**
@@ -47,6 +48,7 @@
 | `test_pipeline.py` (sub31, e5 CE; and `--recipe sub31_small --unseen France`) | **pass**: model 0.9968 / 0.9964, rules 0.8575. The in-memory path exercises France's blend weights, fixed t and the decoy stage; the post-rules need the full-scale France files and run only at test scale (the rows above) |
 | `train_matcher.py --hn --frac 0.02 --rounds 50` (c_hn's retrain path, smoke) | runs: 70 features, **same names and order as `c_hn.txt`**; hn gain share 0.15 (P26's c_hn: 0.15); 40 s, 2.34 GB |
 | `france.py` self-check | ok (R1, `paren_hn`, `street_key`, `name_rel`, `hn_feats` classes / deltas / support, `cap_mask`) |
+| **Cold France** (`probes/P9-integrate/cold31.py`): a fresh world with only the raw parquets, train fits, model files and bge score files linked. France's texts, rules.feats (under P21's learned région map), P3 blocking, the idf144 world, the `(n)` fix, the R1 rescore, c_hn, the blend and the post-rules are all rebuilt | **0 of 259,452 France matching lines and 0 candidate lines differ from `output/sub31`.** The fresh rf differs from the cached (pre-P21) one on 3 S2/S3 only (state / places); 3 texts change their state group. Kept pairs 1,332,223; every band pair has a cached r. 1,190 s, 2.63 GB |
 
 **Cold run (task 3): what `run.py --split test --stage model` (sub31) needs, and what it recomputes.**
 
@@ -62,8 +64,10 @@
 | `p4/m2_big.txt` | 69 MB | m2_big; a retrain is equivalent, not bit-identical | `models/p4/` |
 | `p10/pruner.txt`, `p17/stack_sup-bge-l21.0_US.txt` | 1.8 MB | both retrain bit-identically, but only after the whole train side (~1 h 45) + a holdout run | `models/p10/`, `models/p17/` |
 
-*Recomputed from the raw TSVs* when absent: the same code built every cache, except P21's région map (France only,
-below).
+*Recomputed from the raw TSVs* when absent. The same code built every cache, except P21's région map, which is
+France-only and measured above (0 France lines move). Since the caches' commit cef4e2d, `block.py` only gained the
+France IDF functions and `features.py` / `rules.py` / `translit.py` are unchanged, so India / US rebuild to the same
+files. That is not re-measured end to end (~2 h of test-side rebuild).
 
 | step | cache | cold time (laptop) |
 |---|---|---|
