@@ -1,0 +1,6 @@
+India O1 accept-only (noaddr): all +0.00186  h1 +0.00204
+India O2 reassign (noaddr): all +0.00358  h1 +0.00382
+India O3 reassign (all): all +0.00533  h1 +0.00565
+US O1 accept-only (noaddr): all +0.00310  h1 +0.00323
+US O2 reassign (noaddr): all +0.00494  h1 +0.00513
+US O3 reassign (all): all +0.00699  h1 +0.00733

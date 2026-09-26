@@ -1,0 +1,20 @@
+
+== India: stolen address-less SX 1,723; argmax holder holdout 0.121, argmax row e5 0.868, argmax is TRUE (dup truth) 0.000
+  p_true median 0.16 p_argmax median 0.259 | p_a >= .71: 0.017
+  n_conf: true>argmax 0.820  equal 0.077  true<argmax 0.103
+  n_conf_src: true>argmax 0.649  equal 0.230  true<argmax 0.120
+  sim1: true>argmax 0.026  equal 0.932  true<argmax 0.043
+  n_same1: true>argmax 0.013  equal 0.976  true<argmax 0.010
+  twin at true only 0.536 at argmax only 0.027 both 0.326
+  [correct TP vs runner-up] n_conf: true>ru 0.831 equal 0.074 true<ru 0.095
+  [correct TP vs runner-up] n_conf_src: true>ru 0.650 equal 0.235 true<ru 0.115
+
+== US: stolen address-less SX 2,468; argmax holder holdout 0.164, argmax row e5 0.824, argmax is TRUE (dup truth) 0.000
+  p_true median 0.181 p_argmax median 0.286 | p_a >= .71: 0.038
+  n_conf: true>argmax 0.747  equal 0.130  true<argmax 0.124
+  n_conf_src: true>argmax 0.564  equal 0.267  true<argmax 0.169
+  sim1: true>argmax 0.031  equal 0.880  true<argmax 0.088
+  n_same1: true>argmax 0.032  equal 0.933  true<argmax 0.035
+  twin at true only 0.326 at argmax only 0.056 both 0.472
+  [correct TP vs runner-up] n_conf: true>ru 0.825 equal 0.071 true<ru 0.104
+  [correct TP vs runner-up] n_conf_src: true>ru 0.649 equal 0.227 true<ru 0.124
