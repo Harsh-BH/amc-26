@@ -1,4 +1,4 @@
-"""P44: France noise-word swap tier -- accept one-word-swap pairs whose swapped-in word the generator uses as NOISE.
+"""P46: France noise-word swap tier -- accept one-word-swap pairs whose swapped-in word the generator uses as NOISE.
 
 The generator rewrites true France variants by swapping one S1 word for a noise word, usually after the legal form
 ("Rapiere Sportive SAS" -> "Rapiere SAS Développement", "Divonne Foyer EURL" -> "Divonne EURL Groupe"). It also swaps
@@ -17,11 +17,11 @@ Variant 'g' (S_MAX_G) also admits groupe (France s 0.083, e 0.887): true-like vs
 the edge of India's decoy band.
 Flipped pairs are added to a base submission when their SX is free and the S1 stays within 5 S2 / 6 S3.
 
-    .venv/bin/python probes/P44-noise-word-tier/p44.py selftest
-    .venv/bin/python probes/P44-noise-word-tier/p44.py ho US India               # lens vs #8c holdout truth
-    .venv/bin/python probes/P44-noise-word-tier/p44.py loco 'India>US' 'US>India'  # P6 LOCO, t_profile
-    .venv/bin/python probes/P44-noise-word-tier/p44.py fr                         # France flips -> data/work/p44/
-    .venv/bin/python probes/P44-noise-word-tier/p44.py build output/sub41 output/sub44 [lens|lens_g]
+    .venv/bin/python probes/P46-noise-word-tier/p46.py selftest
+    .venv/bin/python probes/P46-noise-word-tier/p46.py ho US India               # lens vs #8c holdout truth
+    .venv/bin/python probes/P46-noise-word-tier/p46.py loco 'India>US' 'US>India'  # P6 LOCO, t_profile
+    .venv/bin/python probes/P46-noise-word-tier/p46.py fr                         # France flips -> data/work/p46/
+    .venv/bin/python probes/P46-noise-word-tier/p46.py build output/sub43_r90 output/sub46_on43 [lens|lens_g]
 """
 import csv
 import json
@@ -44,8 +44,8 @@ from anchor import decide  # noqa: E402
 from patterns import name_rel  # noqa: E402
 
 W = ROOT / "data/work"
-OUT = W / "p44"
-PROBE = "P44-noise-word-tier"
+OUT = W / "p46"
+PROBE = "P46-noise-word-tier"   # was P44-noise-word-tier until 27 Sep 02:30 (ledger rows before that)
 FR = W / "p31/fr31v0.1_t9868.parquet"      # #31_veto's post-rules France p: the France base of #34v_r90 -> #37_gc70 -> #41
 T_FR = 0.9868
 S_MAX, S_MAX_G, E_MIN = 0.05, 0.09, 0.8    # hn-present shares; France: developpement s 0.018 e 0.974, groupe s 0.083 e 0.887
@@ -232,7 +232,7 @@ def build(base: str, out: str, variant: str = "lens") -> dict:
                       .value_counts().head(6).items()},
             "added_p": np.quantile(added.p, [0, .25, .5, .75, 1]).round(4).tolist(), "shape_before": shape(pred), "shape_after": shape(new),
             "runtime_s": round(time.time() - t0), "peak_gb": round(peak(), 2)}
-    (out / "p44_info.json").write_text(json.dumps(info))
+    (out / "p46_info.json").write_text(json.dumps(info))
     print(json.dumps(info), flush=True)
     return info
 
@@ -247,7 +247,7 @@ def selftest():
     assert list(rows.sx) == ["S3-7", "S2-8"] and pred["S1-b"] == [], (rows, pred)    # input left untouched
     assert name_rel("rapiere sportive", "rapiere developpement", False) == ("sub1", "developpement")
     assert name_rel("divonne foyer", "divonne groupe", False) == ("sub1", "groupe")
-    print("p44 self-check ok")
+    print("p46 self-check ok")
 
 
 if __name__ == "__main__":
