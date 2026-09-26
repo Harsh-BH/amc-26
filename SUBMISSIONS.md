@@ -44,8 +44,12 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 28a | staged, validator PASS (P28) | `output/sub28a/…` | India/US = #9ab | #9ab + France **same-address rule** (hn+street+city equal, name cores differ by an insert/delete or not at all, sibling-word guard; the pure word-SWAP version failed on labels). +15,546 France pairs to 14,417 S1, nothing dropped. LOCO +0.0049 / +0.0012 |
 | 26_28 | staged, validator PASS | `output/sub26_28/…` | India/US = #8c | #26 (hn-aware matcher France + bge, t 0.986) + #28a's same-address rule on France. +15,374 France S1 vs #26. Upload only if BOTH #26 and #28a beat #9ab |
 | 31 | **uploaded 26 Sep 18:04 — LB 0.9856 (BEST, +0.0015 vs #9ab)** | `output/sub31/matching_results.tsv` + `output/sub31/code.zip` | India/US = #8c | #8c India/US + **final France** (P31): P26 hn-aware matcher on P29's rebuilt France (hn '(n)' fix + R1 fillers) + bge (out-of-domain weights) + P29 floored key tier + P28 same-address rule + cap; t 0.9868. France 6.46% empty, 3.12 matches/S1. 42,468 France S1 differ from #9ab |
+| 31_veto | staged, validator PASS (P31) | `output/sub31_veto/…` | = #31 | #31 + P30's bge veto on confident France pairs (τ 0.1; LOCO +0.0283 / +0.0056): −6,140 France pairs |
+| 31_t9818 | staged, validator PASS | `output/sub31_t9818/…` | = #31 | #31 with France t 0.9818 (looser: 6.31% empty, 3.16 per S1) |
+| 31_small | staged, validator PASS | `output/sub31_small/…` | = #31 (matching byte-identical) | #31 with **4.42 candidates/S1** (was 4.83; France 5.13 → 4.48 by dropping unaccepted sibling-decoy pairs). Same LB; better candidate criterion — the final-zip version |
+| 31_m2 | staged, validator PASS | `output/sub31_m2/…` | = #31 | #31 without the P26 matcher (backup) |
 
-**Upload next (26 Sep ~18:10):** **#31** (final France, all levers). If it beats 0.984072 it is our new best; then #31_veto (if P30 passes) / #31_small.
+**Upload next (26 Sep evening):** 1) **#31_veto** (bge veto); 2) **#31_t9818** (looser France t); the better France direction then gets combined. #31_small = the final-zip version of whichever wins (same LB, fewer candidates).
 #7, #7s, #8a, #8b, #8p are superseded (same tests on a weaker base).
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.
