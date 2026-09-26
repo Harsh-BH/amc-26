@@ -38,6 +38,7 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 9ab | **uploaded 26 Sep 14:31 — LB 0.984072 (BEST, +0.0029 vs D4)** | `output/sub9ab/…` | India/US = #8c | #8c + France **IDF fix + bge CE** (P13 out-of-domain weights on P14's IDF candidates), France t 0.985 (= D4's empty rate). AWS scoring $0.13 |
 | 9ab_t990 | staged, validator PASS | `output/sub9ab_t990/…` | = #9ab | #9ab with France t **0.99** (stricter: 2.93 matches/S1, 7.1% empty vs 3.02 / 6.7% at 0.985) |
 | 9ab_t975 | staged, validator PASS | `output/sub9ab_t975/…` | = #9ab | #9ab with France t **0.975** (looser: 3.09 / 6.4%) |
+| 20a | staged, validator PASS (P20) | `output/sub20a/…` | India/US = #8c | #8c + France IDF fix + **R1 (French suffix fillers & Fils / & Cie / Associés / Frères stripped from the name core)** + sibling rule, t 0.975 (no bge in France). vs #9as isolates R1; R1 adds 17.5k France pairs (92.7% hn-equal) |
 
 **Upload next (26 Sep, 5 slots) — every France test sits on the same India/US base (#8c), so each LB delta vs #8c is that France change alone:**
 1) **#8c** — the base (best India/US: bge CE + US stack; France = #6c's). Expected ≈ 0.9819.
