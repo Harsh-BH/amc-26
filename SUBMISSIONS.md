@@ -48,8 +48,10 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 31_t9818 | staged, validator PASS | `output/sub31_t9818/…` | = #31 | #31 with France t 0.9818 (looser: 6.31% empty, 3.16 per S1) |
 | 31_small | staged, validator PASS | `output/sub31_small/…` | = #31 (matching byte-identical) | #31 with **4.42 candidates/S1** (was 4.83; France 5.13 → 4.48 by dropping unaccepted sibling-decoy pairs). Same LB; better candidate criterion — the final-zip version |
 | 31_m2 | staged, validator PASS | `output/sub31_m2/…` | = #31 | #31 without the P26 matcher (backup) |
+| 34 | staged, validator PASS (P34, --check-ids) | `output/sub34/…` | India/US +0.0002 LB-eq (India +0.0002, US +0.0004 holdout) | #31 with India/US from P23/P34's a10 residual stacker (p2-masked, sibling guard); France = #31 |
+| 34_veto | **staged, validator PASS — UPLOAD FIRST (all levers)** | `output/sub34_veto/…` | as #34 | India/US = #34 + France = #31_veto (bge veto τ 0.1). Everything that passed its checks |
 
-**Upload next (26 Sep evening):** 1) **#31_veto** (bge veto); 2) **#31_t9818** (looser France t); the better France direction then gets combined. #31_small = the final-zip version of whichever wins (same LB, fewer candidates).
+**Upload next (26 Sep, 3 slots left):** 1) **#34_veto** (all levers); 2) **#34** (isolates the France veto); 3) keep for the France-threshold test on the winner. Final zip = the `_small` candidate version of the winner.
 #7, #7s, #8a, #8b, #8p are superseded (same tests on a weaker base).
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.
