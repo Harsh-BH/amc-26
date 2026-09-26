@@ -1,4 +1,4 @@
-"""M2 pair matcher (P4-match): LightGBM on the 65 features of features.py. Submission #5: booster
+"""M2 pair matcher (P4-match): LightGBM on the 65 features of features.py. Submissions #5–#9: booster
 data/work/p4/m2_big.txt, trained on train folds 2-5 (#4: m2_ladder.txt, fold 2 only; run.py --recipe switches).
 train_matcher.py rebuilds it from the train data when absent. Submission #6: only the pairs the pruner keeps
 (prune.py, q >= TAU | rule_acc) are scored; TAU = None scores every blocked pair (#4 / #5).

@@ -1,6 +1,6 @@
 """End-to-end pipeline: raw TSVs -> matching_results.tsv + candidate_pairs.tsv. Run from the repo root.
 
-    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # submission #5 (--recipe sub4: #4)
+    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # submission #8c (--recipe sub9a|sub9b|sub9s|sub9d|sub7|…|sub4)
     python code/business_entity_resolution/src/run.py --split holdout --stage model   # dense holdout F0.5 -> pipe ledger
     python code/business_entity_resolution/src/run.py --split dev --stage model       # the small dev world
     python code/business_entity_resolution/src/run.py --split test --stage rules      # submission #2 (rules only)

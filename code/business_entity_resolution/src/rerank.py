@@ -1,4 +1,5 @@
-"""Cross-encoder reranker (P4b-rerank): intfloat/multilingual-e5-small (MIT, 118M params) fine-tuned on
+"""Cross-encoder reranker. Default since #8: BAAI/bge-reranker-v2-m3 (Apache-2.0, 568M), fine-tuned on an AWS A10G by
+bge_train.py (P13). History (#4-#7): intfloat/multilingual-e5-small (MIT, 118M params) fine-tuned on
 "name | addr" of both records, rescoring M2's uncertain band; blended back into p before the decision.
 
     python src/rerank.py band <country>                                   # train-side band (LightGBM, fold 2 fit)
