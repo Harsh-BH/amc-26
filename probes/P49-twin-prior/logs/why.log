@@ -1,0 +1,4 @@
+India: ambiguous SX with a holdout twin 14,142; owner in set 0.569; argmax at a holdout twin 3,720, sub44r accepts 0.011, precision 0.780; argmax p'' median 0.150
+   test-3 slice: 132 SX; the argmax IS the raw-closest twin 0.508; raw-closest is the owner 0.727; sub44r accepts the argmax 0.023 (precision 1.000); accepted with argmax = closest 0.023
+US: ambiguous SX with a holdout twin 20,606; owner in set 0.617; argmax at a holdout twin 10,801, sub44r accepts 0.011, precision 0.683; argmax p'' median 0.191
+   test-3 slice: 829 SX; the argmax IS the raw-closest twin 0.358; raw-closest is the owner 0.479; sub44r accepts the argmax 0.007 (precision 0.833); accepted with argmax = closest 0.005
