@@ -438,10 +438,12 @@ def gc_add(q1, qx, is2, p, am, acc, sib, t: float, guard: np.ndarray | None = No
     return out
 
 
-def complete(q1, qx, is2, p, am, acc, h1, hx, rescue_t=None, gc_t=None, hn_t=None, brand=None, noaddr=None) -> np.ndarray:
+def complete(q1, qx, is2, p, am, acc, h1, hx, rescue_t=None, gc_t=None, hn_t=None, brand=None, noaddr=None,
+             swap=None) -> np.ndarray:
     """acc (the decision: am & p >= t) plus, in the staged files' order, the rescue (rescue_t), the group completion
     (gc_t), the hn-equal two-sided extras (hn_t), the brand recovery (brand = (t, brand_mask per pair)) and the
-    address-less exact-name variants (noaddr = (t, noaddr_mask per pair), any S1, empty ones too); None = off.
+    address-less exact-name variants (noaddr = (t, noaddr_mask per pair), any S1, empty ones too) and the noise-word
+    swaps (swap = (s_max, swap_mask per pair), any S1); None = off.
     p is compared in float64, as P37 / P41 built them. Siblings (stack.sib_mask on h1 / hx, the house numbers of q1 /
     qx) never join."""
     import stack as S
@@ -463,7 +465,98 @@ def complete(q1, qx, is2, p, am, acc, h1, hx, rescue_t=None, gc_t=None, hn_t=Non
     if noaddr is not None:                              # any S1, guarded pairs only (P40)
         acc = add("address-less exact names", noaddr[0], gc_add(q1, qx, is2, p, am, acc, sib | ~noaddr[1], noaddr[0],
                                                                 np.ones(len(p), bool), empty=True))
+    if swap is not None:                                # any S1, guarded pairs only (P46; the mask holds its p floor)
+        acc = add("noise-word swaps (s_max)", swap[0], gc_add(q1, qx, is2, p, am, acc, sib | ~swap[1], 0.0,
+                                                             np.ones(len(p), bool), empty=True))
     return acc
+
+
+# ---------------------------------------------------------------- P46: noise-word swap tier (P33's R05 guards + a lens)
+SWAP = dict(support=20, e_min=0.8, floor=0.02)       # P33 SUPPORT / P46 E_MIN / P33 FLOOR
+
+
+def lens_table(s1: np.ndarray, sx: np.ndarray) -> pd.DataFrame:
+    """P46's label-free lens over pairs (the country's argmax pairs): per word w that a one-word swap brings in (P20
+    name_rel 'sub1'), n = its swap pairs with a house number on both sides, s = their share at a generator sibling
+    offset (SIB3), e = their share keeping the house number. Noise words: s ~ 0, e >= 0.8; decoy words s >= 0.08."""
+    r1 = _rf(WORK / f"rf_test_s1_{C}.parquet", pd.unique(s1), ["core", "hn"])
+    rx = _rf(WORK / f"rf_test_sx_{C}.parquet", pd.unique(sx), ["core", "hn", "is_web"])
+    c1, cx = r1.core.reindex(s1).fillna("").to_numpy(), rx.core.reindex(sx).fillna("").to_numpy()
+    wx = rx.is_web.reindex(sx).fillna(False).to_numpy()
+    kw = [name_rel(a, b, x) for a, b, x in zip(c1, cx, wx)]
+    sub = np.array([k == "sub1" for k, _ in kw], bool)
+    words = np.array([w for _, w in kw], object)[sub]
+    del kw, c1, cx, wx
+    h1, hx = r1.hn.reindex(s1[sub]).fillna("").to_numpy(), rx.hn.reindex(sx[sub]).fillna("").to_numpy()
+    both = (h1 != "") & (hx != "")
+    dl = np.full(len(h1), np.nan)
+    dl[both] = pd.to_numeric(pd.Series(hx[both]), errors="coerce").to_numpy(float) - \
+        pd.to_numeric(pd.Series(h1[both]), errors="coerce").to_numpy(float)
+    g = pd.DataFrame({"w": words, "sib": np.isin(dl, SIB3), "eq": dl == 0, "hn": both}).groupby("w")
+    g = g.agg(n=("sib", "size"), s=("sib", "mean"), n_hn=("hn", "sum"), n_eq=("eq", "sum"))
+    g["e"] = g.n_eq / g.n_hn.clip(lower=1)
+    return g.assign(n_all=g.n, s=g.s * g.n / g.n_hn.clip(lower=1), n=g.n_hn)          # shares over hn-present pairs
+
+
+def swap_mask(s1: np.ndarray, sx: np.ndarray, p: np.ndarray, t: float, learn: pd.DataFrame, s_max: float) -> np.ndarray:
+    """P46's noise-word swap tier per pair (s1 / sx ids of the country's scored list, p = its post-rules p): the SX's
+    argmax pair, not accepted at the post-rules t, whose core swaps one S1 word for a word w (name_rel 'sub1') with
+    the house number equal, a shared place and the same street (P28), and P33's R05 guards: w is not an R1 filler, not
+    a learned sibling word (sib_words on `learn`, P3's blocked list); no other candidate S1 of the SX holds the rest of
+    the SX core; the SX core is no S1's core in the S1's city; p >= 0.02. The lens (lens_table on the argmax pairs)
+    keeps w with >= 20 hn-present swap pairs, s <= s_max (0.05; P46 'lens_g': 0.09) and e >= 0.8: the generator's
+    French noise words (développement, groupe) at the identical address. France +3,185 pairs (P46)."""
+    qx = pd.factorize(sx)[0]
+    am = argmax(qx, p)
+    st = lens_table(s1[am], sx[am])
+    r1 = _rf(WORK / f"rf_test_s1_{C}.parquet", pd.unique(s1), ["core", "hn", "places", "city"])
+    rx = _rf(WORK / f"rf_test_sx_{C}.parquet", pd.unique(sx), ["core", "hn", "places", "is_web"])
+    h1, hx = r1.hn.reindex(s1).fillna("").to_numpy(), rx.hn.reindex(sx).fillna("").to_numpy()
+    both = (h1 != "") & (hx != "")
+    dl = np.full(len(p), np.nan)
+    dl[both] = pd.to_numeric(pd.Series(hx[both]), errors="coerce").to_numpy(float) - \
+        pd.to_numeric(pd.Series(h1[both]), errors="coerce").to_numpy(float)
+    eq = (dl == 0) & am                                 # P28's numeric hn equality
+    ci = np.flatnonzero(eq)
+    c1 = r1.core.reindex(s1[ci]).fillna("").to_numpy()
+    cx = rx.core.reindex(sx[ci]).fillna("").to_numpy()
+    kw = [name_rel(a, b, x) for a, b, x in zip(c1, cx, rx.is_web.reindex(sx[ci]).fillna(False).to_numpy())]
+    ok = np.array([k == "sub1" for k, _ in kw], bool)
+    p1 = r1.places.reindex(s1[ci]).fillna("").to_numpy()
+    px = rx.places.reindex(sx[ci]).fillna("").to_numpy()
+    ok &= np.array([a != "" and bool(set(a.split("|")) & set(b.split("|"))) for a, b in zip(p1, px)], bool)
+    cand, c1, cx = ci[ok], c1[ok], cx[ok]
+    w = np.array([k[1] for k, o in zip(kw, ok) if o], object)
+    del kw, p1, px
+    s1c, sxc = s1[cand], sx[cand]
+    k1 = street_key(_addr((1,), pd.unique(s1c))).reindex(s1c).fillna("").to_numpy()
+    kx = street_key(_addr((2, 3), pd.unique(sxc))).reindex(sxc).fillna("").to_numpy()
+    street = (k1 != "") & (k1 == kx)
+    rest = [frozenset(b.split()) - {x} for b, x in zip(cx, w)]
+    mine = pd.DataFrame({"sx": sxc, "s1": s1c, "i": np.arange(len(cand))})
+    oth = mine.merge(pd.DataFrame({"sx": sx, "o": s1}), on="sx")
+    oth = oth[oth.o != oth.s1]
+    oc = _rf(WORK / f"rf_test_s1_{C}.parquet", pd.unique(oth.o), ["core"]).core.reindex(oth.o).fillna("").to_numpy()
+    hit = np.array([rest[i] <= set(o.split()) for i, o in zip(oth.i.to_numpy(), oc)], bool)
+    uniq = ~np.isin(np.arange(len(cand)), oth.i.to_numpy()[hit])
+    pool = pd.read_parquet(WORK / f"rf_test_s1_{C}.parquet", columns=["core", "city"])
+    keys = set(zip(pool.core.to_numpy(), pool.city.to_numpy()))
+    city1 = r1.city.reindex(s1c).fillna("").to_numpy()
+    nocore = np.array([(b, cc) not in keys for b, cc in zip(cx, city1)], bool)
+    del pool, keys, oth
+    sibw = sib_words(learn)
+    sib_ok = ~np.isin(np.array([f"sub1:{x}" for x in w], object), list(sibw))
+    ws = pd.Series(w)
+    lens = (ws.map(st.n).fillna(0).to_numpy() >= SWAP["support"]) & (ws.map(st.s).fillna(1.0).to_numpy() <= s_max) & \
+        (ws.map(st.e).fillna(0.0).to_numpy() >= SWAP["e_min"])
+    keep = ~np.isin(w, list(NOISE)) & (p[cand] >= SWAP["floor"]) & uniq & nocore & sib_ok & street & lens
+    out = np.zeros(len(p), bool)
+    out[cand[keep]] = True
+    out &= ~(p >= t)                                    # P46: pairs accepted at the post-rules t are not flips
+    print(f"{C}: noise-word swap tier: {len(cand):,} hn-equal one-word swaps in a shared place, {int(keep.sum()):,} pass, "
+          f"{int(out.sum()):,} not accepted at t {t:g}; lens words "
+          f"{sorted(st.index[(st.n >= SWAP['support']) & (st.s <= s_max) & (st.e >= SWAP['e_min'])])[:8]}", flush=True)
+    return out
 
 
 def fkey(s: str) -> str:
@@ -570,6 +663,11 @@ def brand_mask(s1: np.ndarray, sx: np.ndarray, v: Path) -> np.ndarray:
     key1 = pd.Series(np.where(one, j["first"].fillna("").to_numpy(object), ""), index=kx.index)
     print(f"{C}: {len(kx):,} bare brand SX, {int(one.sum()):,} with a unique hn + street + city S1", flush=True)
     return key1.reindex(sx).fillna("").to_numpy(object) == s1
+
+
+def argmax(qx, p):
+    import model as M
+    return M.argmax_sx(qx, p)
 
 
 def _check():
