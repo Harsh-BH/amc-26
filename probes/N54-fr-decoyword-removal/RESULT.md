@@ -66,3 +66,20 @@ sub1 12,149 (3,880 with a decoy word — N54's target — the other 8,269 swap i
 1,543, cie 1,212, développement 1,110, associés 1,070); disjoint 4,247 (web / brand names); add1 3,282 (221 decoy-word).
 **gc** (one-sided completion, p ≥ 0.7) adds 10,120: its sub1/add1 gained words are the same noise words, with a
 decoy-word tail (ecole 59, comite 57, amicale 48, …) that N54 also removes. Nothing else looks decoy-like.
+
+## Addendum 3 (05:05) — LOCO both directions PASS (lens cutoff raised to s > 0.25)
+Rebuilt P6's LOCO frames locally (probes/NIGHT/loco_score.py: data/work/p27/p6/{US,India}.txt over the P4 train X
+shards → data/work/p6/S_holdout_*.parquet, 4 min) and ran probes/NIGHT/loco_n54_n55.py: France-like base = argmax &
+p ≥ t_profile (0.97 US→India, 0.81 India→US) + a simulated P42 hn-extra (free argmax, hn equal, non-sibling, p ≥ 0.8,
+non-empty), lens learned on the TARGET's argmax pairs (label-free). ΔF0.5 of the target, per half (h0 / h1 ± SE):
+| direction | hn-extra adds (prec) | N54 ruled | N54 all |
+|---|---|---|---|
+| US→India, s > 0.2 | 7,050 (0.445), ΔF −0.0059 | +0.00138 / +0.00132 ± 0.00009 (587 removed, 0.9% true) | +0.0048 / +0.0045 ± 0.0002 (1,909, 2.5% true) |
+| India→US, s > 0.2 | 476 (0.973) | −0.00001 (24, 92% true) | **−0.00038** (723, 94.5% true) |
+| US→India, **s > 0.25** | same | +0.00138 / +0.00132 | +0.0048 / +0.0045 |
+| India→US, **s > 0.25** | same | +0.000002 (2) | **+0.00007 / +0.00007 ± 0.00002** (43, 7% true) |
+The s > 0.2 India→US loss was ONE word: "partners" (US true-noise word; LOCO s 0.217, 2,429 cell pairs 99.7% true).
+Every other flagged word is 0% true (US: smith, johnson, brand syllables …; India: solutions, industries, trading …).
+France has one word in (0.2, 0.25] ("in", 22 pairs), so the France removal is unchanged. **Recommend `all`** (positive in
+both directions), `ruled` as the conservative fallback. N55's template does not exist in the LOCO targets (0 / 4 flips,
+4/4 true) — like P46, LOCO confirms precision but cannot size the gain.

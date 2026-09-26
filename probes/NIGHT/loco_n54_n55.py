@@ -41,7 +41,7 @@ def run(src, tgt):
            "hnx_dF": round(float((fe - f0).mean()), 6)}
     # lens on the target's argmax pairs (label-free)
     lt = p46.lens_table(d.loc[am, ["s1", "sx"]].reset_index(drop=True), "train", tgt)
-    D = set(lt[(lt.n >= 20) & (lt.s > 0.2)].index); NZ = set(lt[(lt.n >= 20) & (lt.s <= 0.05) & (lt.e >= 0.8)].index)
+    import os; SM = float(os.environ.get("SMIN", "0.2")); D = set(lt[(lt.n >= 20) & (lt.s > SM)].index); NZ = set(lt[(lt.n >= 20) & (lt.s <= 0.05) & (lt.e >= 0.8)].index)
     c1 = r1.core.reindex(d.s1).fillna("").to_numpy(); cx = rx.core.reindex(d.sx).fillna("").to_numpy()
     ia = np.flatnonzero(am & hn_eq)
     g = [[w for w in b.split() if w not in set(a.split())] for a, b in zip(c1[ia], cx[ia])]

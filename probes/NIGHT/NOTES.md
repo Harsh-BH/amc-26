@@ -39,3 +39,4 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - 05:20 N55 fuzzy-street extension: US analogue 0.80 true, India 0.92; France +2,726 → ≈ +0.00004. DROP (keep identical-address only).
 - 05:30 Same-address France space mapped: gib p-floor relax = +165 only (P41 grid); website names at identical address +777 (≈ +0.00003) — both DROP. N54 (−decoy words) + N55 (+noise words) are the two levers.
 - 05:45 Rebuilding P6 LOCO frames locally (loco_score.py: US.txt / India.txt boosters over P4 train X shards) → then probes/NIGHT/loco_n54_n55.py gives N54/N55 LOCO both directions. rsswatch raised to 3.5 GB (no agy running).
+- 05:05 LOCO rebuilt locally. N54 (s>0.25) passes both directions: US→India ruled +0.0013 / all +0.0046; India→US ruled ≈0 / all +0.00007. s>0.2 failed India→US only via 'partners'. Recommend N54 all. N55 not LOCO-measurable (France template).

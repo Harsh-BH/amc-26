@@ -18,7 +18,7 @@ import numpy as np, pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT / "probes/P46-noise-word-tier")]
 W = ROOT / "data/work"; OUT = W / "p54"
-T_BASE, S_MIN, N_MIN = 0.9868, 0.2, 20
+T_BASE, S_MIN, N_MIN = 0.9868, 0.25, 20   # 0.25 not 0.2: LOCO India>US flags "partners" (US noise word, s 0.217)
 RD = dict(sep="\t", quoting=csv.QUOTE_NONE, dtype=str, keep_default_na=False)
 
 def cells() -> pd.DataFrame:

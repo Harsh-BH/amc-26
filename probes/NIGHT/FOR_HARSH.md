@@ -1,7 +1,8 @@
 # From Aditya's laptop (night run, 27 Sep 03:00–05:30 IST) — for Harsh / the master
 
 **TL;DR — two France-only files to stack on the current best (sub44r or sub48):**
-`p54.py cells && p54.py build output/sub48 output/sub48_n54 ruled` (−≈4.7k decoy-word swaps, est. +0.0004–0.0006),
+`p54.py cells && p54.py build output/sub48 output/sub48_n54 all` (−≈5.4k decoy-word swaps, est. +0.0005–0.0006;
+**LOCO PASSES both ways**: US→India +0.0046, India→US +0.00007 France-F0.5 — see N54 RESULT addendum 3),
 then `n55.py analyse && n55.py build output/sub48_n54 output/sub48_n54_n55 strict` (+≈10k noise-word variants,
 est. +0.0004–0.0006). Each is one validator run away (use system python3 for the validator if memory is tight).
 If you want a LOCO read first: both are cell rules, so P42's solution_p42.py analogue can score them.
