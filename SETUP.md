@@ -103,9 +103,9 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `models/p4b/ce.pt` | `data/work/p4b/ce.pt` | 42 MB | `16013613bbef1c9548a7d91b73978e0be6f833a6007ab45f2460644e1b55c789` |
 | `models/p10/pruner.txt` | `data/work/p10/pruner.txt` | 1 MB | `02ab27da2fca67220fc8377eb881c858aa4871c0eaeacd9efa75bed4eb885a52` |
 | `models/p11/ce_s2P.pt` (#7) | `data/work/p11/ce_s2P.pt` | 43 MB | `4dc0d8826a9efb3a3d1d956130b5c9af139af6941b77596fc1a5719196c3b9af` |
-| `models/p13/ckpt/ce_bge_pool.pt` (#8c; upload pending, also on S3 `amc26-p13/results/p13-rerank-0925-2257/ckpt/`) | `data/work/p13/ckpt/ce_bge_pool.pt` | 624 MB | `36a946769b50322fda057f3693c7e5577e5f476f28ae95e2c4343fa267b72de7` |
-| `models/p13/r/` (#8c; its cached scores; upload pending) | `data/work/p13/r/r_bge_pool_test_{India,US,France}.parquet`, `r_bge_poolck_holdout.parquet` | 39 MB | — |
-| `models/p17/stack_sup-bge-l21.0_US.txt` (#8c; upload pending) | `data/work/p17/stack_sup-bge-l21.0_US.txt` | 0.7 MB | `46116715d9821b8a143d05c1ba6c35c40ada7a93dc1ae9523c7fc6cceb15d184` |
+| `models/p13/ckpt/ce_bge_pool.pt` (#8c; also on S3 `amc26-p13/results/p13-rerank-0925-2257/ckpt/`) | `data/work/p13/ckpt/ce_bge_pool.pt` | 624 MB | `36a946769b50322fda057f3693c7e5577e5f476f28ae95e2c4343fa267b72de7` |
+| `work/p13/r/` (#8c; its cached scores) | `data/work/p13/r/r_bge_pool_test_{India,US,France}.parquet`, `r_bge_poolck_holdout.parquet` | 39 MB | — |
+| `models/p17/stack_sup-bge-l21.0_US.txt` (#8c) | `data/work/p17/stack_sup-bge-l21.0_US.txt` | 0.7 MB | `46116715d9821b8a143d05c1ba6c35c40ada7a93dc1ae9523c7fc6cceb15d184` |
 
 **bge needs a GPU to score fresh.** With P13's cached scores above, #8c / #9 need no GPU at all. Scoring the bge band
 anew needs two things:
