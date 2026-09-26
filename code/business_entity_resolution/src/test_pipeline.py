@@ -79,7 +79,7 @@ if __name__ == "__main__":          # forkserver workers (rules.feats) re-import
         run.RR.CE, run.RR.FAMILY = a.ce.resolve(), a.ce_base or run.RR.FAMILY
     run.FRANCE = a.france or run.FRANCE
     run.CAP = tuple(int(x) for x in a.cap.split(",")) if a.cap else None
-    run.DROP_SIB_CANDS = a.drop_sibling_cands
+    run.DROP_SIB_CANDS |= a.drop_sibling_cands
     print(f"recipe {a.recipe}: CE {run.RR.CE.name} ({run.RR.FAMILY}), stack {list(run.STACK)}, France {run.FRANCE}, "
           f"unseen label {a.unseen}", flush=True)
     s1, sx, truth = world(unseen=a.unseen)

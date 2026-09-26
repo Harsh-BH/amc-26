@@ -1,18 +1,93 @@
 # P9-integrate — RESULT
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
-- **#9ab = the new default recipe `sub9ab`:** `run.py --split test --stage model` reproduces `output/sub9ab`, our best LB
-  0.984072, byte for byte (both files). `--t-country France=0.975|0.99` reproduces `sub9ab_t975` / `sub9ab_t990`.
-- **Built, validator PASS:**
-  - `output/sub9ab_cap`: ≤ 5 S2 / 6 S3 per S1; 86 S1 change.
-  - `output/sub9ab_small`: candidates 4.82 → **4.34 per S1**. India / US matching identical; France changes on 225 S1
-    (0.087%) from its stricter pruner.
-- **Recommendation:** merge. The cap and `sub9ab_small` are safe by their own measures (see below). Whether to upload
-  either is the master's call.
-  - The cap is +0.0000019 on the holdout.
-  - The small set's decoy drop leaves matching unchanged; its France τ 0.1 moves 225 France S1 in an unknown direction
-    (≤ 0.00013 of the test score).
+- **#31 = the new default recipe `sub31`:** `run.py --split test --stage model` reproduces `output/sub31`, our best LB
+  **0.9856**, byte for byte (both files). `--recipe sub31_veto`, `--recipe sub31_small` and `--t-country France=0.9818`
+  reproduce `sub31_veto`, `sub31_small` and `sub31_t9818`, also byte for byte (both files).
+- The France chain lives in **`src/france.py`** (P20 R1 rescore, P26 c_hn + `hn_feats`, P28 bxneg, P29 `paren_hn` /
+  tier / cap, P30 veto), driven by `run.france31`. c_hn's p equals P31's `chn_fix.parquet` exactly (max |Δp| 0), and
+  every post-rule count matches P31's log.
+- **A cold run** needs the model files (bge ckpt, m2_big, pruner, US stacker, **c_hn**) and the bge score files
+  (P13 / P19 / P26 / P29 / P31, + P30 for the veto); it recomputes everything else from the raw TSVs (#31 section:
+  what it needs, what it rebuilds). **A from-raw France rebuild under the current src reproduces #31's France lines
+  exactly** (0 of 259,452 differ, both files; `probes/P9-integrate/cold31.py`, 20 min).
 
-## #9ab — France IDF fix + bge, the cap, a smaller candidate set
+## #31 — the final France chain (P26 + P28 + P29 + P30 + P31)
+**Changes:**
+- **`src/france.py` (new):**
+  - `world(base)` → `data/work/p9/fr31`: links to #9ab's `fr_idf144` world, plus `rf_test_sx_France.parquet` with
+    P29's `paren_hn` re-parse (23,272 S2/S3, 23,250 hn changed; equal to `p29/w_fix`'s file).
+  - `chn(model, out)`: its own process under `ER_WORK` = that world.
+    - P20's rescore with R1 (`NOISE`, `strip`): blocking and context columns are kept, while strings / `rule_acc` /
+      rule-only extra pairs are recomputed.
+    - Then the pruner, then P26's `hn_feats` over the full list (+ `meta`, `_hn` = P26 prep), then c_hn.
+  - `post(q1, qx, id1, idx, p, g, t, v, learn, veto)`: P31's order and dtypes (float64 inside, float32 out).
+    - `tier_mask` / `keys` (P29), `bxneg` + `sib_words` + `street_key` + `name_rel` (P28 / P20, only the `bxneg`
+      variant), the veto (P30), `cap_mask` (P29).
+- **`run.py`:**
+  - Recipes `sub31` (default), `sub31_veto` (`veto=(0.1, "p30/r/r_pool_France.parquet")`), `sub31_small`
+    (`drop_sib_cands=True`).
+  - `CHN = data/work/p31/c_hn.txt`.
+  - `france31()` is the France part of `model_parts` when `FRANCE == "fr31"`. Its t = `T_COUNTRY` or
+    `T_FRANCE_OVERRIDE`, because the rules decide at t.
+  - `r_cache` records the seed files it merged in `<cache>.seeds`. It used to merge "seeds newer than the cache",
+    which would have skipped P26's file: 16:23, older than the 16:43 France cache.
+  - `seed_keys()` is shared by the r cache and the veto lookup.
+  - New flags: `--no-validate`, `--ce-missing keep` (a band pair without a cached r keeps its p; no GPU needed),
+    `--france fr31`.
+- **`train_matcher.py --hn`**: m2_big's recipe + `france.HN`. It is c_hn's retrain path when `c_hn.txt` is absent
+  (`run.france31` calls it). P26 trained in float32 on AWS; this path uses float16, like m2_big: an equivalent model,
+  not the file.
+- **`stack.hn_of(..., work)`**: the France part's decoy stage reads the fixed SX house numbers.
+
+| check | result |
+|---|---|
+| `run.py --split test --stage model` (sub31) vs `output/sub31` | **byte-identical, both files**; validator PASS. c_hn p on 1,332,223 kept pairs = P31's `chn_fix.parquet` (same order, max \|Δp\| 0). Tier 253,136 pairs (+6,088 accepted), bxneg 523,707 (+9,647), cap 21 → 808,722 France matches. r seeded: P19 65,393, P26 36,339, P29 11,248, P31 3,974 France pairs. France chain cold: rescore + c_hn 432 s (2.60 GB, own process; memguard paused it ~3 min), post ~40 s |
+| `--t-country France=0.9818` vs `output/sub31_t9818` | **byte-identical, both files** (tier +3,343, bxneg +5,678, cap 27 = P31) |
+| `--recipe sub31_veto` vs `output/sub31_veto` | **byte-identical, both files** (7,753 vetoed pairs outside the rules = 10,123 − 2,370; −6,141 matches; cap 18 = P31) |
+| `--recipe sub31_small` vs `output/sub31_small` | **byte-identical, both files**. Decoys dropped: France 170,057 (5.13 → 4.48), India 125,346 (4.90 → 4.75), US 416,972 (4.63 → 4.00); matching = `sub31` |
+| `test_pipeline.py` (sub31, e5 CE; and `--recipe sub31_small --unseen France`) | **pass**: model 0.9968 / 0.9964, rules 0.8575. The in-memory path exercises France's blend weights, fixed t and the decoy stage; the post-rules need the full-scale France files and run only at test scale (the rows above) |
+| `train_matcher.py --hn --frac 0.02 --rounds 50` (c_hn's retrain path, smoke) | runs: 70 features, **same names and order as `c_hn.txt`**; hn gain share 0.15 (P26's c_hn: 0.15); 40 s, 2.34 GB |
+| `france.py` self-check | ok (R1, `paren_hn`, `street_key`, `name_rel`, `hn_feats` classes / deltas / support, `cap_mask`) |
+| **Cold France** (`probes/P9-integrate/cold31.py`): a fresh world with only the raw parquets, train fits, model files and bge score files linked. France's texts, rules.feats (under P21's learned région map), P3 blocking, the idf144 world, the `(n)` fix, the R1 rescore, c_hn, the blend and the post-rules are all rebuilt | **0 of 259,452 France matching lines and 0 candidate lines differ from `output/sub31`.** The fresh rf differs from the cached (pre-P21) one on 3 S2/S3 only (state / places); 3 texts change their state group. Kept pairs 1,332,223; every band pair has a cached r. 1,190 s, 2.63 GB |
+
+**Cold run (task 3): what `run.py --split test --stage model` (sub31) needs, and what it recomputes.**
+
+*Must be supplied*: these cannot be rebuilt locally, or a rebuild is not the same file, so its lines would move.
+
+| file (`data/work/…`) | size | why | offload (`gdrive:amc26-offload/`) |
+|---|---|---|---|
+| `p13/ckpt/ce_bge_pool.pt` | 624 MB | the bge CE (AWS). Its sha1 also names the r caches, so it is needed even with every score cached | `models/p13/ckpt/` |
+| `p13/r/r_bge_pool_test_{India,US,France}.parquet` (+ `r_bge_poolck_holdout` for the holdout) | 39 MB | P13's bge scores. Without them every band pair is scored fresh: HF weights + GPU, and bf16 noise moves lines | `models/p13/r/` |
+| `p19/r/`, `p26/bge/r/`, `p29/r/`, `p31/r/` `r_bge_pool_test_France.parquet` | 2.9 MB | France band top-ups (idf144, c_hn, the rebuild) | `work/p19/r` … `work/p31/r` (uploaded 26 Sep 18:43) |
+| `p30/r/r_pool_France.parquet` | 15 MB | `sub31_veto` only | `work/p30/r/` |
+| `p31/c_hn.txt` | 50 MB | P26's AWS matcher; `train_matcher.py --hn` makes an equivalent, not this file | `models/p31/` (uploaded) |
+| `p4/m2_big.txt` | 69 MB | m2_big; a retrain is equivalent, not bit-identical | `models/p4/` |
+| `p10/pruner.txt`, `p17/stack_sup-bge-l21.0_US.txt` | 1.8 MB | both retrain bit-identically, but only after the whole train side (~1 h 45) + a holdout run | `models/p10/`, `models/p17/` |
+
+*Recomputed from the raw TSVs* when absent. The same code built every cache, except P21's région map, which is
+France-only and measured above (0 France lines move). Since the caches' commit cef4e2d, `block.py` only gained the
+France IDF functions and `features.py` / `rules.py` / `translit.py` are unchanged, so India / US rebuild to the same
+files. That is not re-measured end to end (~2 h of test-side rebuild).
+
+| step | cache | cold time (laptop) |
+|---|---|---|
+| TSV → parquet, folds, P2 table, place counts, vectorizers (train fit) | `*_source*.parquet`, `gt_pairs`, `s1_folds`, `p2_xlit_table`, `place_freq_train.json`, `p3/vecs_hash.pkl` | ~15 min (vectorizers need the train S2/S3 sample) |
+| France région map (learned from test France) | `fr_regions.json` | ~1 min |
+| test texts + P3 blocking | `p3/txt_test/`, `p3/cands_test_*` | 6.5 + 5 / 18 / 6 min |
+| test rules.feats | `rf_test_*` | ~20 min |
+| test X, pruner + m2_big p | `p4/X/test_*`, `p9/m2_test_*` | 3 / 20 / 9 + 3 / 18 / 5 min |
+| France idf144 world (IDF refit, reblocking, X, m2) | `p9/fr_idf144/` | ~47 min |
+| France fr31 world ('(n)' fix, R1 rescore, c_hn) | `p9/fr31/` | ~8 min |
+| r caches (seeded from the files above; `.seeds` lists them) | `p9/r_test_*_3bd0b930` | seconds |
+| decision, TSVs, validator | `output/` | ~5 min |
+
+Total ≈ 3 h on the laptop with the model and score files present. The train side (~1 h 45 + ~45 min of m2_big
+training) runs only if a model file is missing. **Fastest byte-exact path:** copy `data/work` whole. That is path A in
+SETUP.md, plus `p9/fr_idf144/` (X 151 MB, cands 68 MB) and `p9/fr31/` (36 + 16 MB), which are not on the drive yet. The run
+then takes ~5 min.
+
+
+## #9ab — France IDF fix + bge, the cap, a smaller candidate set   (history)
 **Changes:**
 - **`run.py`:**
   - Recipe `sub9ab` (default): `_BGE` + `france="idf144_bge"`, t_france 0.985. France's candidates, X and M2 come from
@@ -205,6 +280,12 @@ world and `test_pipeline` have no France label.
   (0.0569 vs 0.0569).
 
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
+**#31 (26 Sep):** merge `wave/p9-integrate` (59f8918 + the docs commit). The default recipe is `sub31`; nothing else
+changes for India / US. For tomorrow's clean reproduction, use the cold-run table in the #31 section: copy the model
+and score files, or the whole `data/work` for a ~5-minute byte-exact run.
+
+The rest of this section is the original #4 integration, kept for reference.
+
 Merge branch `wave/p9-integrate` (commits c731de4 … HEAD). All files are under `code/business_entity_resolution/`:
 
 | file | what |
@@ -292,7 +373,14 @@ In `code/business_entity_resolution/src/` (probe-dir helpers: `probes/P9-integra
 - `score_file(in, out)`: 1,363 pairs/s (India) and 1,700 pairs/s (US), 2.0 GB RSS, 3.4 GB VRAM.
 - `band(c)`: 1 min. `train()`: 25 min (P4b).
 
+**france.py** (#31)
+- `world(base)` → `data/work/p9/fr31` (20 s the first time).
+- `chn(model, out)` under `ER_WORK` = that world: 432 s, 2.60 GB. Kept rows go through a scratch parquet that is
+  deleted afterwards.
+- `post(...)`: ~40 s, ≤ 2.7 GB (P31's peak 2.72 GB; the source reads are country-filtered here).
+
 **run.py**
+- `france31()` → the France part dict (c_hn p as `p_m2`, post-rule p as `p`).
 - `model_parts(split, world)` → per-country dicts; `rerank(c, q1, qx, p, text, cache)` → (p′, r);
   `thresholds(parts)` → {country: t}; `refit_w(parts)`; `ensure_ce()` trains the CE when `ce.pt` is absent.
 
@@ -300,6 +388,16 @@ In `code/business_entity_resolution/src/` (probe-dir helpers: `probes/P9-integra
 With them a rerun skips all scoring: measured 52 s on holdout; the test rerun was not re-timed (decision + writing were 2.5 min).
 
 ## Risks            (licence, external-data, France/unseen-country, scale, anything you assumed)
+- **#31 port fidelity is deliberate.**
+  - bxneg reads the *unfixed* `rf_test_sx_France` (hn / core / places) and the tier reads the fixed one, as P31's code
+    did (P28's `anchor.py` had no `ER_WORK`).
+  - The learned sibling words come from the main world's P3 blocked list, not idf144's.
+  - Changing either would move lines. Both are noted in `france.py`.
+- **c_hn is a model file.** Without `p31/c_hn.txt`, `train_matcher.py --hn` retrains the recipe in float16 on the laptop
+  (> 3 GB, ~1 h). The result is an equivalent booster, not the same file: France lines would move.
+- **The r caches depend on their seed log.** The first run with `sub31` writes `p9/r_*.seeds`. A cache copied without
+  its `.seeds` re-merges every seed once, first-wins, cache first: harmless.
+
 - **Licences.**
   - New pins: lightgbm (MIT), torch (BSD), transformers / tokenizers / safetensors / huggingface_hub (Apache-2.0).
   - Model: e5-small, MIT, 118M.

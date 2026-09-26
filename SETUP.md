@@ -108,6 +108,9 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `work/p13/r/` (#8c; its cached scores) | `data/work/p13/r/r_bge_pool_test_{India,US,France}.parquet`, `r_bge_poolck_holdout.parquet` | 39 MB | — |
 | `work/p19/r/` (#9ab; bge scores of the 63,393 France band pairs new on the idf144 candidates) | `data/work/p19/r/r_bge_pool_test_France.parquet` | 1.3 MB | — |
 | `models/p17/stack_sup-bge-l21.0_US.txt` (#8c) | `data/work/p17/stack_sup-bge-l21.0_US.txt` | 0.7 MB | `46116715d9821b8a143d05c1ba6c35c40ada7a93dc1ae9523c7fc6cceb15d184` |
+| `models/p31/c_hn.txt` (#31 France matcher, P26's AWS job; also on S3 `amc26-p26/results/p26-full-hn-0926-1533/`) | `data/work/p31/c_hn.txt` | 50 MB | `7b48aaede1c4d9ff0a2acf60f09650b307953b64b4c224e3559aee3f020cf36c` |
+| `work/p26/bge/r/`, `work/p29/r/`, `work/p31/r/` (#31; bge scores of the France band pairs new on c_hn / the rebuild) | `data/work/{p26/bge,p29,p31}/r/r_bge_pool_test_*.parquet` | 1.5 MB | — |
+| `work/p30/r/r_pool_France.parquet` (`sub31_veto` only; bge scores of the confident France pairs) | `data/work/p30/r/r_pool_France.parquet` | 15 MB | — |
 
 **bge needs a GPU to score fresh.** With P13's cached scores above, #8c / #9 need no GPU at all. Scoring the bge band
 anew needs two things:
@@ -117,7 +120,7 @@ anew needs two things:
 ```bash
 rclone copy gdrive:amc26-offload/models data/work/     # or copy the files by hand into those paths
 sha256sum data/work/p4/m2_big.txt data/work/p4b/ce.pt data/work/p10/pruner.txt data/work/p11/ce_s2P.pt \
-    data/work/p13/ckpt/ce_bge_pool.pt data/work/p17/stack_sup-bge-l21.0_US.txt   # must match
+    data/work/p13/ckpt/ce_bge_pool.pt data/work/p17/stack_sup-bge-l21.0_US.txt data/work/p31/c_hn.txt   # must match
 ```
 
 ## 6. Cached test features — path A only (the run takes minutes)
@@ -140,6 +143,7 @@ What it contains, and what each file saves you:
 | `p4/X/test_<country>_sx_NNN.parquet` | the 65 match signals for every candidate pair | ~30 min |
 | `p9/m2_test_<country>_<model-id>.parquet` | LightGBM scores | ~1 h |
 | `p9/r_test_<country>_<model-id>.parquet` | cross-encoder scores | ~18 min GPU |
+| `p9/fr_idf144/`, `p9/fr31/` (#9ab / #31) | France's worlds: the idf144 vectorizer, its reblocked candidates, X and m2 p; the `(n)`-fixed `rf_test_sx_France` and c_hn's p | ~55 min |
 
 **Version rule — important.** The caches were built by commit `cef4e2d` (25 Sep 22:43) or later. Feature caches are
 matched **by file name, not by code version**: if your code cleans text differently from the code that built them,
@@ -238,16 +242,21 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
-- The command now produces **submission #9ab** (the default recipe `sub9ab`, public LB **0.984072**, our best):
+- The command now produces **submission #31** (the default recipe `sub31`, public LB **0.9856**, our best):
   - #8c's India / US: the pruner, m2_big, P13's bge cross-encoder (t 0.71) and P17's US stacker;
-  - France: P14's IDF-fixed candidates plus the bge cross-encoder with out-of-domain weights, t 0.985.
-  - `--t-country France=0.975` / `0.99` give `sub9ab_t975` / `sub9ab_t990`.
-  - Holdout (India / US, = #8c): 0.98990 (half 1 0.98956).
-- Options:
-  - `--cap 5,6` (≤ 5 S2 / 6 S3 matches per S1; 86 test S1) → `output/sub9ab_cap`;
-  - `--tau-country France=0.1 --drop-sibling-cands` (candidates 4.82 → 4.34 per S1; France matching changes on
-    225 S1, India / US unchanged) → `output/sub9ab_small`.
-- `--recipe sub8c`, `sub9a`, `sub9b`, `sub9s`, `sub7`, `sub6`, `sub5`, `sub4` were each verified byte for byte
+  - France: `france.py`'s chain (README section 2), t 0.9868: #9ab's IDF-fixed world rebuilt with the `(n)` house
+    numbers and the R1 name fillers, P26's c_hn matcher, the bge blend, then P29's key tier, P28's same-address rule
+    (bxneg) and P29's cap.
+  - `--t-country France=0.9818` gives `sub31_t9818`; `--recipe sub31_veto` (+ P30's bge veto) gives `sub31_veto`;
+    `--recipe sub31_small` (same matching, 4.42 candidates per S1) gives `sub31_small`.
+  - Holdout (India / US, = #8c): 0.98990 (half 1 0.98956). France has no labels.
+- Needs, beyond #9ab's files: `data/work/p31/c_hn.txt` and the France r top-ups `p26/bge/r`, `p29/r`, `p31/r`
+  (`p30/r/r_pool_France.parquet` for `sub31_veto`); see step 5.
+- Cold check: France rebuilt from the raw data under the current code (P21's learned région map included) gives
+  `sub31`'s France lines exactly: 0 of 259,452 differ (`probes/P9-integrate/cold31.py`, 20 min). With the model and
+  score files of step 5 present, a cold run needs ~3 h on the laptop; with step 6's caches (`p9/fr_idf144/`,
+  `p9/fr31/` included) it takes ~5 min.
+- `--recipe sub9ab`, `sub8c`, `sub9a`, `sub9b`, `sub9s`, `sub7`, `sub6`, `sub5`, `sub4` were each verified byte for byte
   against their staged files. `sub9d` predates P21's learned région map, which moves 1,039 of its France rows by
   design: delete `data/work/p9/fr_idfdom/` to rebuild it under the map.
-- Best leaderboard so far: **0.984072** (#9ab, 26 Sep 14:31).
+- Best leaderboard so far: **0.9856** (#31, 26 Sep).
