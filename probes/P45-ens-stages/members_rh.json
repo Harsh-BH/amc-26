@@ -1,0 +1,1 @@
+{"p10": {"folds": [2], "rounds": 5}, "et": {"folds": [3], "rounds": 5, "params": {"extra_trees": true}}}
