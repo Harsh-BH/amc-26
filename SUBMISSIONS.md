@@ -41,6 +41,7 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 20a | staged, validator PASS (P20) | `output/sub20a/…` | India/US = #8c | #8c + France IDF fix + **R1 (French suffix fillers & Fils / & Cie / Associés / Frères stripped from the name core)** + sibling rule, t 0.975 (no bge in France). vs #9as isolates R1; R1 adds 17.5k France pairs (92.7% hn-equal) |
 | 26 | **staged, validator PASS (P26) — upload next** | `output/sub26_hn/…` | India/US = #8c | #8c India/US + France from the **house-number-aware matcher** (hn features inside LightGBM) + bge CE (out-of-domain weights), t 0.986 (= D4 empty rate). LOCO with bge on top: **+2.01 / +1.76 pt** on the unseen country. 25,578 France S1 differ from #9ab; candidates identical |
 | 26_t975 | staged, validator PASS | `output/sub26_hn_t975/…` | = #26 | #26 at France t 0.975 (6.49% empty, 3.10 per S1) — only if #26 beats #9ab |
+| 28a | staged, validator PASS (P28) | `output/sub28a/…` | India/US = #9ab | #9ab + France **same-address rule** (hn+street+city equal, name cores differ by an insert/delete or not at all, sibling-word guard; the pure word-SWAP version failed on labels). +15,546 France pairs to 14,417 S1, nothing dropped. LOCO +0.0049 / +0.0012 |
 
 **Upload next (26 Sep, 5 slots) — every France test sits on the same India/US base (#8c), so each LB delta vs #8c is that France change alone:**
 1) **#8c** — the base (best India/US: bge CE + US stack; France = #6c's). Expected ≈ 0.9819.
