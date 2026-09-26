@@ -1,9 +1,13 @@
 # Business entity resolution — Amazon ML Challenge 2026
 
 This code rebuilds both submission files from the raw TSVs, from the repository root. It uses no external data and
-no API. The one pretrained model is `intfloat/multilingual-e5-small` (MIT, 118M parameters). Its base weights are
-downloaded once from Hugging Face, then fine-tuned on the train data. Every other artefact is fitted on the train
-data and rebuilt when absent.
+no API. Two pretrained models are fine-tuned as cross-encoders; their base weights are downloaded once from Hugging
+Face:
+- `BAAI/bge-reranker-v2-m3` (Apache-2.0, 568M parameters) is the default (#8c). It was fine-tuned on AWS
+  (`probes/P13-aws-rerank`), and `run.py` loads its checkpoint rather than retraining it.
+- `intfloat/multilingual-e5-small` (MIT, 118M parameters) is #4–#7's cross-encoder and is fine-tuned by `rerank.py train`.
+
+Every other artefact is fitted on the train data and rebuilt when absent.
 
 ## 1. Setup
 
@@ -11,6 +15,9 @@ data and rebuilt when absent.
 python3.12 -m venv .venv && .venv/bin/pip install -r code/business_entity_resolution/requirements.txt
 HF_HUB_OFFLINE=0 .venv/bin/python -c "from transformers import AutoModel, AutoTokenizer as T; \
   AutoModel.from_pretrained('intfloat/multilingual-e5-small'); T.from_pretrained('intfloat/multilingual-e5-small')"
+# only to score the bge band fresh (2.3 GB; not needed with P13's cached scores in data/work/p13/r/)
+HF_HUB_OFFLINE=0 .venv/bin/python -c "from transformers import AutoModelForSequenceClassification as M, AutoTokenizer as T; \
+  M.from_pretrained('BAAI/bge-reranker-v2-m3'); T.from_pretrained('BAAI/bge-reranker-v2-m3')"
 ```
 
 After that download, `rerank.py` sets `HF_HUB_OFFLINE=1`, so the pipeline never touches the network.
@@ -30,7 +37,9 @@ a 3 GB memory cap. The cross-encoder steps need the GPU; they take the lock `/tm
 
 It writes `output/matching_results.tsv` and `output/candidate_pairs.tsv`, asserts the format rules, then runs the
 official validator. Nothing else has to run first: on a cold `data/work` the command rebuilds every step below in
-order (training included). With the caches present it only scores, decides and writes.
+order (training included), except the bge cross-encoder: its checkpoint `data/work/p13/ckpt/ce_bge_pool.pt` must be
+downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when it is missing. With the caches present
+it only scores, decides and writes.
 
 **The default recipe is `sub8c`:**
 - the pruner, then m2_big on the kept pairs;
@@ -125,7 +134,7 @@ Runtimes and memory (measured, 3 GB cap):
 | France IDF variant world (`sub9a` / `sub9d`: France reblocked, X rebuilt, pruned, M2) | 47 / 46 min (33 / 38 min of it blocking at 15 threads) | 2.5 GB |
 | pruner + M2 scores, test (the pruner reads all 27.5M pairs; m2_big scores the kept 8.37M) | 3 / 18 / 5 min (France / India / US; India under load) | 1.8 GB |
 | M2 scores without the pruner (`--recipe sub5`, all 27.5M pairs) | 5 / 18 / 43 min (loaded machine) | 2.0 GB |
-| CE rescoring, test (656k India + 583k US kept band pairs; 847k + 702k without the pruner; GPU) | 5 + 5 min cold (#7); 0 with the r cache | 2.1 GB (own process), 3.4 GB VRAM |
+| CE rescoring, test (656k India + 583k US kept band pairs; 847k + 702k without the pruner; GPU) | e5 (#7): 5 + 5 min cold. bge (#8c): ~20 min on an A10G, ~2 h on the RTX 3050. 0 with the r cache | 2.1 GB (own process), 3.4 GB VRAM (e5) |
 | decision + writing + validator | 2.5 min | 2.3 GB |
 
 ## 3. Validate on the training data
@@ -184,11 +193,14 @@ The blend refit on holdout half 0 returns [0.678, 0.715, 0.337] for m2_big (CFG 
 ## 5. Package
 
 ```bash
-.venv/bin/python code/business_entity_resolution/src/package.py --team <team_name>   # -> <team_name>_submission.zip
+.venv/bin/python code/business_entity_resolution/src/package.py --team Yeti [--out output/] [--dest .]   # -> Yeti_submission.zip
 ```
 
 The zip holds `output/`, `code/business_entity_resolution/` (src, this README, requirements) and the filled
 `Documentation_template.md`. The script checks its structure and that both TSVs have one row per test S1.
-The fine-tuned weights (`data/work/p4b/ce.pt`, 43 MB), the booster (`data/work/p4/m2_big.txt`, 69 MB) and the
-pruner (`data/work/p10/pruner.txt`, 1.1 MB) are artefacts, not source. All three are rebuilt from the train data
-by the commands above, and the pipeline trains any that is missing.
+The model files are artefacts, not source, so they are not in the zip:
+- the booster `data/work/p4/m2_big.txt` (69 MB), the pruner `data/work/p10/pruner.txt` (1.1 MB), the US stacker
+  `data/work/p17/stack_sup-bge-l21.0_US.txt` (0.7 MB) and the e5 CEs (`p11/ce_s2P.pt`, `p4b/ce.pt`, 43 MB each).
+  They are rebuilt from the train data by the commands above; the pipeline trains any that is missing.
+- the bge CE `data/work/p13/ckpt/ce_bge_pool.pt` (624 MB). It is fine-tuned on AWS by P13's SageMaker job
+  (`probes/P13-aws-rerank/solution_p13.py`, 76 min on an A10G) and loaded, not retrained, by `run.py`.
