@@ -36,6 +36,7 @@ amc26-offload/
 │   ├── p11/ce_s2P.pt                  the same cross-encoder trained 2 epochs (#7)
 │   ├── p13/ckpt/ce_bge_pool.pt        bge-reranker-v2-m3 cross-encoder, fine-tuned on AWS (#8c / #9, the default)
 │   ├── p13/r/r_bge_pool_*             its cached scores (test India / US / France band, holdout) -- the byte check
+│   ├── p19/r/r_bge_pool_test_France  bge scores of France's idf144 band (#9ab)
 │   ├── p17/stack_sup-bge-l21.0_US.txt house-number stacker, US only (#8c)
 │   └── p10/pruner.txt                 candidate pruner (shrinks shortlists 15.9 → 4.8 per business)
 └── work/                            cached test-side intermediate files (step 6)    ~4.6 GB
@@ -105,6 +106,7 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `models/p11/ce_s2P.pt` (#7) | `data/work/p11/ce_s2P.pt` | 43 MB | `4dc0d8826a9efb3a3d1d956130b5c9af139af6941b77596fc1a5719196c3b9af` |
 | `models/p13/ckpt/ce_bge_pool.pt` (#8c; also on S3 `amc26-p13/results/p13-rerank-0925-2257/ckpt/`) | `data/work/p13/ckpt/ce_bge_pool.pt` | 624 MB | `36a946769b50322fda057f3693c7e5577e5f476f28ae95e2c4343fa267b72de7` |
 | `work/p13/r/` (#8c; its cached scores) | `data/work/p13/r/r_bge_pool_test_{India,US,France}.parquet`, `r_bge_poolck_holdout.parquet` | 39 MB | — |
+| `work/p19/r/` (#9ab; bge scores of the 63,393 France band pairs new on the idf144 candidates) | `data/work/p19/r/r_bge_pool_test_France.parquet` | 1.3 MB | — |
 | `models/p17/stack_sup-bge-l21.0_US.txt` (#8c) | `data/work/p17/stack_sup-bge-l21.0_US.txt` | 0.7 MB | `46116715d9821b8a143d05c1ba6c35c40ada7a93dc1ae9523c7fc6cceb15d184` |
 
 **bge needs a GPU to score fresh.** With P13's cached scores above, #8c / #9 need no GPU at all. Scoring the bge band
@@ -236,16 +238,16 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
-- The command now produces **submission #8c** (the default recipe `sub8c`): the pruner, m2_big, P13's bge
-  cross-encoder (India / US, t 0.71), P17's house-number stacker on US, and France (m2_big p) fixed at t 0.95.
-  Holdout 0.98990 (half 1 0.98956; India 0.99004 / US 0.98924 = P17's numbers; competitor band pairs without a
-  bge score keep #7's e5 blend, `--ce-missing fallback`). #7: 0.98881.
-- The France variants on the same base, each byte for byte:
-  - `--recipe sub9a`: France IDF fix, t 0.975;
-  - `--recipe sub9b`: bge France, t 0.98;
-  - `--recipe sub9s`: sibling rule, t 0.95;
-  - `--recipe sub9d`: train-only IDF, t 0.98.
-- `--recipe sub7`, `sub6`, `sub5`, `sub4` still give #7 / #6 / #5 / #4; `--recipe sub6 --t-country France=0.95` gives
-  #6c (leaderboard 0.980954).
-- Best leaderboard so far: **0.981142** (D4: #5 with France t 0.95; France 0.88 scored 0.981024). The 26 Sep uploads
-  (#8c, then #9a / #9b / #9s on the same base) are queued in [SUBMISSIONS.md](SUBMISSIONS.md).
+- The command now produces **submission #9ab** (the default recipe `sub9ab`, public LB **0.984072**, our best):
+  - #8c's India / US: the pruner, m2_big, P13's bge cross-encoder (t 0.71) and P17's US stacker;
+  - France: P14's IDF-fixed candidates plus the bge cross-encoder with out-of-domain weights, t 0.985.
+  - `--t-country France=0.975` / `0.99` give `sub9ab_t975` / `sub9ab_t990`.
+  - Holdout (India / US, = #8c): 0.98990 (half 1 0.98956).
+- Options:
+  - `--cap 5,6` (≤ 5 S2 / 6 S3 matches per S1; 86 test S1) → `output/sub9ab_cap`;
+  - `--tau-country France=0.1 --drop-sibling-cands` (candidates 4.82 → 4.34 per S1; France matching changes on
+    225 S1, India / US unchanged) → `output/sub9ab_small`.
+- `--recipe sub8c`, `sub9a`, `sub9b`, `sub9s`, `sub7`, `sub6`, `sub5`, `sub4` were each verified byte for byte
+  against their staged files. `sub9d` predates P21's learned région map, which moves 1,039 of its France rows by
+  design: delete `data/work/p9/fr_idfdom/` to rebuild it under the map.
+- Best leaderboard so far: **0.984072** (#9ab, 26 Sep 14:31).

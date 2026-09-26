@@ -43,14 +43,22 @@ order (training included), except the bge cross-encoder: its checkpoint `data/wo
 downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when it is missing. With the caches present
 it only scores, decides and writes.
 
-**The default recipe is `sub8c`:**
+**The default recipe is `sub9ab`** (public LB **0.984072**, our best):
 - the pruner, then m2_big on the kept pairs;
 - **P13's bge-reranker-v2-m3 cross-encoder** on India / US (w fit on holdout half 0), then **P17's house-number
-  stacker on US only**;
-- t 0.71 for India / US, and France (m2_big p) fixed at t 0.95.
+  stacker on US only** (India / US = #8c);
+- t 0.71 for India / US;
+- **France:** P14's IDF-fixed candidates (`idf144`), then the bge CE on France's band with P13's out-of-domain w
+  [0.9245, 0.2595, 0.0515], t 0.985 (P19).
 
-With P13's cached bge scores (`data/work/p13/r/`, seeded into `p9/r_*` on first use) it needs no GPU, takes 4 min
-plus the validator, and reproduces `output/sub8c` byte for byte.
+With the cached bge scores it needs no GPU and reproduces `output/sub9ab` byte for byte, in 4 min plus the validator.
+The scores are seeded into `p9/r_*` on first use:
+- `data/work/p13/r/`: P13;
+- `data/work/p19/r/`: the 63,393 France band pairs that are new on the idf144 candidates.
+
+The t variants:
+- `--t-country France=0.975` reproduces `output/sub9ab_t975`;
+- `--t-country France=0.99` reproduces `output/sub9ab_t990`.
 - Scoring the bge band fresh needs the HF base weights (`BAAI/bge-reranker-v2-m3`, 2.3 GB, downloaded once), the
   fine-tuned checkpoint `p13/ckpt/ce_bge_pool.pt` (624 MB) and a GPU.
 - ~1.24M kept band pairs take ~20 min on an A10G and ~2 h on the laptop's RTX 3050.
@@ -64,6 +72,7 @@ plus the validator, and reproduces `output/sub8c` byte for byte.
 | `sub9a` | `idf144` | P14: France reblocked and refeaturised with its own S2/S3 text in the IDF at its 14.4% share (`block.idf_country`) | 0.975 | `output/sub9a` |
 | `sub9b` | `bge` | the bge CE on France's band, P13's label-free out-of-domain w [0.9245, 0.2595, 0.0515] | 0.98 | `output/sub9b` |
 | `sub9s` | `sib` | P15's sibling rule: p := 0 when hn_x − hn_1 ∈ {3,4,5,7,9,11,13,21} (`stack.sib_mask`) | 0.95 | `output/sub9s` |
+| **`sub9ab`** (default) | `idf144_bge` | `idf144`'s candidates + `bge`'s blend (P19); LB 0.984072 | 0.985 | `output/sub9ab` |
 | `sub9d` | `idfdom` | P14's train-only fallback: 158 French domain words at US street-type IDF (`block.idf_domain`) | 0.98 | `output/sub9d` |
 
 - `idf144` / `idfdom` build a France-only world, `data/work/p9/fr_<name>/`: links to this one plus the variant
@@ -84,7 +93,7 @@ an earlier submission. Each recipe reproduces its staged files byte for byte, an
 
 | recipe | M2 booster (train folds) | CE | blend w (India / US) | stacker | t (India / US) | France | pruner τ → cands / S1 |
 |---|---|---|---|---|---|---|---|
-| `sub8c` (default), `sub9*` | `p4/m2_big.txt` (2–5) | `p13/ckpt/ce_bge_pool.pt` (bge) | [0.59015, 0.63194, 0.29732] | US: `p17/stack_sup-bge-l21.0_US.txt` | 0.71 | see above | 0.03 → 4.83 |
+| `sub9ab` (default), `sub8c`, `sub9*` | `p4/m2_big.txt` (2–5) | `p13/ckpt/ce_bge_pool.pt` (bge) | [0.59015, 0.63194, 0.29732] | US: `p17/stack_sup-bge-l21.0_US.txt` | 0.71 | see above | 0.03 → 4.83 |
 | `sub7` | `p4/m2_big.txt` (2–5) | `p11/ce_s2P.pt` (e5, 2 epochs) | [0.617, 0.666, 0.261] | — | 0.71 | m2, 0.95 | 0.03 → 4.83 |
 | `sub6` | `p4/m2_big.txt` (2–5) | `p4b/ce.pt` (e5, 1 epoch) | [0.678, 0.715, 0.338] | — | 0.69 | m2, P6 rule: 0.78 | 0.03 → 4.83 |
 | `sub5` | `p4/m2_big.txt` (2–5) | `p4b/ce.pt` (e5, 1 epoch) | [0.678, 0.715, 0.338] | — | 0.69 | m2, P6 rule: 0.78 | none → 15.87 |
@@ -94,6 +103,20 @@ an earlier submission. Each recipe reproduces its staged files byte for byte, an
 - `--recipe sub6 --t-country France=0.95` reproduces `output/sub6c` byte for byte.
 - The #8c blend weights are P13's fit at full precision; the documented rounding [0.5901, 0.6319, 0.2973] moves 4 S1
   lines.
+
+**Options on any recipe** (built for #9ab: `output/sub9ab_cap`, `output/sub9ab_small`, both validator PASS):
+
+| option | what | #9ab test | holdout |
+|---|---|---|---|
+| `--cap 5,6` | at most 5 S2 and 6 S3 matches per S1, the highest p kept; the train truth never has more (24,154 S1 at 5 S2, 2,816 at 6 S3) | 86 S1 lose 90 matches (France 17 S1, India 26, US 43) | 4 S1 change, all to F0.5 1.0: +0.0000019 |
+| `--drop-sibling-cands` | a stage before the final decision: a pair at a generator sibling offset (hn_x − hn_1 ∈ P15's {3,4,5,7,9,11,13,21}) survives only if it is its SX's best pair above t. Matching is unchanged by construction | candidates per S1: US 4.63 → 4.00, India 4.90 → 4.75, France 4.37 → 3.97 (after τ below); matches identical | US 4.24 → 3.92, India 4.38 → 4.31; candidate recall 0.9874 → 0.9872; F0.5 unchanged |
+| `--tau-country France=0.1` | a stricter pruner for France only (India / US keep 0.03) | France 5.03 → 4.37 candidates per S1; 225 France S1 (0.087%) change their matches | — (France has no labels; P10 measured τ 0.1 at −0.00076 on India / US) |
+
+```bash
+.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --cap 5,6 --out output/sub9ab_cap
+.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --tau-country France=0.1 \
+    --drop-sibling-cands --out output/sub9ab_small       # candidates 4.82 -> 4.34 per S1 (8.34M -> 7.53M pairs)
+```
 
 | step | what | module / function | cached at (`data/work/…`) |
 |---|---|---|---|

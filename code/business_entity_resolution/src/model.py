@@ -23,6 +23,7 @@ from worlds import WORK
 BOOSTER = WORK / "p4" / "m2_big.txt"      # #5; #4 = m2_ladder.txt
 FOLDS = (2, 3, 4, 5)                       # the train folds BOOSTER is fitted on; #4 = (2,)
 TAU = 0.03                                 # pruner threshold (#6); None = no pruning (#4 / #5)
+TAU_COUNTRY = {}                           # per-country tau overrides (run.py --tau-country France=0.1)
 CACHE = WORK / "p9"                     # M2 p per split / country, keyed by the booster's hash
 DROP = {"s1", "sx", "q1", "qx", "y", "is_true", "fold", "country"}
 PARAMS = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=100, feature_fraction=0.8,
@@ -63,12 +64,16 @@ def argmax_sx(qx: np.ndarray, p: np.ndarray) -> np.ndarray:
     return m
 
 
-def kept(X: pd.DataFrame) -> np.ndarray:
-    """The pruner's keep mask over X (all True when TAU is None)."""
-    if TAU is None:
+def tau(c: str | None) -> float | None:
+    return TAU_COUNTRY.get(c, TAU)
+
+
+def kept(X: pd.DataFrame, c: str | None = None) -> np.ndarray:
+    """The pruner's keep mask over X for country c (all True when its tau is None)."""
+    if tau(c) is None:
         return np.ones(len(X), bool)
     import prune
-    return prune.prune(X, prune.score(prune.load_model(), X), TAU)
+    return prune.prune(X, prune.score(prune.load_model(), X), tau(c))
 
 
 def score(pairs: pd.DataFrame, f1: pd.DataFrame, fx: pd.DataFrame) -> tuple:
@@ -77,18 +82,18 @@ def score(pairs: pd.DataFrame, f1: pd.DataFrame, fx: pd.DataFrame) -> tuple:
     if not len(pairs):
         return np.zeros(0, bool), np.zeros(0, np.float32)
     X = F.featurize(pairs, f1, fx, pairs.q1.to_numpy(), pairs.qx.to_numpy(), pairs.acc.to_numpy())
-    keep = kept(X)
+    keep = kept(X, f1.country.iloc[0] if len(f1) else None)
     return keep, predict(load(), X[keep])
 
 
 def probs_path(split: str, c: str) -> Path:
     """split_probs' cache: data/work/p9/m2_<split>_<c>_<booster hash>[_<pruner hash>_<tau>].parquet."""
     # ponytail: keyed by the booster / pruner only -- delete data/work/p9/m2_* (and p4/X) whenever the features change
-    if TAU is None:
+    if tau(c) is None:
         return CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}.parquet"
     import prune
     prune.load_model()                                  # trains it first when absent
-    return CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}_{tag(prune.MODEL)}_{TAU}.parquet"
+    return CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}_{tag(prune.MODEL)}_{tau(c)}.parquet"
 
 
 def split_probs(split: str, c: str) -> pd.DataFrame:
@@ -106,7 +111,7 @@ def split_probs(split: str, c: str) -> pd.DataFrame:
         X = pd.read_parquet(p)
         if split == "holdout":                          # a file holds every pair of its SX
             X = X[np.isin(X.qx.to_numpy(), X.qx.to_numpy()[X.fold.to_numpy() == 0])]
-        X = X[kept(X)]
+        X = X[kept(X, c)]
         out.append(pd.DataFrame({"q1": X.q1.to_numpy(np.int32), "qx": X.qx.to_numpy(np.int32), "p": predict(m, X)}))
         del X
         F.trim()
