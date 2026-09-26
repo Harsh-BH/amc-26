@@ -226,3 +226,18 @@ Source 1 entity will be ranked higher in the final evaluation beyond the public/
 `candidate_pairs.tsv` and the code that produces it. By definition that file is the exact set the final model scores,
 so a learned pruning stage (meta-blocking) before the matcher legitimately shrinks it. Full text:
 `data/notes/unstop_play_page_v2.txt`.
+
+## Organiser rulings (received 26 Sep, relayed by the team)
+1. **Final entry = the upload with the best PUBLIC score**; the final rank is that upload's private score. The entry we
+   want counted must beat every earlier public score (0.981142 = D4 as of 26 Sep noon). Lower-scoring uploads cost nothing.
+2. **Unlabelled test data may be used**: IDF, blocking, and pseudo-labelling on test (asked for France specifically).
+3. Candidate-set size per S1 ranks teams on top of the LB (smaller is better; a pruned later stage counts; no formula).
+4. Content-identical S2/S3 duplicates: list every ID; the scorer credits each correct ID.
+5. 8B / MIT–Apache limits apply per model (bge-reranker-v2-m3 Apache-2.0 and e5-small MIT both pass).
+6. External data — allowed: hand-written state names/abbreviations, small legal-suffix and street-type dictionaries,
+   anyascii / indic-transliteration / uroman / own transliteration. **Banned:** city-level or postal tables, "large static
+   country/state/city tables", libpostal, cleanco, AWS Entity Resolution.
+   → Gray area in our code: `normalize.FR_REGIONS` (13 régions → ~96 départements, one level below state). Replace with a
+   mapping learned from the data (allowed by ruling 2).
+7. The private split uses the same test files: same three countries, France in both splits.
+8. Final zip: README.md + requirements.txt inside code/business_entity_resolution/; top level = output/, code/, the doc.
