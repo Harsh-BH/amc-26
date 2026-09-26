@@ -38,3 +38,4 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - 05:10 **N55 FOUND** (and N48 closure was wrong): ≈12.7k France same-address noise-word swaps (fils/cie/associés/groupe) still rejected; in-domain analogue 0.998/0.997; France lens ≈1% decoy for fils/associés. Script n55.py (strict/all); chained N54→N55 smoke test PASS. Est. +0.0004–0.0007. Pushed.
 - 05:20 N55 fuzzy-street extension: US analogue 0.80 true, India 0.92; France +2,726 → ≈ +0.00004. DROP (keep identical-address only).
 - 05:30 Same-address France space mapped: gib p-floor relax = +165 only (P41 grid); website names at identical address +777 (≈ +0.00003) — both DROP. N54 (−decoy words) + N55 (+noise words) are the two levers.
+- 05:45 Rebuilding P6 LOCO frames locally (loco_score.py: US.txt / India.txt boosters over P4 train X shards) → then probes/NIGHT/loco_n54_n55.py gives N54/N55 LOCO both directions. rsswatch raised to 3.5 GB (no agy running).
