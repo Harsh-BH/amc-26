@@ -1,0 +1,38 @@
+{
+ "US->India": {
+  "one_sided": 15981,
+  "one_sided_share": 0.1813,
+  "missing_S2": {
+   "s1": 8020,
+   "no_cand": 62,
+   "no_cand_but_true_member": 0,
+   "truly_absent": 62,
+   "ceiling_dF": 0.0
+  },
+  "missing_S3": {
+   "s1": 7961,
+   "no_cand": 68,
+   "no_cand_but_true_member": 3,
+   "truly_absent": 65,
+   "ceiling_dF": 3e-06
+  }
+ },
+ "India->US": {
+  "one_sided": 21517,
+  "one_sided_share": 0.1628,
+  "missing_S2": {
+   "s1": 11614,
+   "no_cand": 37,
+   "no_cand_but_true_member": 0,
+   "truly_absent": 37,
+   "ceiling_dF": 0.0
+  },
+  "missing_S3": {
+   "s1": 9903,
+   "no_cand": 161,
+   "no_cand_but_true_member": 7,
+   "truly_absent": 154,
+   "ceiling_dF": 5e-06
+  }
+ }
+}
