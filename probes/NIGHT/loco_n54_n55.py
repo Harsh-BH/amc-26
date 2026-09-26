@@ -43,7 +43,7 @@ def run(src, tgt):
     lt = p46.lens_table(d.loc[am, ["s1", "sx"]].reset_index(drop=True), "train", tgt)
     import os; SM = float(os.environ.get("SMIN", "0.2")); D = set(lt[(lt.n >= 20) & (lt.s > SM)].index); NZ = set(lt[(lt.n >= 20) & (lt.s <= 0.05) & (lt.e >= 0.8)].index)
     c1 = r1.core.reindex(d.s1).fillna("").to_numpy(); cx = rx.core.reindex(d.sx).fillna("").to_numpy()
-    ia = np.flatnonzero(am & hn_eq)
+    import os; ia = np.flatnonzero(am & (hn_eq if os.environ.get("ANYHN") != "1" else True))
     g = [[w for w in b.split() if w not in set(a.split())] for a, b in zip(c1[ia], cx[ia])]
     dr = [[w for w in a.split() if w not in set(b.split())] for a, b in zip(c1[ia], cx[ia])]
     sub1 = np.array([len(x) == 1 and len(z) <= 1 for x, z in zip(g, dr)])   # sub1 or add1

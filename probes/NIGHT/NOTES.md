@@ -41,3 +41,4 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - 05:45 Rebuilding P6 LOCO frames locally (loco_score.py: US.txt / India.txt boosters over P4 train X shards) → then probes/NIGHT/loco_n54_n55.py gives N54/N55 LOCO both directions. rsswatch raised to 3.5 GB (no agy running).
 - 05:05 LOCO rebuilt locally. N54 (s>0.25) passes both directions: US→India ruled +0.0013 / all +0.0046; India→US ruled ≈0 / all +0.00007. s>0.2 failed India→US only via 'partners'. Recommend N54 all. N55 not LOCO-measurable (France template).
 - 05:15 N54 extended to add1 decoy words: LOCO all US→India +0.0102, India→US +0.00009 (both halves positive).
+- 05:25 N54 widened to any hn (gc/rescue decoy words w/o hn are 0% true in US→India): LOCO all +0.027 / +0.00015; France proxy removal 6,024.

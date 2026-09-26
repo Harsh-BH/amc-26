@@ -93,3 +93,14 @@ cells() now takes sub1 AND add1 with the single gained word in the decoy set. LO
 | India→US | +0.000002 (2) | **+0.00007 / +0.00011 ± 0.00003** (49, 6% true) |
 France cells: sub1 29,664 + add1 4,132 candidate pairs. Other hn-extra false families in US→India (rare words n < 20:
 26% true) are NOT removed — US→India and India→US disagree there (0.26 vs 0.90).
+
+## Addendum 5 (05:25) — any house-number relation (gc / rescue let decoy words in without an hn)
+LOCO decomposition of simulated gc (p ≥ 0.7, one-sided) and rescue (p ≥ 0.9, empty S1) in US→India: add1 / sub1
+decoy-word pairs with NO SX house number are 0% true (gc 726 + 152, rescue 214 + 72). cells() now takes sub1 / add1
+decoy-word pairs at ANY hn relation. LOCO (s > 0.25, sub1 + add1, any hn):
+| direction | ruled | all |
+|---|---|---|
+| US→India | +0.0050 (2,165 removed, 0.2% true) | **+0.0275 / +0.0266 ± 0.0005** (10,533 removed, 0.9% true) |
+| India→US | +0.000002 | **+0.00011 / +0.00019 ± 0.00003** (85 removed, 7% true) |
+France cells 91,160 candidate pairs (sub1 55,984 / add1 35,176). Proxy base (P31 acc + simulated hn-extra + gc):
+ruled removes 5,281, **all removes 6,024**. Scripts: probes/NIGHT/loco_n54_n55.py (SMIN=0.25 ANYHN=1), loco_rules_fp.py.

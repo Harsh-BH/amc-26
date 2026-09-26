@@ -27,7 +27,7 @@ def cells() -> pd.DataFrame:
     am = fr.argmax.astype(bool).to_numpy()
     lt = p46.lens_table(fr.loc[am, ["s1", "sx"]].reset_index(drop=True), "test", "France")      # label-free, France argmax
     dec = lt[(lt.n >= N_MIN) & (lt.s > S_MIN)]
-    x = fr[fr.name_rel.isin(["sub1", "add1"]) & (fr.hn_cls == 0) & (fr.hn_1 != "")].reset_index(drop=True)
+    x = fr[fr.name_rel.isin(["sub1", "add1"])].reset_index(drop=True)          # any hn relation (LOCO addendum 5)
     sub = (x.name_rel == "sub1").to_numpy()
     x["w"] = ""
     x.loc[sub, "w"] = p46.swap_words(x.loc[sub, ["s1", "sx"]].reset_index(drop=True), "test", "France")
