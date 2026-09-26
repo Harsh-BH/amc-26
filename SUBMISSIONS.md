@@ -42,13 +42,9 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 26 | **staged, validator PASS (P26) — upload next** | `output/sub26_hn/…` | India/US = #8c | #8c India/US + France from the **house-number-aware matcher** (hn features inside LightGBM) + bge CE (out-of-domain weights), t 0.986 (= D4 empty rate). LOCO with bge on top: **+2.01 / +1.76 pt** on the unseen country. 25,578 France S1 differ from #9ab; candidates identical |
 | 26_t975 | staged, validator PASS | `output/sub26_hn_t975/…` | = #26 | #26 at France t 0.975 (6.49% empty, 3.10 per S1) — only if #26 beats #9ab |
 | 28a | staged, validator PASS (P28) | `output/sub28a/…` | India/US = #9ab | #9ab + France **same-address rule** (hn+street+city equal, name cores differ by an insert/delete or not at all, sibling-word guard; the pure word-SWAP version failed on labels). +15,546 France pairs to 14,417 S1, nothing dropped. LOCO +0.0049 / +0.0012 |
+| 26_28 | staged, validator PASS | `output/sub26_28/…` | India/US = #8c | #26 (hn-aware matcher France + bge, t 0.986) + #28a's same-address rule on France. +15,374 France S1 vs #26. Upload only if BOTH #26 and #28a beat #9ab |
 
-**Upload next (26 Sep, 5 slots) — every France test sits on the same India/US base (#8c), so each LB delta vs #8c is that France change alone:**
-1) **#8c** — the base (best India/US: bge CE + US stack; France = #6c's). Expected ≈ 0.9819.
-2) **#9a** — France IDF fix (biggest expected France gain).
-3) **#9b** — bge second opinion for France.
-4) **#9s** — France sibling rule.
-5) the **combination** of whatever won in 2–4 (master builds it after the scores), or keep as spare.
+**Upload next (26 Sep evening):** 1) **#26** (hn-aware matcher France); 2) **#28a** (same-address rule); 3) if both beat #9ab (0.984072) → **#26_28**; else #9ab_t975 (France threshold direction). Superseded/offloaded to S3: #6b/#6c/#9s/#9as/#9d/#20a.
 #7, #7s, #8a, #8b, #8p are superseded (same tests on a weaker base).
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.
