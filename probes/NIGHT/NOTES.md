@@ -35,3 +35,4 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - 04:40 N54 admixture test: removed band ≈ 90–100% decoy → est. +0.0004–0.0006. Warned in FOR_HARSH that P47's fill must exclude the cell. Pushed.
 - 04:50 N54 smoke test on local #31-era output: ruled removes 1,075 pairs (base predates hn-extra), 1 s, official validator PASS (system python3; .venv validator > 2.2 GB gets killed by rsswatch).
 - 04:55 Profiled simulated hn-extra (35.9k) and gc (10.1k) adds: apart from N54's decoy-word swaps, they are name-equal / noise-word / brand pairs — clean. N54 is the only FP family in the add rules.
+- 05:10 **N55 FOUND** (and N48 closure was wrong): ≈12.7k France same-address noise-word swaps (fils/cie/associés/groupe) still rejected; in-domain analogue 0.998/0.997; France lens ≈1% decoy for fils/associés. Script n55.py (strict/all); chained N54→N55 smoke test PASS. Est. +0.0004–0.0007. Pushed.

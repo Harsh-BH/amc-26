@@ -13,6 +13,15 @@ Also worth adding the same word guard inside hn-extra / gc in run.py.
 p 0.3–0.8 whose profile is pure decoy (N54 addendum); a descending-p fill would take them. Exclude
 data/work/p54/cells.parquet pairs (after `p54.py cells`) from any France add rule.
 
+## 1b. Upload candidate: N55 — ADD ≈ 12.7k France same-address noise-word variants (fils / cie / associés / groupe)
+probes/N55-fr-noiseword-fill/RESULT.md. Same template as P46's développement swaps, but P46's R05 guards exclude R1
+fillers, P28's guard blocks them, hn-extra needs p ≥ 0.8. France lens: fils s 0.020 e 0.96, associés 0.020 / 0.96,
+cie 0.044 / 0.92 (decoy words s ≈ 0.4). In-domain analogue cell 0.998 (US) / 0.997 (India) true.
+  .venv/bin/python probes/N55-fr-noiseword-fill/n55.py analyse
+  .venv/bin/python probes/N55-fr-noiseword-fill/n55.py build output/<base> output/<base>_n55 strict   # then validator
+Expected +0.0004–0.0006 (strict), +0.0005–0.0007 (all). Disjoint from N54 (apply N54 first, then N55).
+Suggested upload order: best + N54 ruled → + N55 strict → + N55 all / N54 all.
+
 ## 2. Already-run answers for P49-twin-prior (save its time)
 - Test 3 (raw-string channel): train US, twins by normalised core, address-less true SX: SX raw name == true twin's raw
   name 4.3% vs == other twin's 5.3% (twins' raw names differ in 26% of cases). No signal. probes/NIGHT/twin_raw.py
@@ -21,7 +30,7 @@ data/work/p54/cells.parquet pairs (after `p54.py cells`) from any France add rul
 
 ## 3. France negatives from tonight (don't repeat)
 - N49 fuzzy street (same core + hn + city, street typo): only 2,443 pairs new after P28/P42/P37, India bound 0.72. Drop.
-- N48 filler phrases (& Fils / Cie / Associés): after R1 they are core drop1; ≈ 20 unaccepted at identical address. Drop.
+- N48 filler phrases: SUPERSEDED by N55 (my earlier 'drop' was wrong — the cores keep the filler tokens).
 - N53 pure drop1 at identical address: 1,026 new pairs, ≈ +0.00004. Drop.
 - N50 exact name at a different address (S3, unique name): valid but 150 pairs. Drop.
 - N51 France FP audit: accepted sibling-offset pairs are clean (holdout accepted hc==1 0.98 / 0.99 true). No FP cell except N54.

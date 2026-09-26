@@ -42,3 +42,9 @@
   "fils", 15 "cie", 3 "associ", 9 "groupe", 3 "développement" (223 "services"). The v1 "19,587 flips" were counted on
   the P31 proxy base and are almost all already added by hn-extra / P28 / P46 in the current base.
 - The GPT-OSS rerun's holdout table (loose lens cell 63 pairs, precision ≈ 0.08) does not support staging either.
+
+## MASTER CORRECTION (05:10) — the 04:27 closure above was WRONG; superseded by N55
+The pair-file cores keep fils / cie / associés as tokens (R1 did not strip them there), so these variants are 'sub1' /
+'add1' with a gained noise word, not pure drop1 — N53 never saw them. See probes/N55-fr-noiseword-fill (≈ 12.7k new
+France pairs, strict lens words only; in-domain analogue 0.998 / 0.997). N48 v1's volume (19.6k on the proxy) was right;
+its loose lens (s ≤ 0.25) was not needed.
