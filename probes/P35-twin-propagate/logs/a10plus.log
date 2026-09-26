@@ -1,0 +1,9 @@
+India argmax rows with P35 columns: 11858
+US argmax rows with P35 columns: 25915
+twin_p2mask fit h0 report h1 t=0.69 (tuned): d=+0.000336 ± 0.000063 | India +0.000173 US +0.000444 | pairs changed (both halves) 1,831
+twin_p2mask fit h0 report h1 t=0.71: d=+0.000308 ± 0.000064 | India +0.000135 US +0.000423 | pairs changed (both halves) 1,727
+twin_p2mask+P35 fit h0 report h1 t=0.65 (tuned): d=+0.000355 ± 0.000069 | India +0.000270 US +0.000411 | pairs changed (both halves) 2,260
+twin_p2mask+P35 fit h0 report h1 t=0.71: d=+0.000319 ± 0.000068 | India +0.000108 US +0.000460 | pairs changed (both halves) 1,813
+twin_p2mask fit h1 report h0 t=0.71: d=+0.000227 ± 0.000062 | India +0.000119 US +0.000300 | pairs changed (both halves) 1,900
+twin_p2mask fit h1 report h0 t=0.73 (tuned): d=+0.000195 ± 0.000063 | India +0.000090 US +0.000266 | pairs changed (both halves) 1,849
+twin_p2mask+P35 fit h1 report h0 t=0.71 (tuned): d=+0.000192 ± 0.000063 | India +0.000088 US +0.000262 | pairs changed (both halves) 1,979

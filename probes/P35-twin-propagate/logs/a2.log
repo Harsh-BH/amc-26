@@ -1,0 +1,76 @@
+
+==== India: address-less holdout pairs 35,203, with twin support 27,776
+A raise (am, p<t, supported): 4089 prec 0.308
+                   size   mean
+p           n_sup             
+(0.0, 0.1]  1       362  0.028
+            2      1103  0.073
+(0.1, 0.3]  1       155  0.342
+            2       510  0.225
+(0.3, 0.5]  1       438  0.518
+            2       645  0.367
+(0.5, 0.71] 1       534  0.678
+            2       342  0.512
+ by tw_p {'size': {Interval(0.9, 0.99, closed='right'): 35, Interval(0.99, 0.999, closed='right'): 187, Interval(0.999, 1.0, closed='right'): 3867}, 'mean': {Interval(0.9, 0.99, closed='right'): 0.229, Interval(0.99, 0.999, closed='right'): 0.374, Interval(0.999, 1.0, closed='right'): 0.306}}
+ by tw_sim {'size': {Interval(0.84, 0.95, closed='right'): 293, Interval(0.95, 0.999, closed='right'): 66, Interval(0.999, 1.0, closed='right'): 3730}, 'mean': {Interval(0.84, 0.95, closed='right'): 0.348, Interval(0.95, 0.999, closed='right'): 0.364, Interval(0.999, 1.0, closed='right'): 0.304}}
+ by tw_x {'size': {False: 666, True: 3423}, 'mean': {False: 0.285, True: 0.313}}
+B switch (non-am, supported): 17905 prec 0.083
+              size   mean
+am_sup n_sup             
+False  1      2995  0.124
+       2      2853  0.078
+       3      6021  0.054
+True   2      1207  0.161
+       3      4829  0.076
+             size   mean
+p                       
+(0.0, 0.1]   9357  0.042
+(0.1, 0.3]   1500  0.155
+(0.3, 0.5]    842  0.292
+(0.5, 0.71]   163  0.294
+(0.71, 1.0]     7  0.000
+C guard (pred, unsupported): 751 prec 0.973
+       size   mean
+n_sup             
+0       733  0.974
+1        17  0.941
+2         1  1.000
+pred & supported: 5782 prec 0.985 | pred & multi-sup 0.899 178
+
+==== US: address-less holdout pairs 57,614, with twin support 42,088
+A raise (am, p<t, supported): 10787 prec 0.26
+                   size   mean
+p           n_sup             
+(0.0, 0.1]  1      1336  0.032
+            2      1637  0.048
+(0.1, 0.3]  1      1205  0.261
+            2      2178  0.194
+(0.3, 0.5]  1      2097  0.441
+            2      1593  0.372
+(0.5, 0.71] 1       488  0.619
+            2       253  0.522
+ by tw_p {'size': {Interval(0.7, 0.9, closed='right'): 3, Interval(0.9, 0.99, closed='right'): 46, Interval(0.99, 0.999, closed='right'): 275, Interval(0.999, 1.0, closed='right'): 10463}, 'mean': {Interval(0.7, 0.9, closed='right'): 0.667, Interval(0.9, 0.99, closed='right'): 0.283, Interval(0.99, 0.999, closed='right'): 0.276, Interval(0.999, 1.0, closed='right'): 0.26}}
+ by tw_sim {'size': {Interval(0.84, 0.95, closed='right'): 1292, Interval(0.95, 0.999, closed='right'): 279, Interval(0.999, 1.0, closed='right'): 9216}, 'mean': {Interval(0.84, 0.95, closed='right'): 0.289, Interval(0.95, 0.999, closed='right'): 0.29, Interval(0.999, 1.0, closed='right'): 0.256}}
+ by tw_x {'size': {False: 2000, True: 8787}, 'mean': {False: 0.236, True: 0.266}}
+B switch (non-am, supported): 21025 prec 0.094
+              size   mean
+am_sup n_sup             
+False  1      4533  0.109
+       2      2596  0.076
+       3      2522  0.044
+True   2      3664  0.142
+       3      7710  0.083
+             size   mean
+p                       
+(0.0, 0.1]   6024  0.027
+(0.1, 0.3]   3055  0.159
+(0.3, 0.5]    519  0.268
+(0.5, 0.71]    44  0.386
+(0.71, 1.0]     9  0.111
+C guard (pred, unsupported): 1758 prec 0.953
+       size   mean
+n_sup             
+0      1692  0.957
+1        60  0.867
+2         6  0.833
+pred & supported: 10276 prec 0.969 | pred & multi-sup 0.845 568
