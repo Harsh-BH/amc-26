@@ -35,7 +35,7 @@ overstated precision (0.994 vs 0.912 for the rules).
 | 9s | staged, validator PASS | `output/sub9s/…` | India/US = #8c | #8c + **France house-number sibling rule** (P15), t 0.95. 4,160 France S1 differ from #8c (same test as #7s, on the better base) |
 | 9d | staged, validator PASS | `output/sub9d/…` | India/US = #8c | #8c + **train-only IDF fallback** for France (158 French domain words at US street-type IDF), t 0.98. Use only if test statistics are ruled out |
 | 9as | staged, validator PASS | `output/sub9as/…` | India/US = #8c | #8c + France IDF fix + sibling rule (152,374 France pairs zeroed), t 0.975. Differs from #9a on 858 France S1 (the high threshold already removes most siblings). Candidate for the 5th slot if both #9a and #9s beat #8c |
-| 9ab | staged, validator PASS (P19) | `output/sub9ab/…` | India/US = #8c | #8c + France **IDF fix + bge CE** (P13 out-of-domain weights on P14's IDF candidates), France t 0.985 (= D4's empty rate). AWS scoring $0.13 |
+| 9ab | **uploaded 26 Sep 14:31 — LB 0.984072 (BEST, +0.0029 vs D4)** | `output/sub9ab/…` | India/US = #8c | #8c + France **IDF fix + bge CE** (P13 out-of-domain weights on P14's IDF candidates), France t 0.985 (= D4's empty rate). AWS scoring $0.13 |
 
 **Upload next (26 Sep, 5 slots) — every France test sits on the same India/US base (#8c), so each LB delta vs #8c is that France change alone:**
 1) **#8c** — the base (best India/US: bge CE + US stack; France = #6c's). Expected ≈ 0.9819.
