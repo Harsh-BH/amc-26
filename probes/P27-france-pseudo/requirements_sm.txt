@@ -1,0 +1,4 @@
+# pip-installed by the SageMaker PyTorch CPU DLC (pytorch-training:2.9.0-cpu-py312) at job start. numpy, scipy and
+# boto3 ship with the image; pyarrow is not in it (P13, ECR build history). Versions = the laptop's .venv.
+lightgbm==4.7.0
+pyarrow==25.0.1
