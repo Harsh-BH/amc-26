@@ -1,0 +1,5 @@
+# pip-installed by the PyTorch CPU DLC (pytorch-training:2.9.0-cpu-py312) at job start (= P22 eval; laptop .venv versions)
+lightgbm==4.7.0
+pyarrow==25.0.1
+pandas==3.0.6
+scikit-learn==1.9.1
