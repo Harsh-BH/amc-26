@@ -19,10 +19,15 @@
 
 ### Re-zip for sub77 (if the lead says it won)
 ```
-mv output/final/Yeti_submission.zip output/final/archive/Yeti_submission_sub76.zip
-.venv/bin/python code/business_entity_resolution/src/package.py --team Yeti --out output/sub77 --dest output/final
-# S3 val_zip77 + solution_p43.py (same as p78-val-zip76), then S3/Drive final/ copy; docs: [FINAL LB] -> sub77's score, "--upto 41"
+.venv/bin/python probes/P78-final-pkg2/rezip77.py <sub77 LB> --dry   # all 22 doc anchors present once (checked 17:20)
+.venv/bin/python probes/P78-final-pkg2/rezip77.py <sub77 LB>         # ~6 min
+git add README.md APPROACH.md Documentation_template.md SETUP.md SUBMISSIONS.md code/business_entity_resolution/README.md ledger/experiments.jsonl && git commit && git push
 ```
+The script does the following in order. It refuses an LB ≤ 0.988292.
+1. It edits [FINAL LB] everywhere to sub77, and adds a P41 row to Documentation_template §4.11 and the ablation table.
+2. It archives the sub76 zip as `output/final/archive/Yeti_submission_sub76.zip` and runs `package.py --out output/sub77`.
+3. It runs the SageMaker `--check-ids` job p78-val-zip77, and stops if that fails.
+4. It copies the zip to S3 and Drive `final/` (the sub76 zip goes to `archive/` on both first), writes the zip md5 and PASS into SETUP / SUBMISSIONS, and adds a ledger row.
 
 ## Evidence
 | ledger name | world | key metrics | verdict |
@@ -38,6 +43,7 @@ mv output/final/Yeti_submission.zip output/final/archive/Yeti_submission_sub76.z
 - `code/business_entity_resolution/src/final_build.py BASE OUT [--upto STEP] [--changes P] | --selftest` (21 s, ≈0.5 GB; it streams the base and holds only the touched lines).
 - `probes/P78-final-pkg2/extract.py` → `data/work/p78/final_changes.parquet` (66 s; read from the output/ staged folders, which all share sub66_final's S1 order).
 - `build_info_76.json`, `build_info_77.json`, `extract_info.json`: counts and md5s.
+- `rezip77.py LB [--dry]`: the sub77 swap (docs → zip → SageMaker check → backups → ledger), about 6 min.
 
 ## Risks
 - Anyone reproducing needs `final_changes.parquet`. It is in the zip, in S3 / Drive `amc26-offload/final/work/p78/`, and in data/work/p78. It is not committed to git (data/ rule).
