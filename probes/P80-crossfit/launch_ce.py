@@ -7,7 +7,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 BUCKET, PREFIX = "sagemaker-114872709824-ap-south-1", "amc26/p80/ce"
-MAX_RUN = 10800                                  # expected ~85 min; worst case 3 h x ($3.37 + $4.51) = $23.6 for both
+MAX_RUN = 10800                                  # expected ~85 min; worst case 3 h x ($3.37 + $3.13) = $19.5 for A (2xlarge) + B (xlarge)
 
 
 def hp(split: str, name: str) -> dict:

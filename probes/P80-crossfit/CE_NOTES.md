@@ -10,9 +10,9 @@ Each CE scores every candidate pair of the folds the other one trained on.
 
 ## What is trained on what
 
-| | CE_A (`p80ce-A-0927-2141`) | CE_B (`p80ce-B-0927-2141`) |
+| | CE_A (`p80ce-A-0927-2141`) | CE_B (`p80ce-B-0927-2149`) |
 |---|---|---|
-| instance | ml.g6e.2xlarge (1× L40S), on-demand, $3.37/h | ml.g6e.4xlarge (1× L40S), on-demand, $4.51/h |
+| instance | ml.g6e.2xlarge (1× L40S), on-demand, $3.37/h | ml.g6e.xlarge (1× L40S, 4 vCPU), on-demand, $3.13/h |
 | trained on | band pairs of folds {2,3}: India 99,526 / US 159,655 | band pairs of folds {4,5}: India 99,939 / US 159,559 |
 | out of fold for | **folds 4, 5** | **folds 2, 3** |
 | also scores (neither CE saw them) | folds 0, 1 | folds 0, 1 |
@@ -60,8 +60,9 @@ Each CE scores every candidate pair of the folds the other one trained on.
   - ~50 min scoring (12.6M pairs);
   - ~15 min text build, tokenisation, container start and model download;
   - **total ≈ 75–85 min**.
-- **Expected cost ≈ $4.5 (A) + $6.0 (B) ≈ $10.5.**
-- MaxRuntime is 10,800 s (P13 deadline 9,600 s), so the worst case is 3 h × ($3.37 + $4.51) = **$23.6**. The budget is $40.
+- **Expected cost ≈ $4.5 (A) + $4.7 (B, slower tokenising on 4 vCPU) ≈ $9.**
+- MaxRuntime is 10,800 s (P13 deadline 9,600 s), so the worst case is 3 h × ($3.37 + $3.13) = **$19.5**. The budget is $40.
+- `p80ce-B-0927-2141` (g6e.4xlarge) waited for capacity and was stopped before it started, so it was never billed. B was relaunched on g6e.xlarge as `p80ce-B-0927-2149`.
 - If the deadline planner skips a country, `log.jsonl` has a `skip` event and that `oof_*` file is missing.
 
 ## Fetch and merge
@@ -69,7 +70,7 @@ Each CE scores every candidate pair of the folds the other one trained on.
 ```bash
 B=s3://sagemaker-114872709824-ap-south-1/amc26/p80/ce/results
 aws s3 cp $B/p80ce-A-0927-2141/log.jsonl - --profile harsh | grep -E 'val_auc|holdout_auc|train_done|skip|all_done'
-for j in p80ce-A-0927-2141 p80ce-B-0927-2141; do
+for j in p80ce-A-0927-2141 p80ce-B-0927-2149; do
   aws s3 cp --recursive $B/$j/oof/ data/work/p80ce/oof/ --profile harsh    # ~4 files, ~150 MB each with ids
 done
 ```

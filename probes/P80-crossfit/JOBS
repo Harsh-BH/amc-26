@@ -1,2 +1,3 @@
 p80ce-A-0927-2141 ml.g6e.2xlarge
-p80ce-B-0927-2141 ml.g6e.4xlarge
+p80ce-B-0927-2141 ml.g6e.4xlarge STOPPED while Pending (no capacity, never billed)
+p80ce-B-0927-2149 ml.g6e.xlarge
