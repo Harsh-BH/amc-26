@@ -55,6 +55,25 @@ Fable's ideas, gated with `i2_loco.py` → `i2_loco.json`. Each cell is an argma
   - I6a is P54's dup step.
   - The independent CE is P73e / b.
 
+## Addendum 2 (27 Sep ~18:50): the rest of the France gap, gated
+This round gates each idea on P55's LOCO frames. Precision is measured on the pairs the reference leaves free, with Wilson 95% bounds and add dF. The master's bar is Wilson LB ≥ .75 with n ≥ 200 in both countries. Scripts: `gap_loco.py`, `hn_loco.py`, `exact_loco.py` / `exact_fr.py`, `street_fr.py`, `shift.py`, `clean_loco.py`, `clean_street_loco.py`; JSONs alongside.
+
+| cell | India target (free n at precision) | US target | France (sub77) | verdict |
+|---|---|---|---|---|
+| fill a missing source, related name, S1's unique key | 191 at .70, −0.00004 | 841 at .81, +0.00038 | — | fails: India n < 200, Wilson ≈ .63 |
+| copy of an accepted SX (same core + key) | 17,349 at .55, −0.0089 | 4,956 at .75, +0.00035 | — | drop |
+| empty-S1 fill / related extras at a unique key | .42 / .60 | .40 / .61 | — | drop |
+| identical name + city, \|Δhn\| = 1 / 2 | .46 / .41 | .06 / .05 | 37.9k "other" free | drop: ±1/±2 is a decoy offset in the US |
+| exact duplicate (core + hn\|street key + city) | 558 at .943 | 1,310 at .996 | 41 free (29 P64-vetoed) | France already accepts them |
+| **hidden sibling shift** (parsed hn equal; one other address number shifted by SIB3 or 1–2) | all 2% true; veto of accepted +0.0045 | 5% true; veto +0.00013 | 23 accepted | a decoy marker. France rejects it already; India/US in-domain accept it only when true (237 at .992, 55 at 1.00), so there is no veto anywhere |
+| same core + city + hn, no shift, lf ok: **same street** | 531 at .985 | 314 at 1.00 | 28 free | passes, but there is nothing to add |
+| same, **different street** | 21 at .24 (all pairs 183 at .85) | 297 at .983 (all pairs 11,195 at .999) | 6,219 free vs 10,210 accepted (38% free; LOCO 2.7% / 11.5%) | fails India n. P64 vetoes 39% of France's pool, and the adds have p median .31 → `output/sub77_hnst` is staged as a measurement only, **not recommended** |
+
+- Parser notes:
+  - `house_number` keeps the leading digit run, so "5 bis" = "5", and "Appt N" is never read as a house number.
+  - The real gaps are number ranges, second numbers, and a leading postcode read as the house number. They hide sibling shifts, and `shift.flag` catches them.
+- Caps don't truncate France's big clusters: truth never exceeds 5 S2 / 6 S3, and France sits at the cap less often than truth (0.77% vs 1.09%).
+
 ## Evidence         (France-F0.5 dF on the LOCO target; A→B = fit on A's out-of-domain frame, bars picked on A, applied to B; h1 = report half ± SE)
 | ledger name | world | key metrics (India→US / US→India) | verdict |
 |---|---|---|---|

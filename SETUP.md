@@ -190,10 +190,26 @@ and log it (`ledger.py`). A change is worth keeping at ≥ +0.0005.
 ## 7. Run
 
 ```bash
-.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # sub37 = LB 0.986304
-.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --recipe sub37_small \
-    --out output/sub37_final_small       # the final zip's files: same matches, 4.42 candidates per S1
+# the final (sub77, LB 0.988292), byte for byte: the base, then the unseen country's change sets (21 s)
+.venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --recipe sub66_final \
+    --drop-sibling-cands --out output/sub66_final_small   # sub66_final = LB 0.987391, 4.42 candidates per S1
+.venv/bin/python code/business_entity_resolution/src/final_build.py output/sub66_final_small output/sub76
+#   md5 matching a7b2cfe0…, candidates c8850dee…; --upto 41 -> output/sub77 (+ P41 brand adds, md5 9e4fb898…)
+.venv/bin/python code/business_entity_resolution/src/package.py --team Yeti --out output/sub76 --dest output/final
 ```
+
+`final_build.py` reads its change sets from `src/final_changes.parquet` (inside the zip) or from
+`data/work/p78/final_changes.parquet` (S3 / Drive `amc26-offload/final/`). They are 22,562 rows: P67q, P70a, P69 t975ce,
+N54's removals, P71a, P41. `probes/P78-final-pkg2/extract.py` rebuilds them from the probes' staged folders. Each staged
+folder came from its probe's own command:
+- `output/sub67q`: P67, `build67.py qgate sub66_final sub67 sub67q` in `probes/P67-fr-synth/` (the synthetic-French CE
+  column + Qwen gate; the CE and Qwen scores come from GPU runs, see its RESULT.md).
+- `output/sub70a`: P70, `probes/P70-fr-roles/p70.py`.
+- `output/sub66_t975ce`: P69, `p69.py 0.975 …/t975` → `build69ce.py 0.99 …/t975ce` → `splice.py …/t975ce output/sub66_final
+  output/sub66_t975ce` in `probes/P69-fr-loosen/`.
+- `output/sub71a`: P71, `probes/P71-fr-noiseword/build71.py a output/sub71a` (label-free word list from its `work/lens_France.csv`).
+- `output/sub41_on66`: `probes/P70-fr-roles/p41_on.py`.
+- N54: `probes/P74-n54-adapt/build74.py` on #75a, which is `france.decoy_mask`, the same as run.py's `DECOY` hook.
 
 It writes `output/matching_results.tsv` and `output/candidate_pairs.tsv` (1,732,544 rows each — one per test Source 1
 entity, France included), checks the format, then runs the official validator. Expect `PASS`. A later France winner
@@ -261,6 +277,11 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
+- **The final (27 Sep 17:30, P78): `sub77`, public LB 0.988292 [FINAL LB]** = `sub66_final` + the unseen country's
+  change sets (P67q +2,793, P70a +424, P69 t975ce +4,904, N54 −2,120, P71a +4,523; India / US unchanged). Rebuild it
+  byte for byte with `final_build.py` on `--recipe sub66_final --drop-sibling-cands` (step 7). The zip
+  `output/final/Yeti_submission.zip` holds it (md5 520204eb…, validator `--check-ids` PASS on the unzipped zip,
+  SageMaker p78-val-zip76), and the previous zip is in `output/final/archive/`. Backups: S3 / Drive `amc26-offload/final/`.
 - **The command now produces the final (27 Sep 14:45): `sub66_final`, public LB 0.987391** = #54's India / US (the
   combiner of `iu_stack.py`: P44 + P45's r_all + 16 zoo members, refit on the full holdout by P50; P54's duplicate
   copies) + #37_gc70's France chain with the Qwen band blend (P38), P55's veto, P62's acronym block, P54's duplicate
