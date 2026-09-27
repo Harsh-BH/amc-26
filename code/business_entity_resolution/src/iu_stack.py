@@ -20,6 +20,9 @@ Supplied inputs (label-free test files, read here; everything else is computed f
   data/work/p50/{full,fullzoo}_s{0..4}.txt    the boosters (fit on the FULL India + US holdout, 5 seeds; the fit path
                                               stays in probes/P50-idea-batch/e_ship.py fit / e_zoo.py fit)
 Test only: the boosters saw every holdout S1, so a holdout run through them would be in-sample.
+Checked (27 Sep): run.py --recipe sub52_iu -> p'' bit-identical to P50's prob_test_{c}_fullzoo on every argmax pair,
+India / US lines = sub52_max's (0 differing as ID sets; sub54 = those + P54's 14 dup copies); --iu a10 -> sub37_gc70
+byte for byte. The iu stage: India 321 s / US 155 s, run peak 1.41 GB.
     python code/business_entity_resolution/src/iu_stack.py          # self-check
     python code/business_entity_resolution/src/iu_stack.py pack     # members_test_{c} from P50's frames (once)
 """
