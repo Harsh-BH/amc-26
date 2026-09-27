@@ -470,9 +470,37 @@ def ce_r(c, out):
     print(f"{c}: CE lr on {len(R):,} of {len(want):,} frame rows | {time.time() - t0:.0f}s", flush=True)
 
 
-def ce_cs(c, out, jobs):
+def ce_a_only(c, out, path):
+    """ce_cs from a CE_A-only file (s1, sx, r_A: train folds 6-9 keys + test keys, e.g. data/work/p80/cs_US_A_only.parquet,
+    the p80cs ckpt-A pass; sub90u's US): lr = clipped logit of r_A. Train ids -> frame rows of folds 6-9 (sc_r69_<c>),
+    test ids -> test frame rows (sc_rT_<c>); rows keep the file's order."""
+    t = pd.read_parquet(path, columns=["s1", "sx", "r_A"])
+    r = np.clip(t.r_A.to_numpy(np.float64), 1e-4, 1 - 1e-4)
+    lr = np.log(r / (1 - r)).astype(np.float32)
+    for split, name, fr in (("train", "r69", f"sc_{c}.parquet"), ("test", "rT", f"sc_T_{c}.parquet")):
+        id1, idx = FT.ids(split, c)
+        q1 = pc.index_in(pa.array(t.s1.to_numpy(object), pa.large_string()), value_set=id1)
+        qx = pc.index_in(pa.array(t.sx.to_numpy(object), pa.large_string()), value_set=idx)
+        m = ~pc.is_null(q1).to_numpy(zero_copy_only=False) & ~pc.is_null(qx).to_numpy(zero_copy_only=False)
+        k = keys(pc.fill_null(q1, 0).to_numpy()[m], pc.fill_null(qx, 0).to_numpy()[m])
+        fk = pd.read_parquet(out / fr, columns=["q1", "qx", "fold"])
+        if split == "train":
+            fk = fk[fk.fold.to_numpy() >= 6]
+        want = pd.Index(keys(fk.q1, fk.qx))
+        inw = want.get_indexer(k) >= 0
+        kk = k[inw]
+        assert pd.Index(kk).is_unique
+        pd.DataFrame({"q1": (kk >> 32).astype(np.int32), "qx": (kk & 0xFFFFFFFF).astype(np.int32), "lr": lr[m][inw]}
+                     ).to_parquet(out / f"sc_{name}_{c}.parquet", index=False)
+        print(f"{c} {name}: ids matched {int(m.sum()):,}, CE lr on {len(kk):,} of {len(want):,} frame rows", flush=True)
+
+
+def ce_cs(c, out, jobs, a_only=None):
     """Train folds 6-9 (-> sc_r69_<c>) and test (-> sc_rT_<c>) CE lr from the p80cs score files of ONE complete set of
-    jobs: score/score_<c>_<k>of<n>.parquet with q1, qx, fold (-1 = test), r_A, r_B; lr = mean of the clipped logits."""
+    jobs: score/score_<c>_<k>of<n>.parquet with q1, qx, fold (-1 = test), r_A, r_B; lr = mean of the clipped logits.
+    a_only: a local CE_A-only file instead (ce_a_only)."""
+    if a_only:
+        return ce_a_only(c, out, a_only)
     import os
     from pyarrow import fs
     os.environ.setdefault("AWS_PROFILE", "harsh")
@@ -751,6 +779,7 @@ if __name__ == "__main__":
     ap.add_argument("--ho", action="store_true", help="rehearsal on fold 0 alone (m2_big p, 6 pseudo folds)")
     ap.add_argument("--ce", action="store_true", help="add the p80ce CE features (sc_r_<c> / sc_rT_<c>)")
     ap.add_argument("--jobs", default="", help="ce_cs: comma-separated p80cs jobs forming ONE complete score set")
+    ap.add_argument("--a-only", type=Path, help="ce_cs: CE_A-only (s1, sx, r_A) file instead of the p80cs jobs")
     ap.add_argument("--out", type=Path, default=W / "p80")
     ap.add_argument("--test-p", type=Path, help="test: dir with score_test.py's per-X-file test p")
     a = ap.parse_args()
@@ -765,7 +794,7 @@ if __name__ == "__main__":
     elif a.cmd == "blend":
         blend(a.out, (a.country,) if a.country else C, a.ce)
     elif a.cmd == "ce_cs":
-        ce_cs(a.country, a.out, a.jobs.split(","))
+        ce_cs(a.country, a.out, a.jobs.split(","), a.a_only)
     elif a.cmd == "ce_r":
         ce_r(a.country, a.out)
     elif a.cmd == "hybrid":

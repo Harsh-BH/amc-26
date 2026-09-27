@@ -125,6 +125,41 @@ margin vs the p-rival's lr; rmx2 = margin vs the SX's best other lr.
 - India is not shipped tonight. Its fold-0 blend passes on both halves, but its test CE scores are not in yet.
 - Expected US-only LB-eq ≈ 0.383 × 0.00029 ≈ +0.00011. Its t is tuned on fold 0 itself.
 
+## Reproduce sub90u US (LB 0.989382, the final)
+
+sub90u is sub89 with its US lines replaced by the w1 decision. France and India are byte for byte sub89. All commands
+run from the repo root with `.venv/bin/python`; `S=probes/P80-crossfit/stagec.py`.
+
+**Inputs already on disk or S3:**
+- stage 1 (solution_p80.py): out/p80-cfA-r-0927-2123 and out/p80-cfB-r-0927-2123, each with m2_cf_<split>.txt and oof_*.
+- test M2 p: out/p80-sct-g4dn16xlarge-0927-2143 (score_test.py, logit mean of both boosters).
+- CE cross-fit: S3 results/p80ce-A-0927-2141 and results/p80ce-B-0927-2149 (CE_NOTES.md), read by `ce_r`.
+- US folds 6-9 + test CE: data/work/p80/cs_US_A_only.parquet (s1, sx, r_A), the p80cs ckpt-A pass.
+- today's US scores: data/work/p70/prob_test_US_ta.parquet (P70 ta_ship.py probs = sub88/sub89's US rule).
+- dups: data/work/p80/iu_dup_sub88.parquet (sub88's India/US pairs outside the ta rule; sub89's US lines are sub88's).
+
+**Chain:**
+
+```bash
+$S frame India; $S frame US             # train frames sc_<c>.parquet (M2 OOF p, prune, anchors) ~25-30 min each
+$S fit                                  # plain stage C (stagec.json, sc_C{A,B}_<c>.txt); `test` reads them
+$S test US --test-p out/p80-sct-g4dn16xlarge-0927-2143      # builds the test frame sc_T_US.parquet
+$S ce_r US                              # sc_r_US: CE lr for folds 0-5 (S3, read in place)
+$S ce_cs US --a-only data/work/p80/cs_US_A_only.parquet     # sc_r69_US (folds 6-9) + sc_rT_US (test)
+$S fit US --ce                          # sc_ce_C{A,B}_US.txt (283 / 273 trees), sc_ce_US_fit.json, sc_ce_s0_US
+$S blend US --ce                        # sc_ce_US_blend.json: w1.0_all t .72 (+0.000287 ± 0.000033 fold 0)
+$S w1_test US                           # w1_test_US.parquet: 2,250,236 pairs (= data/work/p80/w1_US_pairs.parquet)
+.venv/bin/python probes/P80-crossfit/build_sub.py sub89 sub90u data/work/p80/w1_US_pairs.parquet \
+    data/work/p80/iu_dup_sub88.parquet US   # dup_kept 5, 2,706 US S1 changed, 1,999 candidates appended
+```
+
+**Check (28 Sep).** I reran `ce_cs --a-only` → `fit US --ce` → `blend US --ce` → `w1_test US` into a scratch --out,
+linking only sc_US / sc_T_US / sc_r_US:
+- sc_r69_US and sc_rT_US are row-for-row equal to the files used for sub90u.
+- The boosters are byte-identical.
+- The pairs file is byte-identical (md5 7bfa89b88a053bb244b87442aa1a4c2d).
+- output/sub90u/matching_results.tsv md5 starts a8ad38b59e75.
+
 ## Rehearsal (`--ho`: fold 0 alone, m2_big p, 6 pseudo folds by S1 hash; stagec_ho.json)
 
 This ran before stage 1 landed. Only fold-0 competitors exist in it, so B and C both miss the stealing by other
