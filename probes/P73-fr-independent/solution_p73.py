@@ -19,8 +19,16 @@ def main(train_dir, test_dir, model_dir, out_dir, params):
         job = p13sol.Job(train_dir, md, dict(params, phases=[], s3=f"{params['s3']}/{k}_{m}", bge=run["model"],
                                              lr=run["lr"], epochs={tag: run["epochs"]}))
         job.log(ev="p73_run", run=run)
+        seed = int(run.get("seed", 0))                       # seed arm: offsets P13's fixed seeds (head init + batches)
+        if seed:
+            torch.manual_seed(seed)
+            _ms, _rng = torch.manual_seed, p13sol.np.random.default_rng
+            torch.manual_seed = lambda s, _ms=_ms: _ms(int(s) + seed)
+            p13sol.np.random.default_rng = lambda s=None, _r=_rng: _r(None if s is None else int(s) + seed)
         tok, sc, pad = job.load("bge")
         job.train("bge", tok, sc, pad, tag, [f"ind{k}"], float(run.get("cap_s", 2400)))
+        if seed:
+            torch.manual_seed, p13sol.np.random.default_rng = _ms, _rng
         for f in run["score"]:
             job.write(f"ind_{m}_{f}", job.data(f), job.score("bge", tok, sc, pad, f))
             job.flush_log()
