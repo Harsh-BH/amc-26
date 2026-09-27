@@ -1,0 +1,19 @@
+India index 809,986 S1 (88,168 holdout), queries 214,353 of 513,138 world SX
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 4724.06it/s]
+India index encoded 259s
+India queries 65,536 285s
+India queries 131,072 311s
+India queries 196,608 336s
+India queries 214,353 343s
+India done 345s
+US index 663,106 S1 (132,190 holdout), queries 314,630 of 760,092 world SX
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 4335.75it/s]
+US index encoded 148s
+US queries 65,536 168s
+US queries 131,072 188s
+US queries 196,608 209s
+US queries 262,144 229s
+US queries 314,630 245s
+US done 247s

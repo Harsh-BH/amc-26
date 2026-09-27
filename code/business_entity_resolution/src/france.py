@@ -665,6 +665,288 @@ def brand_mask(s1: np.ndarray, sx: np.ndarray, v: Path) -> np.ndarray:
     return key1.reindex(sx).fillna("").to_numpy(object) == s1
 
 
+# ---------------------------------------------------------------- the final chain (#sub_clean, 27 Sep): P42 recipe stages ->
+# P41 brand (on the gc70 lists) -> P48 CE veto -> P54 in-band CE rescue -> P47 hn-change class -> P55 combiner. Each stage
+# is its probe's rule, on the same France pair rows (the post-rules file order); stage functions are the probes' code.
+LO, HI, CAPS = 0.02, 0.98, (5, 6)                  # the CE band (run.py rerank.CFG) and train's max S2 / S3 per S1
+W_BLEND = (0.9245, 0.2595, 0.0515)                 # the unseen country's out-of-domain bge blend (= run.W_FRANCE)
+HN_OK = (4, 5)                                     # P47: hn_rel classes of the class stage (-1 / -2, other non-sibling)
+
+
+def _logit(p):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return np.log(p / (1 - p))
+
+
+def rank_in(key, p, rows):
+    """rows sorted by (key, -p) and each row's 0-based rank within its key (P42)."""
+    o = rows[np.lexsort((-p[rows], key[rows]))]
+    k = key[o]
+    i = np.arange(len(o))
+    return o, i - np.maximum.accumulate(np.where(np.r_[True, k[1:] != k[:-1]], i, 0))
+
+
+def counts(s1, is2, pred, n):
+    return np.bincount(s1[pred & is2], minlength=n), np.bincount(s1[pred & ~is2], minlength=n)
+
+
+def p42_base(s1, is2, p, am, sib, t, cap=CAPS):
+    """P42: accept argmax & p >= t, then the cap (an S1's lowest pairs over c2 S2 / c3 S3 leave, and their SX leaves
+    every later stage). -> (accepted, free = the pairs a later stage may add)."""
+    key = s1 * 2 + is2
+    acc = am & (p >= t)
+    o, rk = rank_in(key, p, np.flatnonzero(acc))
+    over = o[rk >= np.where(is2[o], cap[0], cap[1])]
+    acc[over] = False
+    free = am & ~sib
+    free[over] = False
+    return acc, free
+
+
+def p42_decide(s1, is2, p, am, sib, hn_eq, n, t, t_r, t_gc, t_hn, cap=CAPS) -> dict:
+    """P42's recipe stages (cumulative masks base / rescue / gc / hn): rescue = an empty S1's best free pair, gc = a
+    one-sided S1's free pairs of the missing source, hn = a non-empty S1's free hn-equal pairs; best p first, caps."""
+    out = {}
+    out["base"], free = p42_base(s1, is2, p, am, sib, t, cap)
+    pred = out["base"]
+    for stage, bar in (("rescue", t_r), ("gc", t_gc), ("hn", t_hn)):
+        if bar is not None:
+            n2, n3 = counts(s1, is2, pred, n)
+            m2, m3 = n2[s1], n3[s1]
+            ok = {"rescue": m2 + m3 == 0, "gc": np.where(is2, (m2 == 0) & (m3 > 0), (m3 == 0) & (m2 > 0)),
+                  "hn": (m2 + m3 > 0) & hn_eq}[stage]
+            c = np.flatnonzero(free & ~pred & ok & (p >= bar))
+            if stage == "rescue":
+                o, rk = rank_in(s1, p, c)
+                take = o[rk == 0]
+            else:
+                o, rk = rank_in(s1 * 2 + is2, p, c)
+                take = o[rk < np.where(is2[o], cap[0] - m2[o], cap[1] - m3[o])]
+            pred = pred.copy()
+            pred[take] = True
+        out[stage] = pred
+    return out
+
+
+def hn_rel(h1, hx) -> np.ndarray:
+    """P39 / P47: 0 hn missing on a side (or unparsable), 1 equal, 2 SIB3 offset, 3 hx - h1 in {1, 2}, 4 in {-1, -2},
+    5 any other difference."""
+    ok = (h1 != "") & (hx != "")
+    d = np.full(len(h1), np.nan)
+    d[ok] = pd.to_numeric(pd.Series(hx[ok]), errors="coerce").to_numpy(float) - \
+        pd.to_numeric(pd.Series(h1[ok]), errors="coerce").to_numpy(float)
+    out = np.where(~ok | np.isnan(d), 0, np.where(d == 0, 1, np.where(np.isin(d, SIB3), 2,
+                   np.where(np.isin(d, [1, 2]), 3, np.where(np.isin(d, [-1, -2]), 4, 5)))))
+    return out.astype(np.int8)
+
+
+def fill_add(s1, is2, key_p, pred, cand, n, cap=CAPS) -> np.ndarray:
+    """Candidate rows cand added best key_p first per (S1, source), up to the caps counted on pred (P47 / P54 / P42)."""
+    n2, n3 = counts(s1, is2, pred, n)
+    o, rk = rank_in(s1 * 2 + is2, key_p, cand)
+    take = o[rk < np.where(is2[o], cap[0] - n2[s1[o]], cap[1] - n3[s1[o]])]
+    out = np.zeros(len(pred), bool)
+    out[take] = True
+    return out
+
+
+# ---- P55: the combiner transferred to the unseen country (LightGBM over country-invariant inputs, fit on both LOCO frames)
+def sx_feats(sx, g):
+    """Per pair: its SX's candidate count, count with g >= 0.5 and g mass excluding the pair, and the best competitor's g."""
+    o = np.lexsort((-g, sx))
+    so = sx[o]
+    first = np.r_[True, so[1:] != so[:-1]]
+    start = np.flatnonzero(first)
+    grp = np.cumsum(first) - 1
+    n = np.diff(np.r_[start, len(o)])
+    top1 = g[o][start]
+    top2 = np.where(n > 1, g[o][np.minimum(start + 1, len(o) - 1)], 0.0)
+    rank = np.arange(len(o)) - start[grp]
+    out = np.empty((len(g), 4))
+    gs = g[o]
+    out[o, 0] = n[grp]
+    out[o, 1] = np.bincount(grp, weights=(gs >= 0.5).astype(float))[grp] - (gs >= 0.5)
+    out[o, 2] = np.bincount(grp, weights=gs)[grp] - gs
+    out[o, 3] = np.where(rank == 0, top2[grp], top1[grp])
+    return out
+
+
+def _dens(v, n):
+    q = np.sort(v)
+    return (len(q) - np.searchsorted(q, v, side="left")) / n
+
+
+def p55_feats(s1, is2, g, r, p, hr, ref, stage, sxf, n) -> pd.DataFrame:
+    """P55's feature frame on the argmax pairs (densities of p / g, CE r, S1 group ranks / gaps / counts, SX exclusivity)."""
+    key = s1 * 2 + is2
+    rows = np.arange(len(s1))
+    o, rk = rank_in(key, p, rows)
+    po = p[o]
+    same = np.r_[False, key[o][1:] == key[o][:-1]]
+    gap_prev = np.full(len(s1), np.nan)
+    gap_next = np.full(len(s1), np.nan)
+    gap_prev[o[same]] = po[np.flatnonzero(same) - 1] - po[same]
+    nxt = np.r_[same[1:], False]
+    gap_next[o[nxt]] = po[nxt] - po[np.flatnonzero(nxt) + 1]
+    cnt = np.bincount(key, minlength=2 * n)
+    acc = np.bincount(key[ref], minlength=2 * n)
+    mx = np.full(2 * n, -1.0)
+    np.maximum.at(mx, key, p)
+    oth = s1 * 2 + (~is2)
+    return pd.DataFrame({
+        "dens_p": _dens(p, n), "dens_g": _dens(g, n), "lr": np.where(np.isnan(r), np.nan, _logit(np.nan_to_num(r, nan=0.5))),
+        "is2": is2.astype(np.int8), "hn_rel": hr.astype(np.int8), "stage": stage.astype(np.int8),
+        "region": np.select([g < LO, g >= HI], [0, 2], 1).astype(np.int8),
+        "s1_rank": rk[np.argsort(o)], "gap_prev": gap_prev, "gap_next": gap_next,
+        "n_same": cnt[key], "n_oth": cnt[oth], "acc_same": acc[key] - ref, "acc_oth": acc[oth],
+        "max_oth": mx[oth], "s1_psum": np.bincount(s1, weights=p, minlength=n)[s1],
+        "sx_n": sxf[:, 0], "sx_n05": sxf[:, 1], "sx_psum": sxf[:, 2], "sx_gap": _logit(g) - _logit(np.maximum(sxf[:, 3], 1e-6)),
+    }).astype(np.float32)
+
+
+def p55_score(boosters, X) -> np.ndarray:
+    """The bagged combiner: sigmoid of the mean logit of the boosters' probabilities."""
+    lg = np.mean([_logit(1 / (1 + np.exp(-b.predict(X, raw_score=True)))) for b in boosters], 0)
+    return 1 / (1 + np.exp(-lg))
+
+
+def p42_frame(f: dict, c: dict, s1, sx, is2, sib, hn_eq, g, r, n) -> dict:
+    """P42's France frame as P55 / P54's fr54 read it (p42.fr_p at tau 0.1 on the no-veto post-rules p0: exact but for
+    the post-rules cap; P42 decide at t 0.99; ref = recipe - P48's veto, 'unmoved' = p0 on the blend of g and r)."""
+    p0 = f["p0"].astype(np.float64)
+    rn = np.nan_to_num(r, nan=1.0)
+    cond = (g >= HI) & (rn < 0.1)
+    q = np.where(cond & ~(cond & (f["p"] > 0)), 0.0, p0)
+    amq = argmax(sx, q)
+    st = p42_decide(s1, is2, q, amq, sib, hn_eq, n, 0.99, c["rescue"], c["gc"], c["hn"])
+    bl = 1 / (1 + np.exp(-(W_BLEND[0] * _logit(g) + W_BLEND[1] * _logit(np.nan_to_num(r, nan=0.5)) + W_BLEND[2])))
+    unmoved = np.abs(p0 - bl) <= 1e-4
+    added = (st["rescue"] & ~st["base"]) | (st["gc"] & ~st["rescue"])
+    veto = added & (g > LO) & (g < HI) & unmoved & (rn < c.get("veto", 0.2))    # build48.veto_mask
+    _, free = p42_base(s1, is2, q, amq, sib, 0.99)
+    return {"q": q, "am": amq, "st": st, "ref": st["hn"] & ~veto, "veto": veto, "free": free, "unmoved": unmoved, "p0": p0}
+
+
+ORDER_CLEAN = ("veto", "brand", "u", "cls", "p55")                  # build38.clean + P55 (sub_clean)
+ORDER_54 = ("brand", "xf", "swap", "veto54", "cls", "u54")          # the #43 -> #48 -> #52 -> #54 lineage
+
+
+def chain(f: dict, c: dict) -> np.ndarray:
+    """The unseen country's final decision (#sub_clean; #54 with c["order"] = ORDER_54) on its post-rules pairs.
+    f (row-aligned arrays): q1 / qx codes, is2, p = post-rules p (veto tau 0.1), p0 = post-rules p without the veto,
+    g = c_hn's p, pbl = the bge blend before the post-rules, r = CE r (P30's pool first, then the band cache; NaN = none),
+    r_lo = P48's CE r of the other pairs, h1 / hx house numbers (fixed SX side), s1 / sx ids, n = #S1, v = the fr31
+    world, learn = P3's blocked list (swap only). c: t (decision), anchor (post-rules t), rescue / gc / hn (P42), then the
+    stages of c["order"] (default ORDER_CLEAN), each its probe's rule:
+      P42 recipe stages on p (base t, rescue, gc, hn-equal extras) -> lines, always first
+      brand  P41 brand pairs at c["brand"], computed on the gc70-style lists (anchor t, rescue 0.90, gc 0.70), unioned
+      xf     P40 address-less exact names at c["xf"], computed on the gc70-style lists + brand, unioned
+      swap   P46 noise-word swap tier (lens s <= c["swap"], flips at the anchor), merged: free SX, caps
+      veto   P48: the recipe's rescue / gc stage pairs in the band whose p no rule moved and whose CE r < c["veto"]
+      veto54 the same veto as #48 was built (build48.veto_mask on P42's frame: p0 on the blend of g and r)
+      u      P54 in-band CE rescue: free argmax non-sibling band pairs (p unmoved), SX in no line, r >= c["u"], caps
+      u54    the same rescue as fr54 built #54: on P42's frame, pairs outside its recipe reference
+      cls    P47 class: free argmax pairs with an hn change of class -1/-2 or other non-sibling, p >= c["cls"], caps
+      p55    P55 combiner c: drop recipe band pairs (own p) with c < v; add free own argmax pairs with c > u, caps
+    Returns the accepted mask (every pair an argmax pair of its SX)."""
+    import lightgbm as lgb
+    import stack as S
+    s1, sx, is2 = f["q1"].astype(np.int64), f["qx"].astype(np.int64), f["is2"]
+    p, g, n = f["p"].astype(np.float64), f["g"].astype(np.float64), f["n"]
+    h1, hx = f["h1"], f["hx"]
+    r = f["r"].astype(np.float64)
+    am = argmax(sx, p)
+    sib, hn_eq = S.sib_mask(h1, hx), (h1 != "") & (h1 == hx)
+    say = lambda name, m: print(f"{C}: {name} {int(m.sum()):,} pairs", flush=True)
+    st = p42_decide(s1, is2, p, am, sib, hn_eq, n, c["t"], c["rescue"], c["gc"], c["hn"])
+    say("recipe (P42)", st["hn"])
+    lines = st["hn"].copy()
+    band = (g > LO) & (g < HI)
+    unmoved = np.abs(p - f["pbl"].astype(np.float64)) <= 1e-4
+    _, free = p42_base(s1, is2, p, am, sib, c["t"])
+    taken = lambda: np.bincount(sx[lines], minlength=int(sx.max()) + 1)[sx] > 0
+    ones = np.ones(len(p), bool)
+    gc70 = gib = fr42 = None
+    for stage in c.get("order", ORDER_CLEAN):
+        if stage in ("brand", "xf") and gc70 is None:   # the #37_gc70-style lists P41 / P40 were staged on
+            gc70 = am & (p >= c["anchor"])
+            gc70 |= rescue(s1, p, am, gc70, sib, 0.90)
+            gc70 |= gc_add(s1, sx, is2, p, am, gc70, sib, 0.70)
+        if stage in ("u54", "p55", "veto54") and fr42 is None:
+            fr42 = p42_frame(f, c, s1, sx, is2, sib, hn_eq, g, r, n)
+        if stage == "brand":
+            gib = gc_add(s1, sx, is2, p, am, gc70, sib | ~brand_mask(f["s1"], f["sx"], f["v"]), c["brand"], ones)
+            say("brand (P41) added", gib & ~lines)
+            lines |= gib
+        elif stage == "xf":
+            base = gc70 | (gib if gib is not None else False)
+            xf = gc_add(s1, sx, is2, p, am, base, sib | ~noaddr_mask(f["s1"], f["sx"]), c["xf"], ones, empty=True)
+            say("address-less exact names (P40) added", xf & ~lines)
+            lines |= xf
+        elif stage == "swap":
+            fl = swap_mask(f["s1"], f["sx"], p, c["anchor"], f["learn"], c["swap"])
+            m = gc_add(s1, sx, is2, p, am, lines, sib | ~fl, 0.0, ones, empty=True)
+            say("noise-word swaps (P46) added", m)
+            lines |= m
+        elif stage == "veto":
+            added = (st["rescue"] & ~st["base"]) | (st["gc"] & ~st["rescue"])
+            veto = added & band & unmoved & (r < c["veto"])
+            say("CE veto (P48)", veto & lines)
+            lines &= ~veto
+        elif stage == "veto54":
+            say("CE veto (P48, as #48)", fr42["veto"] & lines)
+            lines &= ~fr42["veto"]
+        elif stage == "u":
+            rr = np.nan_to_num(r, nan=0.0)
+            m = fill_add(s1, is2, rr, lines, np.flatnonzero(free & ~lines & band & unmoved & ~taken() & (rr >= c["u"])), n)
+            say("in-band CE rescue (P54)", m)
+            lines |= m
+        elif stage == "u54":
+            rr = np.nan_to_num(r, nan=0.0)
+            cand = fr42["free"] & ~fr42["ref"] & band & fr42["unmoved"] & ~taken() & (rr >= c["u"])
+            m = fill_add(s1, is2, rr, lines, np.flatnonzero(cand), n)
+            say("in-band CE rescue (P54, fr54)", m)
+            lines |= m
+        elif stage == "cls":
+            cand = np.flatnonzero(free & ~lines & ~taken() & np.isin(hn_rel(h1, hx), HN_OK) & (p >= c["cls"]))
+            m = fill_add(s1, is2, p, lines, cand, n)
+            say("hn-change class (P47) added", m)
+            lines |= m
+        elif stage == "p55":
+            v55, u55, files = c["p55"]
+            q, amq, ref, stq = fr42["q"], fr42["am"], fr42["ref"], fr42["st"]
+            rl = np.where(np.isnan(r), f["r_lo"], r)
+            stage_c = np.select([stq["base"], stq["rescue"], stq["gc"], stq["hn"]], [1, 2, 3, 4], 0)
+            rows = np.flatnonzero(amq)
+            X = p55_feats(s1[rows], is2[rows], g[rows], rl[rows], q[rows], hn_rel(h1, hx)[rows], ref[rows], stage_c[rows],
+                          sx_feats(sx, g)[rows], n)
+            cf = p55_score([lgb.Booster(model_file=str(x)) for x in files], X)
+            p0f, gf = fr42["p0"].astype(np.float32), g.astype(np.float32)
+            own = ~(((p0f == np.float32(1.0)) & (g < 0.99995)) | ((p0f == np.float32(0.99)) & (gf != np.float32(0.99))))[rows]
+            rg = X.region.to_numpy()
+            rm = np.zeros(len(p), bool)
+            rm[rows[ref[rows] & own & (cf < v55) & (rg == 1)]] = True
+            used = np.bincount(sx[lines], minlength=int(sx.max()) + 1) > 0      # SX of any line before the veto
+            lines &= ~rm
+            cnt = np.stack(counts(s1, is2, lines, n), 1)
+            sup = ~((rg == 2) & (q[rows] > 0))
+            cand = np.flatnonzero(fr42["free"][rows] & ~ref[rows] & own & sup & (cf > u55))
+            add = np.zeros(len(p), bool)
+            for i in rows[cand[np.argsort(-cf[cand], kind="stable")]]:
+                j = 0 if is2[i] else 1
+                if used[sx[i]] or cnt[s1[i], j] >= CAPS[j]:
+                    continue
+                used[sx[i]] = True
+                cnt[s1[i], j] += 1
+                add[i] = True
+            lines |= add
+            say("combiner (P55) vetoed", rm)
+            say("combiner (P55) added", add)
+        else:
+            raise ValueError(stage)
+    return lines
+
+
 def argmax(qx, p):
     import model as M
     return M.argmax_sx(qx, p)

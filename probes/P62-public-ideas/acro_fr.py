@@ -27,7 +27,7 @@ def read(path):
 
 def main(sub="output/sub_clean"):
     global FR
-    j = acro.rule(pd.read_parquet(W / "p62/acro_test_France.parquet"))
+    j = acro.rule(pd.read_parquet(W / f"p62/{acro.RULE}_test_France.parquet"))
     FR = set(pd.read_parquet(W / "rf_test_s1_France.parquet", columns=["id"]).id)
     m = read(f"{sub}/matching_results.tsv")
     cand = read(f"{sub}/candidate_pairs.tsv")
@@ -57,8 +57,8 @@ def main(sub="output/sub_clean"):
          "free_p8c_desc": free.p8c.describe().round(3).to_dict(),
          "matched_p8c_mean": float(u.p8c[u.matched].mean())}
     print(json.dumps(r, indent=1))
-    (W / "p62/acro_fr.json").write_text(json.dumps(r, indent=1))
-    free[["s1", "sx", "in_cand", "argmax", "cap_ok", "p8c"]].to_parquet(W / "p62/acro_fr_free.parquet", index=False)
+    (W / f"p62/{acro.RULE}_fr.json").write_text(json.dumps(r, indent=1))
+    free[["s1", "sx", "in_cand", "argmax", "cap_ok", "p8c"]].to_parquet(W / f"p62/{acro.RULE}_fr_free.parquet", index=False)
 
 
 if __name__ == "__main__":

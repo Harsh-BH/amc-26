@@ -103,14 +103,19 @@ overstated precision (0.994 vs 0.912 for the rules).
 **P42 ranking (27 Sep 01:40):** #42_both is expected at +0.0005 against #41's +0.0002, #37_gc70_hn90's +0.0003 and #39_ind80's +0.0003. It passes both LOCO directions on both analogues, and it contains 75% of #41's pairs and all of hn90's kind of extras. Upload order: **#42_both** (or #42_both_on41 if only one France slot is left) → #42_both_on41 or #41 → #42_r90. If #42_both loses: rebuild `t=0.99,r=0.97` without the hn stage (LOCO +0.0028 / +0.0005). #37_gc70_hn90 is superseded: 18,162 of its 18,180 extras are inside #42_both. #41_hn90 is superseded with it. #39_ind80 ranks below: 59% of its adds are inside #42_both, and it fails US→India by −0.06. Details: `probes/P42-fr-joint-tune/RESULT.md`.
 
 **Upload next (27 Sep, base = #37_gc70 LB 0.986304):** 1) **#41** (P41: gc70 + synthetic-brand recovery; passes the plain LOCO both ways at precision 0.98–0.99, expected +0.0002). 2) **#41_hn90** (= #41 ∪ #37_gc70_hn90, so it tests hn90's 14,974 non-brand extras on top of #41). If it loses, keep #41. (Alternative order: #37_gc70_hn90 first, then #41_hn90 if it gains or #41 if it loses.) 2) #37_gc70_r70. Not staged (LOCO fails both ways or ≈ 0): gc at 0.6 / 0.5 (US→India −0.00012 / −0.00026, India→US +0.00013 / +0.00023 vs gc70); retrieval for no-candidate one-sided S1 (ceiling ≤ 1.7k S1, junk-like precision). Rebuild any P37 file in 15 s: `P37_BASE=<base dir> .venv/bin/python probes/P37-fr-complete/p37.py build <mode> <t> <out>`.
-**Final zip (P43, 27 Sep).** `output/final/Yeti_submission.zip` = `output/sub37_final_small` (matching_results.tsv =
-#37_gc70 byte for byte; candidate_pairs.tsv 7,658,102 pairs = 4.42 per S1; official validator `--check-ids` PASS) +
-`code/business_entity_resolution/` (src, README, requirements) + the filled `Documentation_template.md`. Backup:
-`s3://sagemaker-114872709824-ap-south-1/amc26-offload/final/`. **The zip must hold the best-public upload's matching
-file**, rebuilt by its code. Which staged folders `run.py --split test --stage model` rebuilds:
+**Final zip (P43, 27 Sep, updated 07:30).** Default final (master): **`output/sub_iu54_frgc70`** = #54's India/US lines
+(P44 combiner + P45 r_all + 16 zoo columns, full-holdout refit, P54 duplicate copies) + #37_gc70's France lines.
+`output/final/Yeti_submission.zip` = `output/sub_iu54_frgc70_small` (the same matching file, the small candidate set) + src +
+README + requirements + the filled doc; backups `s3://sagemaker-114872709824-ap-south-1/amc26-offload/final/` and
+`gdrive:amc26-offload/final/`. **The zip must hold the best-public upload's matching file**, rebuilt by its code.
+Which staged folders `run.py --split test --stage model` rebuilds (27 Sep recipes first):
 
 | staged folder | run.py flags | checked |
 |---|---|---|
+| `sub_iu54_frgc70` (default final) | `--recipe sub_iu54_frgc70` (default; = `sub37` + `iu=fullzoo` + P54 dup on the labelled countries) | **matching byte-identical** (md5 7f559944…); `--drop-sibling-cands` → `output/sub_iu54_frgc70_small` (7,658,108 candidates, 4.42/S1, md5 64ed1800…), validator `--check-ids` PASS (SageMaker p43-val-final-0730) |
+| `sub_clean` | `--recipe sub_clean` (France: `france.chain`, ORDER_CLEAN; India/US fullzoo; dup) | France: `france.chain` = `sub_clean_fr` exactly and = `sub_clean` but for its 49 duplicate copies (which `dup_add` adds); India/US = `sub_iu54_frgc70`'s (verified) |
+| `sub_clean_iu34` | `--recipe sub_clean_iu34` (India/US = #34's a10) | **0 differing lines as sets, both files** |
+| `sub54` (LB 0.986685) | `--recipe sub54` (France: ORDER_54 with P40 / P46 / #48's veto, no P55) | France (chain on P42's frame): 2 S1 differ by 1 pair each beyond the 32 duplicate copies (P38's on43 rebuild of the union #43_r90 is 2 rows short too); India/US = `sub_iu54_frgc70`'s |
 | `sub37_gc70` (LB 0.986304) | `--recipe sub37` (default) | byte-identical, both files |
 | `sub37_final_small` | `--recipe sub37_small` | matching = `sub37_gc70`; validator `--check-ids` PASS |
 | `sub37_gc70_hn90` | `--recipe sub37_hn90` (= `--hn-extra 0.9`) | byte-identical, both files |
