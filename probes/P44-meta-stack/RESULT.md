@@ -125,6 +125,9 @@ Run from the repo root with `probes/P44-meta-stack/py.sh` (a 2.2 GB cap). Work f
   - On test the CE drops a few more out-of-band pairs than on holdout (US drops per accepted pair 1.33×, under the 1.5× bar).
   - The zip needs P45's CE-on-every-argmax-pair step ported next to run.py's CE stage.
 - **AWS:** 5 CPU jobs (smoke, hn21, m2hn, 2 validators), < $1.
+- **Disk:** the test frames `T_{c}.parquet` (610 MB) were deleted for disk. Rebuild with `te44.py build <c>` (≈ 4 min per
+  country, after re-fetching the two GBDTs' `pred/test_<c>.parquet` from S3). The prob files `prob_test_{c}_p44{,r}.parquet` are
+  kept, so rebasing sub44 / sub44r needs only `combine`.
 - **France / unseen countries:** untouched (byte-identical to sub46_on43).
 - **Assumptions:**
   - The gate is read as LB-eq with P34's weights (0.468 / 0.383).

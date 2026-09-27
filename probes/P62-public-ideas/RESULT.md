@@ -12,7 +12,7 @@
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
 - **Idea 3:** no change. India/US stays on sub_clean's recipe (= sub54's: P44 combiner + r_all + zoo, full refit). Do not
   revert to #34 / sub_clean_iu34 on density grounds.
-- **Idea 1 (sent to P50 at ~07:05, CE addendum ~08:10):** apply `data/work/p62/acro_cs_france.tsv` on top of sub_clean.
+- **Idea 1 (sent to P50 at ~07:05, CE addendum ~07:48):** apply `data/work/p62/acro_cs_france.tsv` on top of sub_clean.
   - Columns: s1, sx, tier, in_cand, p8c, comp_p. Append each sx to its s1's matching line.
   - Where `in_cand` is False (2,643 rows), also append the sx to the s1's candidate line, or the subset check fails.
   - Caps (≤ 5 S2 / ≤ 6 S3 after all adds) are already enforced against sub_clean; recheck if another change set touches
