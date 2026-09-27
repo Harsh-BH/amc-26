@@ -604,7 +604,7 @@ def france_variant(name: str, c: str) -> pd.DataFrame:
                 *[str(f.relative_to(WORK)) for f in B.TXT["test"].glob(f"{c}_*.parquet")]]:
         d = v / rel
         d.parent.mkdir(parents=True, exist_ok=True)
-        if not d.exists():
+        if not d.exists() and not d.is_symlink():      # a link to a not-yet-built input is still a link
             d.symlink_to((WORK / rel).resolve())
     vp = v / "p3" / "vecs_hash.pkl"
     if not vp.exists():
