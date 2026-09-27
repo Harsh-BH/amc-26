@@ -1,0 +1,202 @@
+{
+ "US_India": {
+  "related|same key|unique": {
+   "n": 30431,
+   "prec": 0.982,
+   "accepted": 0.966,
+   "free_n": 1031,
+   "free_prec": 0.606,
+   "add_dF": {
+    "dF": -0.000393,
+    "dF_h1": -0.000404,
+    "se_h1": 0.000137,
+    "add": 1029,
+    "add_prec": 0.607
+   }
+  },
+  "related|same key|shared": {
+   "n": 15260,
+   "prec": 0.976,
+   "accepted": 0.957,
+   "free_n": 660,
+   "free_prec": 0.571,
+   "add_dF": {
+    "dF": -0.000299,
+    "dF_h1": -0.000239,
+    "se_h1": 8.5e-05,
+    "add": 656,
+    "add_prec": 0.575
+   }
+  },
+  "disjoint gib|same key|unique": {
+   "n": 692,
+   "prec": 1.0,
+   "accepted": 0.918,
+   "free_n": 57,
+   "free_prec": 1.0,
+   "add_dF": {
+    "dF": 6.3e-05,
+    "dF_h1": 7.6e-05,
+    "se_h1": 2.8e-05,
+    "add": 57,
+    "add_prec": 1.0
+   }
+  },
+  "disjoint gib|same key|shared": {
+   "n": 250,
+   "prec": 0.884,
+   "accepted": 0.824,
+   "free_n": 44,
+   "free_prec": 0.591,
+   "add_dF": {
+    "dF": -1.5e-05,
+    "dF_h1": -3.5e-05,
+    "se_h1": 2.7e-05,
+    "add": 44,
+    "add_prec": 0.591
+   }
+  },
+  "disjoint plain|same key|unique": {
+   "n": 324,
+   "prec": 0.892,
+   "accepted": 0.87,
+   "free_n": 42,
+   "free_prec": 0.381,
+   "add_dF": {
+    "dF": -3.9e-05,
+    "dF_h1": -2.7e-05,
+    "se_h1": 1.5e-05,
+    "add": 41,
+    "add_prec": 0.39
+   }
+  },
+  "disjoint plain|same key|shared": {
+   "n": 183,
+   "prec": 0.678,
+   "accepted": 0.65,
+   "free_n": 64,
+   "free_prec": 0.156,
+   "add_dF": {
+    "dF": -0.000142,
+    "dF_h1": -0.000133,
+    "se_h1": 3.9e-05,
+    "add": 63,
+    "add_prec": 0.159
+   }
+  },
+  "any|byte-equal addr": {
+   "n": 6490,
+   "prec": 0.989,
+   "accepted": 0.97,
+   "free_n": 196,
+   "free_prec": 0.75
+  },
+  "any|same key not byte-equal": {
+   "n": 48029,
+   "prec": 0.979,
+   "accepted": 0.957,
+   "free_n": 2043,
+   "free_prec": 0.611
+  }
+ },
+ "India_US": {
+  "related|same key|unique": {
+   "n": 236086,
+   "prec": 0.99,
+   "accepted": 0.978,
+   "free_n": 5207,
+   "free_prec": 0.629,
+   "add_dF": {
+    "dF": -0.001365,
+    "dF_h1": -0.00124,
+    "se_h1": 0.000219,
+    "add": 5195,
+    "add_prec": 0.63
+   }
+  },
+  "related|same key|shared": {
+   "n": 48519,
+   "prec": 0.989,
+   "accepted": 0.976,
+   "free_n": 1187,
+   "free_prec": 0.638,
+   "add_dF": {
+    "dF": -0.000242,
+    "dF_h1": -0.00031,
+    "se_h1": 8.8e-05,
+    "add": 1182,
+    "add_prec": 0.64
+   }
+  },
+  "disjoint gib|same key|unique": {
+   "n": 3734,
+   "prec": 0.984,
+   "accepted": 0.914,
+   "free_n": 321,
+   "free_prec": 0.885,
+   "add_dF": {
+    "dF": 0.000176,
+    "dF_h1": 0.000222,
+    "se_h1": 4.5e-05,
+    "add": 321,
+    "add_prec": 0.885
+   }
+  },
+  "disjoint gib|same key|shared": {
+   "n": 755,
+   "prec": 0.613,
+   "accepted": 0.437,
+   "free_n": 424,
+   "free_prec": 0.41,
+   "add_dF": {
+    "dF": -0.000335,
+    "dF_h1": -0.0004,
+    "se_h1": 6e-05,
+    "add": 424,
+    "add_prec": 0.41
+   }
+  },
+  "disjoint plain|same key|unique": {
+   "n": 2314,
+   "prec": 0.805,
+   "accepted": 0.792,
+   "free_n": 481,
+   "free_prec": 0.143,
+   "add_dF": {
+    "dF": -0.000754,
+    "dF_h1": -0.000766,
+    "se_h1": 7.5e-05,
+    "add": 478,
+    "add_prec": 0.144
+   }
+  },
+  "disjoint plain|same key|shared": {
+   "n": 785,
+   "prec": 0.459,
+   "accepted": 0.423,
+   "free_n": 453,
+   "free_prec": 0.073,
+   "add_dF": {
+    "dF": -0.000752,
+    "dF_h1": -0.000774,
+    "se_h1": 7.2e-05,
+    "add": 452,
+    "add_prec": 0.073
+   }
+  },
+  "any|byte-equal addr": {
+   "n": 10477,
+   "prec": 0.998,
+   "accepted": 0.999,
+   "free_n": 15,
+   "free_prec": 0.4
+  },
+  "any|same key not byte-equal": {
+   "n": 301515,
+   "prec": 0.986,
+   "accepted": 0.973,
+   "free_n": 8144,
+   "free_prec": 0.568
+  }
+ }
+}
