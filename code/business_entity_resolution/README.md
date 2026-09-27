@@ -46,8 +46,8 @@ downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when i
 it only scores, decides and writes.
 
 **The final zip's files are `final_build.py` on `--recipe sub66_final --drop-sibling-cands`** (**[FINAL LB] 0.988292**,
-`sub76`, +0.000901 over sub66_final): five unseen-country change sets applied to that base (P67q, P70a, P69 t975ce,
-−N54, P71a; the `final_build.py` bullet below). **The base, `sub66_final`** (the default recipe; public LB 0.987391,
+`sub77`, +0.000901 over sub66_final): six unseen-country change sets applied to that base (P67q, P70a, P69 t975ce,
+−N54, P71a, P41; `final_build.py --upto 41`, the bullet below). **The base, `sub66_final`** (the default recipe; public LB 0.987391,
 +0.000706 over #54): **India / US = #54's combiner** (below) with P54's duplicate step, **the unseen country (France) =
 `sub_iu54_best`'s chain** (#37_gc70's chain with the Qwen band blend, P55's band veto, P62's acronym block and P54's
 duplicate step, below) + **P64's legal-form conflict veto** + **P66's address-less exact names** (P64 / P66 below).

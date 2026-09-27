@@ -190,7 +190,7 @@ and log it (`ledger.py`). A change is worth keeping at ≥ +0.0005.
 ## 7. Run
 
 ```bash
-# the final (sub76, LB 0.988292), byte for byte: the base, then the unseen country's change sets (21 s)
+# the final (sub77, LB 0.988292), byte for byte: the base, then the unseen country's change sets (21 s)
 .venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --recipe sub66_final \
     --drop-sibling-cands --out output/sub66_final_small   # sub66_final = LB 0.987391, 4.42 candidates per S1
 .venv/bin/python code/business_entity_resolution/src/final_build.py output/sub66_final_small output/sub76
@@ -277,7 +277,7 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
-- **The final (27 Sep 17:30, P78): `sub76`, public LB 0.988292 [FINAL LB]** = `sub66_final` + the unseen country's
+- **The final (27 Sep 17:30, P78): `sub77`, public LB 0.988292 [FINAL LB]** = `sub66_final` + the unseen country's
   change sets (P67q +2,793, P70a +424, P69 t975ce +4,904, N54 −2,120, P71a +4,523; India / US unchanged). Rebuild it
   byte for byte with `final_build.py` on `--recipe sub66_final --drop-sibling-cands` (step 7). The zip
   `output/final/Yeti_submission.zip` holds it (md5 520204eb…, validator `--check-ids` PASS on the unzipped zip,
