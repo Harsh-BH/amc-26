@@ -105,3 +105,20 @@ ext = o[o.fold <= 1].groupby(["q1", "qx"], as_index=False).agg(  # folds 0-1: lo
   - So the 1/3-data CE is weaker by about 0.009 AUC. Keep that in mind when a combiner trained on these OOF scores is applied to the shipped CE's test r.
   - Checkpoint: `results/p80ce-A-0927-2141/ckpt/ce_bge_pool.pt`. Scoring is running now.
 - **CE_B has passed its build and self-check and is training.** Peak memory so far is 29% of the xlarge's 32 GB.
+
+## Stage 2b: stage C's missing rows scored by both checkpoints (launched 22:37)
+
+- **Keys.** They are in `s3://…/amc26/p80/ce/score_data/keys/<c>/` (built by `build_ce.py score_channel`).
+  - `train69`: the `sc_<c>` frame rows of folds 6–9, with columns q1, qx, fold. India 1,488,866 / US 2,230,697.
+  - `test`: every test X pair whose cross-fit M2 p is ≥ 0.01 (from the `p80-sct` files; the same set `stagec.apply_test` builds), with columns q1, qx. India 3,599,994 / US 2,966,683.
+- **How a job scores its slice.** Each job takes a contiguous slice `part = [k, n]` of train69 + test.
+  - It runs P13's `bge_ckpt` path once per checkpoint (A = `p80ce-A-0927-2141`, B = `p80ce-B-0927-2149`), sharing tokens between the two passes.
+  - It writes `results/<job>/score/score_<c>_<k>of<n>.parquet`, with columns q1, qx, fold (−1 = test), s1, sx, r_A, r_B and r.
+  - r = sigmoid of the mean logit, with each r clipped to [1e-6, 1 − 1e-6] before the logit.
+  - Per-checkpoint P13 files are under `results/<job>/{A,B}/`.
+- **Jobs** (the full list is in `JOBS`):
+  - US halves 0of2 and 1of2 run on g5.4xlarge and g5.2xlarge (A10G).
+  - India halves 0of2 and 1of2 run on g6.4xlarge and g6.2xlarge (L4). Their g6e twins never got capacity and were stopped unbilled.
+  - L4 scores India at ~915 pairs/s, which puts those halves at ≈ 23:55. So India quarters 0–3of4 were launched as a hedge on g5.8xlarge, g5.16xlarge, g6.8xlarge and g6.16xlarge.
+  - Use whichever complete India set lands first: {0of2, 1of2} or {0of4 … 3of4}. Both are keyed by (q1, qx).
+- **Checks.** The CPU smoke test (`build_ce.py smoke_score`) passed. On it, ids = `rerank.rows` and texts = `rerank.texts` for both train and test, and r_A ≠ r_B.
