@@ -40,6 +40,8 @@ def files(out: Path, code: Path, documentation: Path | None):
     yield from ((code / n, f"code/business_entity_resolution/{n}") for n in ("README.md", "requirements.txt"))
     if CHANGES:   # final_build.py's add-on change sets (#76 / #77)
         yield CHANGES, "code/business_entity_resolution/src/final_changes.parquet"
+    if (code / "src" / "final_patch.parquet").exists():   # final_patch.py's evening lines (#84)
+        yield code / "src" / "final_patch.parquet", "code/business_entity_resolution/src/final_patch.parquet"
     if documentation:
         yield documentation, documentation.name
 
