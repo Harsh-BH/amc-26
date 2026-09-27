@@ -5,6 +5,8 @@ the pair is not a legal-form conflict (P64 class 4), France p >= 0.3; caps 5 S2 
 Why: train truth — address-less SX are 97.7% true (decoys keep an address) and a unique exact core names the owner 96-97%;
 LOCO US->India +0.00065 France-F (11 SE, prec .95). France's leftover shape (82% of such pairs accepted) matches US->India.
     .venv/bin/python probes/N69-noaddr-owner/build.py <base matching_results.tsv> <out_dir> [candidate_pairs.tsv]
+Optional arm b (N69_ARM=b, run on the arm-a output): eq core shared by exactly 2 France S1, p >= .9 (LOCO US->India
++0.00008 both halves, prec .97; India->US untestable: its chain never reaches p .9 here).
 """
 import sys, os, csv, numpy as np, pandas as pd
 CAP = {"S2": 5, "S3": 6}
@@ -13,7 +15,12 @@ base, out = sys.argv[1], sys.argv[2]; cand = sys.argv[3] if len(sys.argv) > 3 el
 f = pd.read_parquet("data/work/n69/fr_noaddr.parquet")
 m = pd.read_csv(base, **RD); m.columns = ["s1", "ms"]
 own = {x for ms in m.ms if ms for x in ms.split(",")}
-sel = f[f.name_rel.isin(["eq", "typo"]) & (f.ncore == 1) & (f.lfc != 4) & (f.p >= 0.3) & ~f.sx.isin(own)].sort_values("p", ascending=False)
+ARM = os.environ.get("N69_ARM", "a")   # a: unique core (primary) | b: core shared by exactly 2 France S1, eq name, p >= .9 (optional)
+if ARM == "a":
+    sel = f[f.name_rel.isin(["eq", "typo"]) & (f.ncore == 1) & (f.lfc != 4) & (f.p >= 0.3) & ~f.sx.isin(own)]
+else:
+    sel = f[(f.name_rel == "eq") & (f.ncore == 2) & (f.lfc != 4) & (f.p >= 0.9) & ~f.sx.isin(own)]
+sel = sel.sort_values("p", ascending=False)
 assert sel.sx.is_unique
 fr = set(pd.read_parquet("data/work/rf_test_s1_France.parquet", columns=["id"]).id)
 assert sel.s1.isin(fr).all()
