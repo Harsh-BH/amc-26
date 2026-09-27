@@ -67,6 +67,14 @@ def build(cls_name, t, out, base2=None):
     x["rk"] = x.groupby(["s1", "is2"]).cumcount()
     room = np.where(x.is2, 5 - n2.reindex(x.s1).fillna(0).to_numpy(), 6 - n3.reindex(x.s1).fillna(0).to_numpy())
     x = x[x.rk.to_numpy() < room]
+    # P64's legal-form conflict veto (class 4) must not be undone by an add (none expected: exact-name adds share the form)
+    sys.path.insert(0, str(ROOT / "probes/P64-legal-form-feat"))
+    import lf
+    from loco66 import names
+    k = lf.pair_class(lf.sig(names("test", x.s1, (1,)).reindex(x.s1).reset_index(drop=True)),
+                      lf.sig(names("test", x.sx, (2, 3)).reindex(x.sx).reset_index(drop=True)))
+    n_conf = int((k == 4).sum())
+    x = x[k != 4]
     new = x.groupby("s1").sx.agg(list).to_dict()
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -84,9 +92,9 @@ def build(cls_name, t, out, base2=None):
                 g.write(line)
     assert n == len(new)
     for name in ("candidate_pairs.tsv", "code.zip"):
-        if not (out / name).exists():
+        if not (out / name).exists() and (base / name).exists():
             os.link(base / name, out / name)
-    info = {"base": str(base), "pairs_from": str(P.BASE), "rule": f"p66 {cls_name}@{t}", "added": len(x), "s1_changed": n}
+    info = {"base": str(base), "pairs_from": str(P.BASE), "rule": f"p66 {cls_name}@{t}", "added": len(x), "s1_changed": n, "p64_conflicts_skipped": n_conf}
     (out / "p66_info.json").write_text(json.dumps(info))
     print(json.dumps(info))
 
