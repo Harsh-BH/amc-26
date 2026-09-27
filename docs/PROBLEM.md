@@ -152,6 +152,11 @@ Test-only:
   in 69% of S1 names), street words (rue/avenue/bd) in 95% of S1 addresses, postcodes almost
   never (0.4%). Same noise generator as US/India (typos, dropped letters, website names).
 - Non-France mix shifts to 55% India / 45% US (train 40/60), and there are more S2/S3 per S1.
+- The extra test S2/S3 are **decoys, not extra copies**: unique-core + same-house-number pairs per US S1 are 1.714 in
+  train vs 1.719 in test, so real copies are generated exactly as in train (27 Sep audit). Row order and ID numbers are
+  random w.r.t. matches (true-pair |row gap| median 0.293 = the uniform value).
+- France's 17k free unique-core + same-hn pairs are ~89% different-street decoys; the ~1,350 same-street-with-typo ones
+  fail the India LOCO pool (.55, n 73), so they stay out (P70 `clean_street_loco.json`, class `typo`).
 - Candidate budget with country-scoped blocking, all 3 countries combined: k=10 → 17M pairs,
   k=50 → 87M; the full cross join is 6.7T (France alone: k=10 → 2.6M, full join 372B).
 
