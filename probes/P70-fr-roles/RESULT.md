@@ -16,6 +16,7 @@
 - **Overlap:**
   - 1,695 of the adds are also #67's adds (0 same-SX conflicts), so on top of #67 only about 296 are new.
   - 289 are also t975ce's.
+  - P72's number-mark add tier (sub72, 1,060 adds at c > .99) is almost a subset: 932 of its adds are P70's and 1,044 are P67's, and only 3 fall outside the union. Three different extra columns on P55's combiner converge on the same high-c pairs, so the lever is the precise add tier itself.
 - **Change set:** `data/work/p70/changes.parquet` (s1, sx, action, p, c_new, qwen_r). Filtering on c_new ≥ .99 reproduces a u .99 build, because adds are taken best-first.
 - **Rebuild** (≈ 3 min, ≤ 1.7 GB):
   ```
