@@ -45,7 +45,7 @@ order (training included), except the bge cross-encoder: its checkpoint `data/wo
 downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when it is missing. With the caches present
 it only scores, decides and writes.
 
-**The final zip's files are `final_build.py` on `--recipe sub66_final --drop-sibling-cands`** (**[FINAL LB] 0.988292**,
+**The final zip's files are `final_build.py` on `--recipe sub66_final --drop-sibling-cands`** (**[FINAL LB] 0.988475 = `sub84` via `final_patch.py` on this build's `sub77`; `sub77` itself: 0.988292**,
 `sub77`, +0.000901 over sub66_final): six unseen-country change sets applied to that base (P67q, P70a, P69 t975ce,
 −N54, P71a, P41; `final_build.py --upto 41`, the bullet below). **The base, `sub66_final`** (the default recipe; public LB 0.987391,
 +0.000706 over #54): **India / US = #54's combiner** (below) with P54's duplicate step, **the unseen country (France) =
