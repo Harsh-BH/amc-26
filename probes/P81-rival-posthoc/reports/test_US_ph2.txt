@@ -1,0 +1,32 @@
+fr_posthoc2: base=/tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/matching_results_ph3.tsv candidates=/tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/candidate_pairs_ph3.tsv country=US rules=['D', 'E', 'F'] norm=/home/shriya/github_repos/amc-26/data/work/theirs/normalized_v6
+base: 5,851,534 pairs; US: 663,106 S1s, 2,248,155 predicted pairs, 2,652,221 candidate pairs, 3,817,031 S2/S3 records  [6s]
+predicted pairs not in candidates (base, US): 0
+DROPPED total: 0 pairs on 0 S1s  [9s]
+D normalized duplicates of a predicted record: 25 pairs on 23 S1s
+F filler copies (['groupe', 'developpement', 'associes', 'services']): 10 qualifying pairs, 0 pairs on 0 records with >1 S1 removed -> 10 pairs on 10 S1s; by token [('services', 0, 1), ('services', 1, 9)]
+E empty-address unique-name copies: 512 pairs on 499 S1s
+ADD: records qualifying for different S1s across rules (not added): 0
+ADDED total: 547 pairs on 532 S1s [('D', 25), ('E', 512), ('F', 10)]  [18s]
+CAP 5 S2/6 S3 (US S1s): removed 32 pairs (added ones: 3)
+added pairs already in base candidates: 547; inserted into candidate_pairs: 0
+
+== DIFF REPORT
+DROP W: 0 pairs on 0 S1s; S1s emptied by W alone 0; of its S1s empty in output 0
+DROP S2: 0 pairs on 0 S1s; S1s emptied by S2 alone 0; of its S1s empty in output 0
+ADD F: 10 pairs on 10 S1s (kept after cap 10; to S1s empty in base 0)
+ADD F2: 0 pairs on 0 S1s (kept after cap 0; to S1s empty in base 0)
+ADD E: 512 pairs on 499 S1s (kept after cap 510; to S1s empty in base 67)
+ADD D: 25 pairs on 23 S1s (kept after cap 24; to S1s empty in base 0)
+S1s emptied overall: 0; S1s newly non-empty: 67
+S1 rows changed: 556 (US: 556; other countries: 0)
+candidate rows changed: 0 (US: 0; other countries: 0)
+ONLY US CHANGED: True
+records under >= 2 S1s: output 0 (base 0)
+US S1s over the 5/6 cap in output: 0
+format: headers identical True; S1 rows identical/same order True; lines 1,732,544 -> 1,732,544; empty-id tokens 0; CR/quotes 0; trailing newline True
+predicted pairs not in candidates: output 0 (base 0); candidate pairs 7,668,504 -> 7,668,504
+pairs: 5,851,534 -> 5,852,049 (-0 drop, +547 add, -32 cap)
+wrote /home/shriya/github_repos/amc-26/data/work/theirs/run/matching_results_us2.tsv
+      /home/shriya/github_repos/amc-26/data/work/theirs/run/candidate_pairs_us2.tsv
+      /home/shriya/github_repos/amc-26/data/work/theirs/run/fr_posthoc2_us2_changes.tsv
+      /home/shriya/github_repos/amc-26/data/work/theirs/run/fr_posthoc2_us2_report.txt   [29s]

@@ -1,0 +1,44 @@
+fr_posthoc3: base=/tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/matching_results_ph2.tsv candidates=/tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/candidate_pairs_ph2.tsv country=France rules=['F2', 'F5A', 'F7', 'F8'] strict=False norm=/home/shriya/github_repos/amc-26/data/work/theirs/normalized_v6
+base: 5,841,312 pairs; France: 259,452 S1s, 854,895 predicted pairs, 1,168,372 candidate pairs, 843,451 model-output pairs, 1,434,993 S2/S3 records loaded  [6s]
+model-output pairs dropped by earlier rules: 1; base pairs added by earlier rules: 11,445
+attrs: 1,168,372 pairs  [7s]
+F7 number guard on earlier rule adds: 79 pairs on 75 S1s
+F5 acronym-form records: 25,038
+F5R guard (current S1 street closer to the record than the target's): removed 0
+F5 token-competitor guard removed: F5A 0, F5R 0
+F5R reassign candidates: 8; F5A add candidates: 4,956  [15s]
+F2 fuzzy filler: sector-swap guard removed 126; shape+site+pos+lf 6,393; after ncomp==1 & competitor guard 5,338
+F8 house-1 filler: 13 pairs
+ADD candidates 10,307; removed: earlier-drop pairs 0, dropped this pass 0, F7 number guard 0 [], records for >1 S1 across rules 0 ([])
+cap-skipped adds: 6 [('S1-140627058', 'S2-127920027', 'F5A'), ('S1-972072409', 'S3-608062418', 'F5A'), ('S1-304633696', 'S2-538322946', 'F2'), ('S1-760679408', 'S2-869979569', 'F2'), ('S1-778716140', 'S2-609564273', 'F2'), ('S1-853672127', 'S2-220610034', 'F2')]
+DROPPED total: 79 pairs on 75 S1s [('F7', 79)]
+ADDED total: 10,301 pairs on 10,021 S1s [('F2', 5334), ('F5A', 4954), ('F8', 13)]  [19s]
+final CAP 5 S2/6 S3 (France S1s): removed 0 pairs (added ones: 0)
+added pairs already in base candidates: 6,134; inserted into candidate_pairs: 4,167
+
+== DIFF REPORT
+DROP F1: 0 pairs on 0 S1s; emptied by F1 alone 0; its S1s empty in output 0
+DROP F3: 0 pairs on 0 S1s; emptied by F3 alone 0; its S1s empty in output 0
+DROP F4a: 0 pairs on 0 S1s; emptied by F4a alone 0; its S1s empty in output 0
+DROP F4b: 0 pairs on 0 S1s; emptied by F4b alone 0; its S1s empty in output 0
+DROP F7: 79 pairs on 75 S1s; emptied by F7 alone 7; its S1s empty in output 7
+DROP F5R: 0 pairs on 0 S1s; emptied by F5R alone 0; its S1s empty in output 0
+ADD F4c: 0 pairs on 0 S1s (kept after cap 0; to S1s empty in base 0)
+ADD F5R: 0 pairs on 0 S1s (kept after cap 0; to S1s empty in base 0)
+ADD F5A: 4,954 pairs on 4,874 S1s (kept after cap 4,954; to S1s empty in base 99)
+ADD F2: 5,334 pairs on 5,244 S1s (kept after cap 5,334; to S1s empty in base 118)
+ADD F6: 0 pairs on 0 S1s (kept after cap 0; to S1s empty in base 0)
+ADD F8: 13 pairs on 13 S1s (kept after cap 13; to S1s empty in base 0)
+S1s emptied overall: 7; S1s newly non-empty (filled): 214
+S1 rows changed: 10,093 (France: 10,093; other countries: 0)
+candidate rows changed: 4,119 (France: 4,119; other countries: 0)
+ONLY France CHANGED: True
+records under >= 2 S1s: output 0 (base 0)
+France S1s over the 5/6 cap in output: 0
+format: headers identical True; S1 rows identical/same order True; lines 1,732,544 -> 1,732,544; empty-id tokens 0; CR/quotes 0; trailing newline True
+predicted pairs not in candidates: output 0 (base 0); candidate pairs 7,664,337 -> 7,668,504
+pairs: 5,841,312 -> 5,851,534 (-79 drop, +10,301 add, -0 cap)
+wrote /tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/matching_results_ph3.tsv
+      /tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/candidate_pairs_ph3.tsv
+      /tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/fr_posthoc3_ph3_changes.tsv
+      /tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/fr_posthoc3_ph3_report.txt   [27s]

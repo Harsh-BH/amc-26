@@ -1,0 +1,47 @@
+fr_posthoc: base=output/sub84x/matching_results.tsv candidates=output/sub84x/candidate_pairs.tsv country=France rules=['a', 'b', 'b2', 'cap', 'd1', 'd2g']
+base: 1,732,544 S1 rows, 5,829,868 predicted pairs
+France: 259,452 S1s, 1,434,993 S2/S3 records, 843,451 predicted pairs  [3s]
+
+== 1. DROP
+flagged: S=0 V=0 S&V=0 any=0 (0 S1s); would empty 0 S1s without the guard
+blocked by guard (no kept same-house prediction): 0 pairs
+DROPPED: 0 pairs (S 0, V-only 0, W-only 0) on 0 S1s
+  by hd (S/V): []
+  by signature (S): []
+  by marker (V): []
+
+== 2. ADD   (197,466 of 258,999 France S1s with a street are alone at their site; 676,580 records at those sites, 155,579 unclaimed)  [7s]
+(a) pseudo at unique exact site: 1,205
+(b) acronym at unique site: 2,680  by length [(2, 2468), (3, 212)]
+(b2) acronym variant at unique site: 3,257  by length [(2, 2932), (3, 285), (4, 40)]
+(d) filler copies before the position guard: [('add_d1', 'after_lf', 499), ('add_d1', 'before_lf', 20), ('add_d1', 'noLF', 1195), ('add_d2g', 'after_lf', 557), ('add_d2g', 'before_lf', 55), ('add_d2g', 'noLF', 110)]
+(d) filler copies: 2,361  by rule/tok/LF [('add_d1', 'developpement', 'after_lf', 253), ('add_d1', 'developpement', 'noLF', 584), ('add_d1', 'groupe', 'after_lf', 246), ('add_d1', 'groupe', 'noLF', 611), ('add_d2g', 'groupe', 'after_lf', 557), ('add_d2g', 'groupe', 'noLF', 110)]
+ADDED: 6,894 pairs on 6,705 S1s  [('add_a', 1205), ('add_b', 2680), ('add_b2', 648), ('add_d1', 1694), ('add_d2g', 667)]
+
+== 3. CAP (5 S2 / 6 S3, scope=country, keeps first-listed = highest p): removed 4 pairs on 4 S1s (France: 4 pairs / 4 S1s); added pairs removed by cap: 3
+added pairs already in the base candidates: 4,765; inserted into candidate_pairs: 2,129
+
+== CHECKS
+S1 rows changed: 6,704 (France: 6,704; other countries: 0, of which explained by the cap only: 0)
+only France S1s changed by the rules (DROP/ADD): True
+records under >= 2 S1s: output 0 (base 0)
+format: headers identical True; S1 rows identical and in the same order True; lines 1,732,544 -> 1,732,544; empty-id tokens 0; CR/quotes 0; trailing newline True
+predicted pairs not in candidates: output 0 (base 0); candidate pairs 7,662,208 -> 7,664,337
+pairs: 5,829,868 -> 5,836,758  (-0 drop, +6,894 add, -4 cap)
+non-empty S1s: 1,631,819 -> 1,631,994
+
+== ACCEPTANCE
+e6: France same-street predicted pairs per 1000 S1 by house diff (base -> output):
+          +1/2  0.74  ->  0.74
+     +dec3..11  0.63  ->  0.63
+    +even6..12  0.99  ->  0.99
+          -1/2  1.64  ->  1.64
+        -3..11  3.54  ->  3.54
+             0  2591.74  ->  2618.21
+i7: France pseudo==2 records at a unique S1 exact site predicted to that S1: base 0.841 (n=11,849) -> output 0.943 (n=11,849)
+    same, sites without foreign non-pseudo records: base 0.846 (n=7,846) -> output 1.000 (n=7,846)
+
+wrote /tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/matching_results_ph1.tsv
+      /tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/candidate_pairs_ph1.tsv
+      /tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/fr_posthoc_ph1_changes.tsv
+      /tmp/claude-1001/-home-shriya-github-repos-amc-26/c69ae552-b8a3-422d-89c9-9242b33640e4/scratchpad/A84x/fr_posthoc_ph1_report.txt   [46s]
