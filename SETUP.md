@@ -115,7 +115,10 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `models/p55/fr_plain_s{0,1,2}.txt` (#clean's P55 France combiner, 3 seeds; S3 `amc26-offload/final/models/p55/`) | `data/work/p55/` | 0.7 MB each | `4341e582…` / `efa788a6…` / `95b418bf…` (first 16 hex) |
 | `work/p48/r_lo_France.parquet` (#clean: P48's bge scores of the France pairs outside the CE band, AWS GPU) | `data/work/p48/r_lo_France.parquet` | 2.3 MB | `ea4142ad…` |
 | `work/p36/morph_test.json` (the 44 brand syllables; rebuilt from the test names when absent) | `data/work/p36/morph_test.json` | 0.3 kB | `dbfbd6ef…` |
-| IU_INPUTS_PLACEHOLDER | | | |
+| `models/p50/fullzoo_s{0..4}.txt` (the final India / US combiner, 5 seeds; `full_s*` = without the zoo columns) | `data/work/p50/` | 0.7 MB each | S3 `amc26-offload/final/models/p50/` |
+| `work/p10/q_test_{India,US}.parquet` (P10's pruner score of every blocked test pair: a combiner column) | `data/work/p10/` | 170 / 136 MB | — |
+| `work/p45/oof/r_all_test_{India,US}.parquet` (P45: the bge CE on every #8c test argmax pair, AWS GPU) | `data/work/p45/oof/` | 71 / 56 MB | — |
+| `work/p50/members_test_{India,US}.parquet` (the 2 house-number GBDTs' and 16 zoo members' test predictions) | `data/work/p50/` | 310 / 238 MB | — |
 
 **Disk-tight machines:** a model file moved to cold storage can leave `<file>.tag` (its sha1[:8], e.g.
 `echo 3bd0b930 > data/work/p13/ckpt/ce_bge_pool.pt.tag`); runs whose scores are all cached then resolve the caches
@@ -257,6 +260,19 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
+- **The command now produces the final (27 Sep, master): `sub_iu54_frgc70`** = #54's India / US (the combiner of
+  `iu_stack.py`: P44 + P45's r_all + 16 zoo members, refit on the full holdout by P50; P54's duplicate copies) + #37_gc70's
+  France (the #31 chain + veto + rescue 0.90 + group completion 0.70). It rebuilds `output/sub_iu54_frgc70`'s matching
+  file **byte for byte**; `--drop-sibling-cands` gives the zip's candidate file (7,658,108 pairs, 4.42 per S1).
+  Official validator `--check-ids` PASS. Public LB: [FINAL LB].
+- 27 Sep alternatives: `--recipe sub_clean` (France = `france.chain`, P42 / P41 / P48 / P54 / P47 / P55), `sub_clean_iu34`
+  (the same with #34's India / US: 0 differing lines as sets vs its folder), `sub54` (the uploaded #54, LB 0.986685).
+  `--iu a10` returns India / US to #34 (byte-identical to #37_gc70 then).
+- Needs, beyond #37's files: the combiner inputs and boosters and, for `sub_clean`, P55's boosters and P48's `r_lo` (step 5).
+- Leaderboard: 0.986304 (#37_gc70) → **0.986685 (#54)** → final [FINAL LB].
+
+### Before 27 Sep 07:30 (history)
+
 - The command now produces **submission #37_gc70** (the default recipe `sub37`, public LB **0.986304**, our best as of
   27 Sep 01:00), byte for byte (both files; P43, 27 Sep):
   - India / US = #34: #8c (the pruner, m2_big, P13's bge cross-encoder, P17's US stacker) + P34's a10 stacker
@@ -280,4 +296,4 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
   `probes/P9-integrate/cold31.py`, 20 min). With the model and score files of step 5, a cold run needs ~3 h on the
   laptop; with step 6's caches (`p9/fr_idf144/`, `p9/fr31/` included) ~12 min (6 min once `p9/a10_*` exists).
 - Leaderboard: 0.9856 (#31) → 0.985647 (#34_veto) → 0.98596 (#34v_r90) → **0.986304 (#37_gc70)**; 27 Sep:
-  [slot — later winners, SUBMISSIONS.md].
+  see the 27 Sep status above.

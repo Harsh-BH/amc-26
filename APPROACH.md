@@ -219,7 +219,9 @@ US: +0.0005 on the US.
   independent judge found those two older rules mostly wrong (8% and 19% right), so they were dropped.
 - **Copies of the same record.** When two rows are exact copies and one is matched, the other now goes to the same
   business (P54): in the training answers that is right 100% of the time (60,319 groups).
-- **The final:** [FINAL — which upload, and why].
+- **The final:** #54's India/US lines with #37's France lines (`sub_iu54_frgc70`). The India/US checker is the gain
+  the holdout backs most strongly (10 SE); for France, #37's recipe is the one the leaderboard confirmed step by step,
+  while #54's France gained less than expected and carried the two rules the audit rejects. Public LB: [FINAL LB].
 
 **The rule about France.** France is the only test country that the training data never shows. The organisers allow a
 stricter rule "for countries unseen in training", so the code finds France exactly that way (countries in the test
@@ -250,7 +252,7 @@ rank smaller shortlists higher. The matches are exactly the ones of our best upl
 | #34v_r90 | + empty France businesses get their best candidate (≥ 0.90) | = #34 | 0.98596 |
 | #37_gc70 | + half-finished France groups completed (≥ 0.70) | = #34 | 0.986304 |
 | **#54** | the combined India/US checker + four new France stages (with P46 / P40) | India/US +0.0007 | **0.986685** (best so far) |
-| 27 Sep | [slots: later uploads, e.g. #54's India/US with #37's France] | | [LB] |
+| **final** (27 Sep) | #54's India/US checker + #37's France (`sub_iu54_frgc70`) | = #54 India/US | [LB] |
 | final | the best public upload (the organisers count its private score) | | **[FINAL LB]** |
 
 The jump from rules to a trained model (+21 points) was the biggest win: the model learned when a same-name business
@@ -301,7 +303,8 @@ leaderboard what our holdout predicted (≈ 0.989). France started at ≈ 0.93 a
 
 ## 11. What we are doing right now (27 Sep)
 
-1. **Final package (P43, 27 Sep):** one command (`run.py --recipe <final>`) rebuilds the final upload; [FINAL].
+1. **Final package (P43, 27 Sep):** one command (`run.py`, default recipe `sub_iu54_frgc70`) rebuilds the final upload
+   byte for byte; the zip holds it with the small shortlist (4.42 per business) and passed the official checker.
    Earlier (27 Sep night): one command (`run.py`, recipe `sub37`) rebuilt our then-best upload byte for
    byte; the zip `Yeti_submission.zip` holds it with the small shortlist file and passed the official checker.
 2. **Leaderboard uploads (27 Sep):** the staged next candidates (#37_gc70_hn90 first), then whatever the last probes

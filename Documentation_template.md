@@ -25,10 +25,11 @@ The pipeline has six stages. Every model in it runs locally, is MIT or Apache-2.
 4. **Matcher.** LightGBM (`m2_big`) on 65 label-free pair and candidate-list features.
 5. **Cross-encoder** on the matcher's uncertain band. It is **bge-reranker-v2-m3** (Apache-2.0, 568M), fine-tuned on an
    AWS SageMaker A10G GPU. It replaced an earlier multilingual-e5-small cross-encoder.
-6. **Two residual stackers, then the decision.** A US house-number stacker knows the data generator's "sibling"
-   house-number offsets. The a10 stacker (India + US) re-scores each record's best pair from its competition: the
-   runner-up, the Source 1's other pairs, same-name "twin" Source 1 among the candidates. Then each Source 2/3 record
-   goes to its single best Source 1, kept if p ≥ t.
+6. **Stackers, then the decision.** A US house-number stacker knows the data generator's "sibling" house-number offsets.
+   A combiner (India + US; P44 → P45 → P50) re-scores each record's best pair from its competition (the runner-up, the
+   Source 1's other pairs, same-name "twin" Source 1, exclusivity mass), house-number corruption signals, 18 other
+   models' opinions and the cross-encoder on every best pair. Then each Source 2/3 record goes to its single best
+   Source 1, kept if p ≥ t; a content-identical copy of an accepted record joins the same Source 1.
 
 **France** is 15% of the test set and has no labels, so every France step is label-free. It is the only test country
 absent from the training data, and the code finds it that way (`run.unseen()`: test Source 1 labels minus train Source 1
@@ -49,7 +50,8 @@ France's threshold and rules were validated with leaderboard uploads that change
   against 0.7708 for an exact-key rule baseline.
 - **Best public leaderboard: 0.986304** (#37_gc70, 26 Sep 23:32; France ≈ 0.966). The path there: 0.980017 (#5) →
   0.981142 (D4, France stricter) → 0.984072 (#9ab) → 0.9856 (#31, the France chain) → 0.985647 (#34_veto) → 0.98596
-  (#34v, empty-S1 rescue) → 0.986304 (#37, group completion). **27 Sep: [slot — best public upload of the day].**
+  (#34v, empty-S1 rescue) → 0.986304 (#37, group completion) → **0.986685** (#54, 27 Sep: the India/US combiner + the
+  France chain of 4.9). **Final entry: #54's India/US with #37's France (`sub_iu54_frgc70`), public LB [FINAL LB].**
 - The whole gap between holdout and leaderboard was France: at #5 the leaderboard implied India + US ≈ 0.989 and
   France ≈ 0.93.
 
@@ -137,7 +139,8 @@ shared ledger; nothing was merged without its number.
   |---|---|---|---|
   | blocking ∪ rule pairs | 27.5M | 15.87 (16.76 / 15.71 / 15.72) | 0.9917 (14.2 / S1 on holdout) |
   | after the pruner (what the matcher and the cross-encoder score) | 8,370,573 | 4.83 (5.14 / 4.90 / 4.63) | 0.9874 (4.30 / S1) |
-  | **after the sibling-decoy stage = the final `candidate_pairs.tsv`** (#37, `sub37_small`) | **7,658,102** | **4.42 (4.48 / 4.75 / 4.00)** | **0.9872** (India / US 4.31 / 3.92 per S1) |
+  | after the sibling-decoy stage (#37, `sub37_small`) | 7,658,102 | 4.42 (4.48 / 4.75 / 4.00) | 0.9872 (India / US 4.31 / 3.92 per S1) |
+  | **the final `candidate_pairs.tsv`** (`sub_iu54_frgc70 --drop-sibling-cands`: the decoy stage + P54's 7 duplicate candidates) | **7,658,108** | **4.42 (4.48 / 4.75 / 4.00)** | — |
 
   The pruner's list is 130 MB, down from 377 MB; the final file is 121 MB. 42,182 test Source 1 have no candidate in
   the final file (22,641 after the pruner), and all of them are among the empty answers.
@@ -358,11 +361,11 @@ sibling house-number offset. They run in this order after argmax + t.
 |---|---|---|---|---|
 | empty-S1 rescue (#34v) | an S1 left with no match takes its best argmax candidate if p ≥ 0.90. France had 6.51% empty S1 against ~5.7% true singletons in training | +1,205 S1 | LOCO −0.0017 / +0.0009 France-F0.5 (mixed) | 0.985647 → **0.98596** (+0.00031) |
 | group completion (#37, P37) | an S1 whose predicted group holds only S2 or only S3 records takes every free argmax candidate of the missing source with p ≥ 0.70, best first, up to 5 S2 / 6 S3. In the training truth 81% of S1 hold both sources and 14% one; France's predictions were one-sided for 20.7% of its S1 | +10,084 pairs to 9,322 S1; one-sided 20.7% → 17.1% | LOCO (density-matched t) US→India +0.00082, India→US +0.00204 France-F0.5; added-pair precision 0.71 / 0.85 | → **0.986304** (+0.00034) |
-| hn-equal extras (staged, `--hn-extra 0.9`) | a free argmax non-sibling SX with p ≥ 0.90 and the S1's own house number joins a two-sided group too | +18,180 pairs to 17,222 S1 | LOCO India→US +0.0021 (precision 0.93), US→India −0.0014 | [slot — 27 Sep] |
-| synthetic-brand recovery (staged, recipe `sub41`, P41) | the generator renames some records to a made-up brand glued from a closed set of syllables (P36 learns the 44 syllables label-free from the test names) and keeps the business's address. A free argmax non-sibling SX whose whole name is one such brand joins a non-empty group of the only S1 with its exact house number + street + city, p ≥ 0.30 | +5,742 pairs to 5,641 S1 | LOCO US→India +0.00008 (precision 1.00), India→US +0.00010 (0.99); train truth: 99.8% (US) / 96.1% (India) right | [slot — 27 Sep] |
-| address-less exact names (staged, recipe `sub40x`, P40) | a free argmax non-sibling SX with an empty address whose full normalised name (legal form kept) equals its S1's, a name no other S1 of the country carries; any S1 | +2,441 pairs to 2,360 S1 at p ≥ 0.90 (+4,692 at 0.70) | LOCO vs #41 at 0.70: US→India +0.00011 (precision 0.96), India→US +0.00003 (0.73) | [slot — 27 Sep] |
-| noise-word swap tier (staged, recipe `sub46_on43`, P46) | a true French variant swaps one S1 word for a generator noise word at the identical address ("Rapiere Sportive SAS" → "Rapiere SAS Développement"). A label-free lens over the argmax pairs keeps words whose one-word swaps almost never sit at a sibling house-number offset (s ≤ 0.05) and keep the house number (e ≥ 0.8); P33's guards (house number, street, city, unique remaining core, not a sibling word) | +3,185 pairs to 3,147 S1 on #43_r90 | holdout lens cell 94.7% true (US) / 96.9% (India) | [slot — 27 Sep] |
-| joint re-tune (staged, recipe `sub42_both`, P42) | all France bars re-tuned together on a 49,392-cell LOCO grid: accept at t 0.99 (post-rules at 0.9868), rescue 0.97, gc 0.70, hn extras 0.80 | +23,509 / −2,570 pairs, 24,331 S1; 3.14 → 3.22 per S1 | LOCO vs #37: +0.00003 / +0.00321 (chain analogue) | [slot — 27 Sep] |
+| hn-equal extras (staged, `--hn-extra 0.9`) | a free argmax non-sibling SX with p ≥ 0.90 and the S1's own house number joins a two-sided group too | +18,180 pairs to 17,222 S1 | LOCO India→US +0.0021 (precision 0.93), US→India −0.0014 | in #54 (as P42's hn-equal extras at 0.80) |
+| synthetic-brand recovery (staged, recipe `sub41`, P41) | the generator renames some records to a made-up brand glued from a closed set of syllables (P36 learns the 44 syllables label-free from the test names) and keeps the business's address. A free argmax non-sibling SX whose whole name is one such brand joins a non-empty group of the only S1 with its exact house number + street + city, p ≥ 0.30 | +5,742 pairs to 5,641 S1 | LOCO US→India +0.00008 (precision 1.00), India→US +0.00010 (0.99); train truth: 99.8% (US) / 96.1% (India) right | in #54 and #clean |
+| address-less exact names (staged, recipe `sub40x`, P40) | a free argmax non-sibling SX with an empty address whose full normalised name (legal form kept) equals its S1's, a name no other S1 of the country carries; any S1 | +2,441 pairs to 2,360 S1 at p ≥ 0.90 (+4,692 at 0.70) | LOCO vs #41 at 0.70: US→India +0.00011 (precision 0.96), India→US +0.00003 (0.73) | in #54; dropped after the audit (4.9) |
+| noise-word swap tier (staged, recipe `sub46_on43`, P46) | a true French variant swaps one S1 word for a generator noise word at the identical address ("Rapiere Sportive SAS" → "Rapiere SAS Développement"). A label-free lens over the argmax pairs keeps words whose one-word swaps almost never sit at a sibling house-number offset (s ≤ 0.05) and keep the house number (e ≥ 0.8); P33's guards (house number, street, city, unique remaining core, not a sibling word) | +3,185 pairs to 3,147 S1 on #43_r90 | holdout lens cell 94.7% true (US) / 96.9% (India) | in #54; dropped after the audit (4.9) |
+| joint re-tune (staged, recipe `sub42_both`, P42) | all France bars re-tuned together on a 49,392-cell LOCO grid: accept at t 0.99 (post-rules at 0.9868), rescue 0.97, gc 0.70, hn extras 0.80 | +23,509 / −2,570 pairs, 24,331 S1; 3.14 → 3.22 per S1 | LOCO vs #37: +0.00003 / +0.00321 (chain analogue) | in #54 and #clean (rescue 0.90) |
 
 - Final France profile (#37): 6.05% empty, 3.14 matches per Source 1 (US / India 5.7% / 3.38); 76.8% of France S1
   have both sources.
@@ -389,7 +392,7 @@ rule on the same France pair rows, applied in this order after the post-rules (t
   (0.986685, +0.00038 vs #37). So #clean drops both. They stay available as stages (`--swap`, `--noaddr`; the #54 order is
   recipe `sub54`).
 - vs #54: France only, 11,838 lines (+1,149 / −11,059 pairs). vs #37: France +32,731 / −3,241 pairs.
-- Shape after the chain: 3.26 matches per France S1 (India / US 3.38), 5.9% empty, 76.7% of S1 with both sources.
+- Shape before P55: 3.26 matches per France S1 (India / US 3.38), 5.9% empty, 76.7% of S1 with both sources.
 
 ## 5. Results & Error Analysis
 
@@ -401,7 +404,7 @@ rule on the same France pair rows, applied in this order after the post-rules (t
     holdout's own band.
   - Two independent audits (at #3) found no label leakage. The threshold-tuning optimism is at most 0.00003.
   - **Public leaderboard: best 0.986304 (#37_gc70, 26 Sep 23:32).** Final entry = the best public upload:
-    [slot — update if a 27 Sep upload beats 0.986304].
+    27 Sep: #54 0.986685 (best so far); final entry `sub_iu54_frgc70` (#54's India/US + #37's France): [FINAL LB].
 
 ### 5.1 Ablation — every step on the same full-corpus holdout
 
@@ -421,7 +424,9 @@ rule on the same France pair rows, applied in this order after the post-rules (t
 | e5-small CE trained 2 epochs (#7) | 0.98881 | 0.98869 | +0.00039 ± 0.00006 | `P11-ce-big/ce-s2P-plain-rule`; pipe `p9-model` (23:46) |
 | bge-reranker-v2-m3 CE instead of e5 (#8a) | — | — | **+0.00059 ± 0.00007** (P13 yardstick); +0.00055 ± 0.00007 on the pruned list | `P13-aws-rerank/pool-bge_poolck_holdout_vs_p11s2P_plain`; P17 |
 | + US house-number / support stacker (#8c) | **0.98990** | 0.98956 | +0.00033 ± 0.00005 (US +0.00055) | `P17-hn-stack/hn-stack-sup-on8a-bge-USonly`; pipe `p9-model` (26 Sep 07:45) |
-| + a10 residual stacker, India + US (#34, **final India/US**) | — (half 0 in-sample) | **0.98984** | +0.00021 ± 0.00006 LB-eq (India +0.00016, US +0.00036) | `P34-a10-stack/a10-twin_p2mask-sibguard-fit_h0-report_h1` |
+| + a10 residual stacker, India + US (#34) | — (half 0 in-sample) | 0.98984 | +0.00021 ± 0.00006 LB-eq (India +0.00016, US +0.00036) | `P34-a10-stack/a10-twin_p2mask-sibguard-fit_h0-report_h1` |
+| combiner + r_all instead of a10 (#44r) | — | — | **+0.000656 ± 0.000062 LB-eq over #34 (10.6 SE)** | `P44-meta-stack`, `P45-ens-stages` |
+| + full-holdout refit + 16 zoo columns (#52_max, **final India/US**) | — (fit on every holdout S1) | — | +0.000039 ± 0.000019 (refit) / +0.000025 ± 0.000029 (zoo) | `P50-idea-batch` |
 
 France cannot be scored on labels. Its changes were chosen on LOCO proxies and label-free profiles (section 4.6), then
 tested on the leaderboard.
@@ -443,8 +448,8 @@ The public leaderboard is a subset of test (all three countries).
 | #34v_r90 — 23:00 | #34_veto + France empty-S1 rescue at p ≥ 0.90 (4.8) | 0.98596 | +0.00031 |
 | #37_gc70 — 23:32 | #34v_r90 + France group completion at p ≥ 0.70 (4.8) | 0.986304 | +0.00034, France ≈ 0.966 |
 | **#54 — 27 Sep 05:32** | India / US: the combiner + r_all + zoo, full-holdout refit (4.4c); France: the chain of 4.9 with P46 / P40 and without P55 | **0.986685** | **best**: +0.00038, about a quarter of the expected +0.0015–0.002 |
-| 27 Sep, slot 2 | [#clean: #54 without P46 / P40, + P55 (4.9)] | [LB] | [Δ vs 0.986685] |
-| 27 Sep, slot 3 | [later upload] | [LB] | |
+| 27 Sep, slot 2 | **`sub_iu54_frgc70`**: #54's India / US (4.4c) + #37's France (4.7–4.8), the default final | [LB] | [Δ vs 0.986685] |
+| 27 Sep, slot 3 | [`sub_iu54_best`: + Qwen France CE, P55 band veto, acronym rule — only if the LB prefers it] | [LB] | |
 | 27 Sep, slot 4 | [later upload] | [LB] | |
 | 27 Sep, slot 5 | [later upload] | [LB] | |
 | **final entry** | the best public upload (organiser ruling) | **[FINAL LB]** | the zip's `output/` holds its matching file with the small candidate set |
@@ -523,11 +528,12 @@ changed both: India / US by the a10 stacker, France by the veto).
 
 - **Entry point:** `python src/run.py --split test --stage model --out output/` writes both TSVs, asserts the format
   rules and runs the official validator.
-  - The default recipe is `sub37` (#37_gc70, LB 0.986304); **the zip's `output/` is `--recipe sub37_small`** (the
-    same matches, 4.42 candidates per Source 1). `--recipe sub37_hn90|sub34_veto|sub34|sub31|sub31_veto|sub31_small`
-    gives the neighbours, `--recipe sub9ab|sub8c|sub9a|sub9b|sub9s|sub9d` the earlier France options, and
-    `--recipe sub7|sub6|sub5|sub4` earlier submissions.
-  - Each recipe reproduces its staged files byte for byte (`sub37`: both files of `output/sub37_gc70`).
+  - The default recipe is **`sub_iu54_frgc70`** (the final: #54's India / US + #37's France); **the zip's `output/` is
+    `--recipe sub_iu54_frgc70 --drop-sibling-cands`** (the same matching file, byte for byte, with 4.42 candidates per
+    Source 1). `--recipe sub_clean | sub_clean_iu34 | sub54` are the 27 Sep alternatives, `--recipe sub37 | sub37_hn90 |
+    sub41 | sub42_both | sub40x | sub43_r90 | sub46_on43 | sub34 | sub31 …` the 26–27 Sep night's, and
+    `--recipe sub9ab|sub8c|…|sub4` the earlier submissions; `--iu a10|full|fullzoo` switches India / US.
+  - Each recipe reproduces its staged folder (byte for byte or as ID sets per line; SUBMISSIONS.md lists which).
   - Options:
     - the unseen country's bars: `--t-country France=<t>`, `--veto <tau>`, `--rescue <p>`, `--gc <p>`,
       `--hn-extra <p>` (0 turns a rule off);
@@ -547,9 +553,10 @@ changed both: India / US by the a10 stacker, France by the veto).
   - `train_matcher.py` + `model.py`: m2_big.
   - `rerank.py`: e5 / bge cross-encoder scoring and the blend.
   - `stack.py`: the US house-number stacker and France's sibling rule.
-  - `a10.py`: #34's a10 residual stacker (India + US).
+  - `a10.py`: #34's a10 residual stacker (India + US); `iu_stack.py`: the final India / US combiner (P44 + P45 + P50).
   - `france.py`: the unseen-country chain (rebuild, R1 rescore, c_hn's house-number features, tier / bxneg / veto /
-    cap) and its decision-time additions (rescue, group completion, hn extras).
+    cap), its decision-time additions (rescue, group completion, hn extras, brand, address-less, noise-word tier) and
+    the 27 Sep `chain` (P42 / P41 / P48 / P54 / P47 / P55).
   - `submit_probs.py`: scored pairs → TSVs.
   - `metric.py`: macro F0.5.
 - **Guards:** `test_pipeline.py` (end to end, including an injected unseen country), `test_rules*.py`, and each module's
@@ -573,6 +580,9 @@ changed both: India / US by the a10 stacker, France by the veto).
 | pruner | LightGBM | MIT | 300 trees × 31 leaves |
 | US stacker | LightGBM | MIT | 200 trees × 31 leaves |
 | a10 stacker (India + US, #34) | LightGBM | MIT | 200 trees × 31 leaves, 15 columns |
+| India / US combiner (final, P44 / P45 / P50) | LightGBM, 5 seeds | MIT | 200 trees each; members: 2 house-number GBDTs + 16 zoo models (LightGBM, CatBoost Apache-2.0, small torch MLPs BSD) |
+| France combiner (P55, `sub_clean`) | LightGBM, 3 seeds | MIT | 200 trees × 31 leaves, 20 country-invariant columns |
+| France audit judge (P38, analysis only; `sub38` variants) | Qwen/Qwen3-Reranker-4B + LoRA | Apache-2.0 | 4.02B params (≤ 8B) |
 | France matcher (c_hn, #31) | LightGBM | MIT | 3,579 trees × 127 leaves, 70 features |
 | cross-encoder (final, #8a+) | BAAI/bge-reranker-v2-m3, fine-tuned | Apache-2.0 | 568M params |
 | cross-encoder (history, #4–#7) | intfloat/multilingual-e5-small, fine-tuned | MIT | 118M params |

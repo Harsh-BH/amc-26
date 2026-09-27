@@ -46,7 +46,7 @@ downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when i
 it only scores, decides and writes.
 
 **The final zip's files are `--recipe sub_iu54_frgc70 --drop-sibling-cands`** (the master's final as of 27 Sep 07:30;
-[FINAL LB]): **India / US = #54's combiner** (below) with P54's duplicate step, **the unseen country (France) = #37_gc70's
+public LB [FINAL LB]): **India / US = #54's combiner** (below) with P54's duplicate step, **the unseen country (France) = #37_gc70's
 chain** (`sub37` below: #31's chain + veto + empty-S1 rescue 0.90 + group completion 0.70). `--recipe sub_iu54_frgc70`
 rebuilds `output/sub_iu54_frgc70`'s matching file (the duplicate copies written after each line's sorted ids, as P54
 did); `--drop-sibling-cands` gives the small candidate set of the zip.
@@ -69,8 +69,9 @@ did); `--drop-sibling-cands` gives the small candidate set of the zip.
   list.
 - `--recipe sub_clean_iu34` keeps #34's India / US (the a10 stacker); `--recipe sub54` is the uploaded #54 (LB
   0.986685): the same chain with P40's address-less names (0.70) and P46's noise-word tier, in #54's order, no P55.
-- Reproduction ([VERIFY]): `sub_clean`, `sub_clean_iu34` and `sub54` rebuild `output/sub_clean`, `output/sub_clean_iu34`
-  and `output/sub54` as sets per line (the staged files append the duplicate copies at the line's end; run.py sorts).
+- Reproduction: `sub_iu54_frgc70` rebuilds its folder's matching file byte for byte; `sub_clean_iu34` its folder with 0
+  differing lines as ID sets (both files); `sub_clean`'s France chain equals its folder's France lines (+ the duplicate
+  step); `sub54`'s France is 2 pairs off (the union #43_r90 it descends from is not a sequential rule).
 - Extra inputs of the final chain: `data/work/p55/fr_plain_s{0,1,2}.txt` (P55's boosters, fit on the LOCO frames by
   `probes/P55-fr-combiner/p55.py scores`), `data/work/p48/r_lo_France.parquet` (P48's bge scores of the France pairs
   outside the CE band, AWS GPU job), `data/work/p36/morph_test.json` (the brand syllables; recomputed from the test

@@ -1,7 +1,7 @@
 """End-to-end pipeline: raw TSVs -> matching_results.tsv + candidate_pairs.tsv. Run from the repo root.
 
-    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # submission #37_gc70 (LB 0.986304)
-        --recipe sub37_small (the final zip: same matches, 4.42 candidates per S1) | sub37_hn90 | sub34 | sub31 | … | sub4
+    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # the final (27 Sep): sub_iu54_frgc70
+        --drop-sibling-cands (the final zip: same matches, 4.42 candidates per S1) | --recipe sub_clean | sub54 | sub37 | … | sub4
         --rescue T / --gc T / --hn-extra T / --veto TAU / --t-country France=T: the unseen country's bars (0 = off)
     python code/business_entity_resolution/src/run.py --split holdout --stage model   # dense holdout F0.5 -> pipe ledger
     python code/business_entity_resolution/src/run.py --split dev --stage model       # the small dev world
@@ -13,7 +13,8 @@ One country at a time, labels taken from the S1 file (an open set: France and un
   3 score   rules: the accept set (v0) | model: M2 LightGBM on 65 features (features.py, model.py) -> p, then for
             the countries the cross-encoder was trained on (India, US) the band 0.02 < p < 0.98 is rescored by
             rerank.py in its own process under the GPU lock and blended into p; then P17's house-number stacker (US)
-            and P34's a10 residual stacker (a10.py, India / US: #34). UNSEEN = the test S1 labels absent from train
+            and P34's a10 residual stacker (a10.py, India / US: #34), or (iu = full / fullzoo, the final) P44's
+            combiner with P45's r_all and 16 zoo members, refit on the full holdout (iu_stack.py). UNSEEN = the test S1 labels absent from train
             S1 (unseen(): France) get france.py's chain (#31, FRANCE = "fr31") -- the rebuilt idf144 world, c_hn,
             the bge blend, tier / bxneg / [veto] / cap. No country is named in the code: "France" in a name below is
             the chain's name (it was built for the one unseen test label)
@@ -22,7 +23,8 @@ One country at a time, labels taken from the S1 file (an open set: France and un
             unseen in training" is allowed, organisers 27 Sep); P6's label-free rule when it is None -- the t where
             the predicted empty-S1 rate equals the labelled countries' rate at M2's own optimum T_M2 (0.69), clipped
             to [T_M2, T_M2 + 0.2]. Then, UNSEEN only (france.complete): empty-S1 rescue (#34v, p >= 0.90) and
-            group completion (#37, p >= 0.70)
+            group completion (#37, p >= 0.70); or (recipe chain, #clean / #54) france.chain's 27 Sep stages
+            (P42 / P41 / P48 / P54 / P47 / P55). Last, P54's duplicate step (dup_add)
   5 write   one row per S1, matches ⊆ candidates, only S2-/S3- ids of the split; then the official validator
 Splits:
   test     the submission (all 1,732,544 test S1)
@@ -143,7 +145,7 @@ RECIPES["sub_iu54_frgc70"] = dict(RECIPES["sub37"], iu="fullzoo", dup="seen")
 # P40 address-less (both on the gc70-style lists, unioned) -> P46 tier -> P48 veto -> P47 class -> P54 rescue; no P55
 RECIPES["sub54"] = dict(RECIPES["sub_clean"], chain=dict(_CHAIN, xf=0.70, swap=0.05, p55=None,
                                                          order=("brand", "xf", "swap", "veto54", "cls", "u54")))
-RECIPE = "sub37"            # LB 0.986304 (best); later bars: --rescue / --gc / --hn-extra / --veto / --t-country
+RECIPE = "sub_iu54_frgc70"   # the final (27 Sep 07:30, master); #37_gc70 = sub37 (LB 0.986304), #54 = sub54 (0.986685)
 CHN = WORK / "p31" / "c_hn.txt"   # P26's hn-aware matcher (AWS: probes/P26-france-da, SETUP.md), for fr31
 CAP = None                  # --cap 5,6: at most 5 S2 and 6 S3 matches per S1 (the train truth never exceeds them)
 DROP_SIB_CANDS = False      # --drop-sibling-cands: unaccepted decoy-offset pairs leave candidate_pairs.tsv
