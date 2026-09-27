@@ -435,12 +435,25 @@ def ce_r(c, out):
     want = pd.Index(keys(fk.q1, fk.qx))
     del fk
     got = {}
+    id1, idx, s1_fold = None, None, None
     for sp, job in CE_JOBS.items():
-        t = pq.read_table(f"{CE_S3}/{job}/oof/oof_{sp}_{c}.parquet", filesystem=s3, columns=["q1", "qx", "fold", "r"])
-        k = keys(t.column("q1").to_numpy(), t.column("qx").to_numpy())
+        try:
+            t = pq.read_table(f"{CE_S3}/{job}/oof/oof_{sp}_{c}.parquet", filesystem=s3, columns=["q1", "qx", "fold", "r"])
+            q1, qx, fo = t.column("q1").to_numpy(), t.column("qx").to_numpy(), t.column("fold").to_numpy()
+        except OSError:                          # oof/ is written at job end; r/ (same r, entity ids) lands per country
+            t = pq.read_table(f"{CE_S3}/{job}/r/r_bge_pool_test_{c}.parquet", filesystem=s3, columns=["s1", "sx", "r"])
+            if id1 is None:
+                id1, idx = FT.ids("train", c)
+                _, _, s1_fold = s1_pool(c)
+            q1 = pc.index_in(pc.cast(t.column("s1"), pa.large_string()), value_set=id1)
+            qx = pc.index_in(pc.cast(t.column("sx"), pa.large_string()), value_set=idx)
+            assert q1.null_count == 0 and qx.null_count == 0
+            q1, qx = q1.to_numpy(), qx.to_numpy()
+            fo = s1_fold[q1]
+        k = keys(q1, qx)
         m = want.get_indexer(k) >= 0
         r = np.clip(t.column("r").to_numpy().astype(np.float64)[m], 1e-4, 1 - 1e-4)
-        got[sp] = pd.DataFrame({"k": k[m], "fold": t.column("fold").to_numpy()[m], "lr": np.log(r / (1 - r))})
+        got[sp] = pd.DataFrame({"k": k[m], "fold": fo[m], "lr": np.log(r / (1 - r))})
         print(f"  {c} CE_{sp}: {len(t):,} scored, {m.sum():,} in the frame, folds {sorted(set(got[sp].fold))} | "
               f"{time.time() - t0:.0f}s peak {peak():.2f} GB", flush=True)
         del t
@@ -456,9 +469,46 @@ def ce_r(c, out):
     print(f"{c}: CE lr on {len(R):,} of {len(want):,} frame rows | {time.time() - t0:.0f}s", flush=True)
 
 
+def ce_cs(c, out, jobs):
+    """Train folds 6-9 (-> sc_r69_<c>) and test (-> sc_rT_<c>) CE lr from the p80cs score files of ONE complete set of
+    jobs: score/score_<c>_<k>of<n>.parquet with q1, qx, fold (-1 = test), r_A, r_B; lr = mean of the clipped logits."""
+    import os
+    from pyarrow import fs
+    os.environ.setdefault("AWS_PROFILE", "harsh")
+    s3 = fs.S3FileSystem(region="ap-south-1")
+    t0 = time.time()
+    want = {n: pd.Index(keys(*(lambda d: (d.q1, d.qx))(pd.read_parquet(out / f, columns=["q1", "qx"]))))
+            for n, f in (("r69", f"sc_{c}.parquet"), ("rT", f"sc_T_{c}.parquet"))}
+    got = {"r69": [], "rT": []}
+    files = sorted(i.path for j in jobs for i in s3.get_file_info(fs.FileSelector(f"{CE_S3}/{j}/score"))
+                   if Path(i.path).name.startswith(f"score_{c}_"))
+    n = int(Path(files[0]).stem.split("of")[-1])
+    assert len(files) == n and len({Path(f).name for f in files}) == n, files
+    lg4 = lambda x: np.log(np.clip(x, 1e-4, 1 - 1e-4) / (1 - np.clip(x, 1e-4, 1 - 1e-4)))
+    for f in files:
+        t = pq.read_table(f, filesystem=s3, columns=["q1", "qx", "fold", "r_A", "r_B"])
+        k, fo = keys(t.column("q1").to_numpy(), t.column("qx").to_numpy()), t.column("fold").to_numpy()
+        lr = (lg4(t.column("r_A").to_numpy().astype(np.float64)) + lg4(t.column("r_B").to_numpy().astype(np.float64))) / 2
+        for name, m in (("r69", fo >= 6), ("rT", fo == -1)):
+            m = m & (want[name].get_indexer(k) >= 0)
+            got[name].append(pd.Series(lr[m].astype(np.float32), index=k[m]))
+        print(f"  {c} {Path(f).name}: {len(t):,} rows | {time.time() - t0:.0f}s peak {peak():.2f} GB", flush=True)
+        del t
+    for name, parts in got.items():
+        R = pd.concat(parts)
+        assert R.index.is_unique
+        kk = R.index.to_numpy(np.int64)
+        pd.DataFrame({"q1": (kk >> 32).astype(np.int32), "qx": (kk & 0xFFFFFFFF).astype(np.int32), "lr": R.to_numpy()}
+                     ).to_parquet(out / f"sc_{name}_{c}.parquet", index=False)
+        print(f"{c} {name}: CE lr on {len(R):,} of {len(want[name]):,} frame rows", flush=True)
+
+
 def attach_r(D, path):
-    """CE logit lr per frame row (NaN where the CE has not scored the pair)."""
+    """CE logit lr per frame row (NaN where the CE has not scored the pair); sc_r_<c> also takes sc_r69_<c> if present."""
     R = pd.read_parquet(path)
+    extra = path.with_name(path.name.replace("sc_r_", "sc_r69_"))
+    if "sc_r_" in path.name and extra.exists():
+        R = pd.concat([R, pd.read_parquet(extra)], ignore_index=True)
     lr = pd.Series(R.lr.to_numpy(np.float32), index=keys(R.q1, R.qx))
     assert lr.index.is_unique
     D["lr"] = lr.reindex(keys(D.q1, D.qx)).to_numpy(np.float32)
@@ -515,6 +565,85 @@ def hybrid(out, ho=False, cs=C, ce=False):
     print(json.dumps({k: v for k, v in res.items() if k.startswith("lbeq")}), flush=True)
 
 
+def c_scores(c, out, ce):
+    """Stage-C p of every frame row from the saved boosters (C_A on 4-5, C_B on 2-3, mean elsewhere = fit's s)."""
+    import lightgbm as lgb
+    mtag = "sc_ce" if ce else "sc"
+    D = pd.read_parquet(out / f"sc_{c}.parquet")
+    if ce:
+        D = attach_r(D, out / f"sc_r_{c}.parquet")
+    X = feats(D)
+    D = D[["q1", "qx", "fold", "y", "s3"]]
+    bs = {k: lgb.Booster(model_file=str(out / f"{mtag}_C{k}_{c}.txt")) for k in "AB"}
+    f, s = D.fold.to_numpy(), np.empty(len(D))
+    for k, fo in (("A", (4, 5)), ("B", (2, 3))):
+        m = np.isin(f, fo)
+        s[m] = bs[k].predict(X[m])
+    m = ~np.isin(f, (2, 3, 4, 5))
+    s[m] = (bs["A"].predict(X[m]) + bs["B"].predict(X[m])) / 2
+    return D, s
+
+
+def blend(out, cs=C, ce=True, WS=(0.3, 0.5, 0.7), grid=np.round(np.arange(0.30, 0.961, 0.01), 2)):
+    """q = w logit(p54) + (1-w) logit(stage-C p) on fold-0 pairs (one side missing -> the other side's logit; other folds'
+    rivals keep stage C), then owner re-decision + caps + threshold t. (w, t) tuned on one fold-0 half, reported on the
+    other, both directions; w = 0 is stage C with a fold-0-half t, w = 1 today's p54 re-decided."""
+    mtag = "sc_ce" if ce else "sc"
+    res = {}
+    for c in cs:
+        t0 = time.time()
+        id1, idx = FT.ids("train", c)
+        _, n_true, _ = s1_pool(c)
+        D, s = c_scores(c, out, ce)
+        s0 = pd.read_parquet(out / f"{mtag}_s0_{c}.parquet")
+        m0 = D.fold.to_numpy() == 0
+        assert np.allclose(s[m0], s0.s.to_numpy(), atol=1e-5), "c_scores != fit's fold-0 s"
+        F = pd.read_parquet(W / f"p76/F_{c}.parquet", columns=["g", "y", "is_s3", "p54", "sx_id"])
+        S = pd.read_parquet(W / f"p76/S_{c}.parquet", columns=["id", "n_true", "half"])
+        q_s = pc.index_in(pa.array(S.id.to_numpy(object), pa.large_string()), value_set=id1).to_numpy()
+        fq1 = q_s[F.g.to_numpy()]
+        fqx = pc.index_in(pa.array(F.sx_id.to_numpy(object), pa.large_string()), value_set=idx).to_numpy()
+        fk, dk = keys(fq1, fqx), keys(D.q1, D.qx)
+        j = pd.Index(dk).get_indexer(fk)                                   # F row -> frame row (-1: pruned by p floor)
+        lp54 = logit(F.p54.to_numpy(np.float64))
+        miss = j < 0
+        q1 = np.r_[D.q1.to_numpy(np.int64), fq1[miss]]
+        qx = np.r_[D.qx.to_numpy(np.int64), fqx[miss]]
+        s3 = np.r_[D.s3.to_numpy(), F.is_s3.to_numpy()[miss] > 0.5]
+        y = np.r_[D.y.to_numpy(), F.y.to_numpy()[miss]]
+        ls = np.r_[logit(s), lp54[miss]]
+        l54 = np.full(len(q1), np.nan)
+        l54[j[~miss]] = lp54[~miss]
+        l54[len(D):] = lp54[miss]
+        base = fb(np.bincount(F.g.to_numpy()[(F.p54.to_numpy() >= T_BASE) & F.y.to_numpy()], minlength=len(S)),
+                  np.bincount(F.g.to_numpy()[F.p54.to_numpy() >= T_BASE], minlength=len(S)), S.n_true.to_numpy())
+        h = S.half.to_numpy()
+        fs = {}
+        for w in (0.0,) + tuple(WS) + (1.0,):
+            q = np.where(np.isnan(l54), ls, w * np.nan_to_num(l54) + (1 - w) * ls)
+            if w == 1.0:
+                q = np.where(np.isnan(l54), ls, l54)
+            pq_ = 1 / (1 + np.exp(-q))
+            cand = owner_rank(q1, qx, s3, pq_)
+            for t in grid:
+                fs[(w, float(t))] = per_s1(q1, y, cand & (pq_ >= t), q_s, n_true) - base
+        r = {"n_s1": len(S), "argmax_pairs_outside_frame": float(miss.mean())}
+        for fit_h in (0, 1):
+            m_fit, m_rep = h == fit_h, h == 1 - fit_h
+            for w in (0.0,) + tuple(WS) + (1.0,):
+                tb = max((k for k in fs if k[0] == w), key=lambda k: fs[k][m_fit].mean())
+                d = fs[tb][m_rep]
+                r[f"w{w}_h{fit_h}->h{1 - fit_h}"] = dict(t=tb[1], fit=float(fs[tb][m_fit].mean()), mean=float(d.mean()),
+                                                         se=float(d.std(ddof=1) / np.sqrt(len(d))))
+            kb = max(fs, key=lambda k: fs[k][m_fit].mean())
+            d = fs[kb][m_rep]
+            r[f"best_h{fit_h}->h{1 - fit_h}"] = dict(w=kb[0], t=kb[1], mean=float(d.mean()), se=float(d.std(ddof=1) / np.sqrt(len(d))))
+        res[c] = r
+        print(c, json.dumps(r), f"| {time.time() - t0:.0f}s peak {peak():.2f} GB", flush=True)
+        (out / f"{mtag}_{c}_blend.json").write_text(json.dumps(r, indent=1))
+    return res
+
+
 def _owner(qx, s):
     """Row index of each row's SX owner (best s), per row."""
     o = np.lexsort((-s, qx))
@@ -544,11 +673,12 @@ def selftest():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("frame", "fit", "test", "hybrid", "ce_r", "selftest"))
+    ap.add_argument("cmd", choices=("frame", "fit", "test", "hybrid", "blend", "ce_r", "ce_cs", "selftest"))
     ap.add_argument("country", nargs="?")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--ho", action="store_true", help="rehearsal on fold 0 alone (m2_big p, 6 pseudo folds)")
     ap.add_argument("--ce", action="store_true", help="add the p80ce CE features (sc_r_<c> / sc_rT_<c>)")
+    ap.add_argument("--jobs", default="", help="ce_cs: comma-separated p80cs jobs forming ONE complete score set")
     ap.add_argument("--out", type=Path, default=W / "p80")
     ap.add_argument("--test-p", type=Path, help="test: dir with score_test.py's per-X-file test p")
     a = ap.parse_args()
@@ -556,6 +686,10 @@ if __name__ == "__main__":
     frac = 0.01 if a.smoke else 1.0
     if a.cmd == "selftest":
         selftest()
+    elif a.cmd == "blend":
+        blend(a.out, (a.country,) if a.country else C, a.ce)
+    elif a.cmd == "ce_cs":
+        ce_cs(a.country, a.out, a.jobs.split(","))
     elif a.cmd == "ce_r":
         ce_r(a.country, a.out)
     elif a.cmd == "hybrid":
