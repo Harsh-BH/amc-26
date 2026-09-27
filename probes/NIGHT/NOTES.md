@@ -45,3 +45,4 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - 05:35 LOCO full-chain removal tests (loco_chain.py): rare-word add1/sub1, typo hn-missing, eq hn-diff — all DISAGREE between directions (India-target +, US-target −, or reverse). No ship.
 - 05:40 N55 low-p (≤0.02) pairs inspected: same template, no floor needed. Prepared N56-review brief (adversarial Gemini review of N54/N55) for when the quota resets (~08:15).
 - 06:40 Harsh's #54 LB 0.986685 (+0.00038, ~1/4 expected); P38 audit suspects P46 (CE-blind). Slot test: noise-word S1s 2.88–2.98 other-accepted vs decoy-word S1s 3.26 (US calib true 3.07 / false 3.52) → supports P46/N55 true, N54 decoy. FOR_HARSH updated with slot-use order.
+- 07:00 WAKEUP.md plan = sub_iu54_frgc70 (gc70 France). LOCO N54 on gc70-style chain: +0.0296 / +0.00015 both halves; ≈2.4k France removals on gc70-like proxy. FOR_HARSH top section rewritten for that base.

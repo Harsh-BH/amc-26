@@ -1,4 +1,14 @@
-# From Aditya's laptop (night run, 27 Sep 03:00–05:30 IST) — for Harsh / the master
+# From Aditya's laptop (night run) — for Harsh / the master   [updated 07:00 for WAKEUP.md's plan]
+
+## ▶ Fits your plan: `sub_iu54_frgc70` + N54 (France-only REMOVAL of same-address decoy-word pairs)
+  .venv/bin/python probes/N54-fr-decoyword-removal/p54.py cells          # 1 min, needs data/work/p31/pairs_France.parquet
+  .venv/bin/python probes/N54-fr-decoyword-removal/p54.py build output/sub_iu54_frgc70 output/sub_iu54_frgc70_n54 all
+  → validator. On a gc70-like France it removes ≈ 2.4k pairs (196 S1 become empty). **LOCO on a gc70-style chain
+  (base + gc 0.7 + rescue 0.9, no hn-extra), both halves: US→India +0.0296 / +0.0297 ± 0.0005 (10,066 removed, 0.9%
+  true); India→US +0.00011 / +0.00019 ± 0.00003 (84 removed, 7% true)** — probes/NIGHT/loco_gc70.py. Precision-side,
+  matches "France is precision-limited". Expected ≈ +0.0002–0.0003 over sub_iu54_frgc70. Good candidate for slot 2/3.
+N55 (+ noise-word variants) is a recall add of the same template as P46 — only if the P46 question comes out in P46's favour.
+
 
 **Re the #54 shortfall (LB +0.00038 vs +0.0015–0.002 expected):** one France component that the gates never isolated is
 P42's hn-extra (p ≥ 0.8, no word check). In a local LOCO rebuild (US→India, France-like chain) the simulated hn-extra adds
