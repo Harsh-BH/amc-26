@@ -19,7 +19,7 @@ cross-college allowed. One Unstop login per person at a time — simultaneous lo
 Deliverables: `matching_results.tsv` uploads during the run, then `<team_name>_submission.zip`
 (outputs + runnable code + filled `Documentation_template.md`, no page limit). Layout in `docs/PROBLEM.md`.
 
-**[FINAL LB] 0.988292** — `sub77` (27 Sep 16:56), in `output/final/Yeti_submission.zip`. It rebuilds byte for byte with
+**[FINAL LB] 0.988475** — `sub84` (27 Sep 20:02): `sub77` + the evening France change sets — xlf (address-less, legal form differs only), groupe swaps, P73 #79q, P76 R3, P80 (address-less, legal form kept), broad type-word veto, sub68fr, never-candidate noise swaps, narrow P73 veto; rebuilt byte for byte by `final_build.py … --upto 41` then `final_patch.py output/sub77 output/sub84`. Before that: **0.988292** — `sub77` (27 Sep 16:56), in `output/final/Yeti_submission.zip`. It rebuilds byte for byte with
 `run.py --recipe sub66_final --drop-sibling-cands` then `final_build.py` (SETUP.md §7).
 
 ## Setup

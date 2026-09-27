@@ -219,7 +219,8 @@ US: +0.0005 on the US.
   independent judge found those two older rules mostly wrong (8% and 19% right), so they were dropped.
 - **Copies of the same record.** When two rows are exact copies and one is matched, the other now goes to the same
   business (P54): in the training answers that is right 100% of the time (60,319 groups).
-- **[FINAL LB] The final (`sub77`, public LB 0.988292, our best, +0.0009 over `sub66_final`):** `sub66_final` plus six
+- **[FINAL LB] The final: `sub84` (27 Sep 20:02): `sub77` + the evening France change sets — xlf (address-less, legal form differs only), groupe swaps, P73 #79q, P76 R3, P80 (address-less, legal form kept), broad type-word veto, sub68fr, never-candidate noise swaps, narrow P73 veto; rebuilt byte for byte by `final_build.py … --upto 41` then `final_patch.py output/sub77 output/sub84`; public LB 0.988475 (+0.00018 over `sub77`).**
+- **The previous final (`sub77`, public LB 0.988292, +0.0009 over `sub66_final`):** `sub66_final` plus six
   France change sets: a France judge trained on made-up pairs built from France's own records (P67), word-role pairs
   (P70), pairs just under France's bar that the language model strongly backs (P69), **removal** of decoy pairs where
   only an organisation word changed ('X Sportive' → 'X Comite', N54), and noise-word swaps like 'developpement'
