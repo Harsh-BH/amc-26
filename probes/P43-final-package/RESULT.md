@@ -1,5 +1,24 @@
-# P43-final-package — RESULT (27 Sep 08:35: second task, the final package for sub_iu54_frgc70; night task below)
-## TL;DR            (3 lines: the answer, the number, the recommendation)
+# P43-final-package — RESULT (27 Sep 14:50: third task, the final = sub66_final; earlier tasks below)
+## TL;DR — third task (27 Sep 13:45 → 14:50): P64 + P66 in src, the final zip on sub66_final (LB 0.987391)
+- **`run.py --recipe sub66_final` (now the default) rebuilds `output/sub66_final/matching_results.tsv` byte for byte**
+  (md5 c6246285…, 0 differing lines). Candidates: 1 France line differs, the #54-file dup candidate (same as `sub_iu54_best`).
+  - Stage counts equal the staged builds: P66 class 10,403 of 40,822 address-less argmax pairs; 1,900 adds on #37's base
+    (= `output/sub66`); P64 veto 344 (= `output/sub64`); 1,884 adds fit on 1,810 S1; 0 P64 conflicts; second dup pass 0.
+  - New code: `france.lf_sig / lf_class / lf_veto` (P64, verbatim `lf.py` + P3 text names), `france.xfc` (verbatim
+    `rule66.xfc`), `france.xfc_adds` (rule40.add = `gc_add(..., sib | ~cls, t, ones, empty=True)`), `run.xfc_frame`
+    (#37's frame: bge post-rules p, its argmax, `complete(t, 0.90, 0.70)`) and `run.xfc_fit` (fr66 build's fit: SX
+    owned → drop, caps on the line, P64 class 4 on raw names, appended sorted after the line). Recipes `sub64`,
+    `sub64_frgc70`, `sub66`, `sub66_final`. Only `sub66_final` was run in full (28 min, paused by memguard ~10 min).
+  - Pitfall fixed: `np.isin(object_array, list)` loops per value (≈10^11 compares); use `pd.Series.isin`.
+- **Final zip = `output/sub66_final_small`** (md5 dd580e52…, 30 files, 93.9 MB; official validator `--check-ids` PASS
+  on the unzipped zip, SageMaker p43-val-zip66; backed up to S3 + Drive `final/`): the sub66_final matching file +
+  `sub_iu54_best_small`'s candidates (7,660,700, 4.42/S1, md5 759a20e6…). That is what `--drop-sibling-cands` writes for
+  this recipe: P64 / P66 / the second dup pass never touch run.py's candidate list (P66's adds are non-sibling argmax
+  pairs, which the decoy stage keeps). Checked: all 5,805,047 matched pairs are inside it; not re-run in full.
+  - code.zip of `output/sub64` and `output/sub66_final` rebuilt from main's src (hard link removed first).
+  - Old final zip (sub_iu54_frgc70) kept as `final/archive/Yeti_submission_sub_iu54_frgc70.zip` on S3 and Drive.
+
+## TL;DR — second task (27 Sep 06:30 → 08:50)
 - **The final zip is built, validated and backed up** (27 Sep 08:50). `output/final/Yeti_submission.zip` (md5 96ef3224…,
   93.8 MB, 30 files, the rulings' layout) holds `output/sub_iu54_frgc70_small`.
   - Its `matching_results.tsv` is **byte-identical to the master's final `output/sub_iu54_frgc70`** (md5 7f559944…).

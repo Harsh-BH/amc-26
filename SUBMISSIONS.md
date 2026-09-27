@@ -112,7 +112,8 @@ India/US lines + `sub_iu54_best`'s France chain + P64's veto + P66's adds; `run.
 rebuilds its matching file byte for byte (md5 c6246285…; candidates 1 France line off, the #54 dup candidate).
 `output/final/Yeti_submission.zip` = `output/sub66_final_small` (the same matching file + `sub_iu54_best_small`'s
 candidates, which `--recipe sub66_final --drop-sibling-cands` writes: P64 / P66 / the second dup pass leave the
-candidate list alone; every match is in it) + src +
+candidate list alone; every match is in it; zip md5 dd580e52…, validator `--check-ids` PASS on the unzipped zip,
+SageMaker p43-val-zip66) + src +
 README + requirements + the filled doc; backups `s3://sagemaker-114872709824-ap-south-1/amc26-offload/final/` and
 `gdrive:amc26-offload/final/`. **The zip must hold the best-public upload's matching file**, rebuilt by its code.
 Which staged folders `run.py --split test --stage model` rebuilds (27 Sep recipes first):
