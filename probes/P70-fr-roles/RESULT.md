@@ -109,6 +109,27 @@ The class: address-less SX whose name core equals a unique S1 core, with a full 
   - xfc leftovers: 46. Pools too small.
 - **`sub77_xlf` under the same strict pool test:** it fails the US-target pool ((a) .46, (b) .63) and passes only on all-pairs precision. The free-share diagnostic (France 50% / 25% ~ India target 39% / 26%) predicts it transfers.
 
+## Addendum 5 (27 Sep ~21:05): India/US combiner + generator traces + verified-merge anchors → sub86 / sub87
+These ideas come from the public repo present-day-ber-amlc-2026 (their stage C). The code is our own; none of theirs was used.
+- **Features:**
+  - 7 generator traces (`traces.py`): same site, S1s at the SX's site, S1s at the S1's site, unique-site match, last-token swap at the site, same-source address agreement, P36 pseudo-word name.
+  - 5 anchors (`anchors.py`): anchor count, max name / address token-set ratio to the S1's other pa ≥ .9 argmax pairs, exact-address match, name ratio to the S1.
+- **Holdout test** (paired, shipped fullzoo COLS + params, t .71):
+
+  | features added | fit h0 → report h1 | fit h1 → report h0 |
+  |---|---|---|
+  | traces | +0.000075 ± 0.000032 | −0.000003 ± 0.000029 |
+  | anchors | −0.000003 ± 0.000030 | +0.000020 ± 0.000029 |
+  | **both** | **+0.000046 ± 0.000033** | **+0.000056 ± 0.000030** |
+
+  Both halves are positive with both sets together, ≈ +0.00005 LB.
+- **Also tested:** the rival's expected-F0.5 prefix decision on our p54 gives 0.0000 (`expf.py`).
+- **Ship** (`ta_ship.py fit | probs | build BASE OUT`):
+  - Boosters `data/work/p70/ta_s{0..4}.txt`; probs `data/work/p70/prob_test_{India,US}_ta.parquet`.
+  - The builder must first rebuild the base's India/US lines from the fullzoo probs: 0 missing, and exactly the 14 P54 dup copies extra, which it carries over.
+  - **sub86** = sub84 France + new India/US: India 1,254 S1 (+654 / −605), US 911 S1 (+548 / −365). France byte-identical, --check-ids PASS, md5 171e1953….
+  - **sub87** = sub85 France + the same India/US lines: --check-ids PASS, md5 93d4b54d….
+
 ## Evidence         (France-F0.5 dF on the LOCO target; A→B = fit on A's out-of-domain frame, bars picked on A, applied to B; h1 = report half ± SE)
 | ledger name | world | key metrics (India→US / US→India) | verdict |
 |---|---|---|---|

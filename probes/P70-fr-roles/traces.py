@@ -44,17 +44,26 @@ def build(split, c):
     del t, k1
     # SX of the frame
     ux = pd.unique(sx)
-    rx = p70._raw(split, ux, [2, 3], ["business_name", "business_address", "country"])
     rfx = pd.read_parquet(W / f"rf_{split}_sx_{c}.parquet", columns=["id", "core", "city"]).set_index("id")
-    ax = rx.business_address.reindex(ux).fillna("")
-    kx = p70._street(ax, pd.Series([c] * len(ux), index=ax.index)).to_numpy()
-    cityx = rfx.city.reindex(ux).fillna("").to_numpy()
-    keyx = pd.Series(np.where((kx != "") & (cityx != ""), kx + "|" + cityx, ""), index=ux)
-    addrx = pd.Series(N.fold(ax).str.replace(r"[^a-z0-9]", "", regex=True).to_numpy(), index=ux)
     M = set(json.loads((W / f"p36/morph_{'test' if split == 'test' else 'train'}.json").read_text()))
-    nm = rx.business_name.reindex(ux).fillna("").astype(str).to_numpy()
-    un, inv = np.unique(nm, return_inverse=True)
-    gibx = pd.Series(G.is_gib(un, M)[inv], index=ux)
+    kl, al, gl = [], [], []
+    for i in range(0, len(ux), 700_000):           # chunked: test frames hold ~3.7M SX
+        u = ux[i:i + 700_000]
+        rx = p70._raw(split, u, [2, 3], ["business_name", "business_address", "country"])
+        ax = rx.business_address.reindex(u).fillna("")
+        kx = p70._street(ax, pd.Series([c] * len(u), index=ax.index)).to_numpy()
+        cityx = rfx.city.reindex(u).fillna("").to_numpy()
+        kl.append(np.where((kx != "") & (cityx != ""), kx + "|" + cityx, ""))
+        al.append(N.fold(ax).str.replace(r"[^a-z0-9]", "", regex=True).to_numpy())
+        nm = rx.business_name.reindex(u).fillna("").astype(str).to_numpy()
+        un, inv = np.unique(nm, return_inverse=True)
+        gl.append(G.is_gib(un, M)[inv])
+        del rx, ax, kx, nm
+        print(f"  sx chunk {i + len(u):,}/{len(ux):,} peak {p70.peak():.2f} GB", flush=True)
+    keyx = pd.Series(np.concatenate(kl), index=ux)
+    addrx = pd.Series(np.concatenate(al), index=ux)
+    gibx = pd.Series(np.concatenate(gl), index=ux)
+    del kl, al, gl
     ks1, ksx = kser.reindex(s1).fillna("").to_numpy(), keyx.reindex(sx).fillna("").to_numpy()
     out = pd.DataFrame(index=A.index)
     out["t_site_same"] = ((ks1 == ksx) & (ksx != "")).astype(np.float32)
