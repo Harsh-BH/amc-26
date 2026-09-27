@@ -83,8 +83,22 @@ def gate(*jobs):
     print("PASS" if ok else "FAIL")
 
 
-def build(tau, *jobs):
-    """France: output/sub79q minus its France pairs with g >= .98 and seed-mean independent logit < tau -> output/sub81v."""
+def _adds(new, base):
+    """(s1, sx) pairs a staged file has that its base lacks (streamed, only differing lines)."""
+    out = set()
+    with open(ROOT / "output" / base / "matching_results.tsv") as fb, open(ROOT / "output" / new / "matching_results.tsv") as fn:
+        next(fb); next(fn)
+        for lb, ln in zip(fb, fn):
+            if lb != ln:
+                a, _, b0 = lb.rstrip("\n").partition("\t"); _, _, b1 = ln.rstrip("\n").partition("\t")
+                out |= {(a, x) for x in set(b1.split(",")) - set(b0.split(",")) - {""}}
+    return out
+
+
+def build(tau, *jobs, base="sub81", out_name="sub81v"):
+    """France: <base> minus its France pairs with g >= .98 and seed-mean independent logit < tau -> output/<out_name>.
+    Lead's rule (27 Sep 19:10): never veto a pair from the LB-/analogue-backed, CE-blind add classes P71 (71a), P41 (41),
+    xlf (sub77_xlf vs sub77) or groupe (sub78g vs sub77); report how many would-be vetoes each class shields."""
     import shutil
     for j in jobs:
         ev73.fetch(j)
@@ -92,21 +106,38 @@ def build(tau, *jobs):
     r, ns = fc_logit(jobs, "France", len(f))
     v = f[(f.g.to_numpy() >= 0.98) & (r < float(tau))]
     veto = set(zip(v.s1, v.sx))
-    src, out = ROOT / "output/sub79q", ROOT / "output/sub81v"
+    ch = pd.read_parquet(ROOT / "data/work/p78/final_changes.parquet")
+    shield = {st: set(zip(ch.s1[ch.step == st], ch.sx[ch.step == st])) for st in ("71a", "41")}
+    shield["xlf"] = _adds("sub77_xlf", "sub77")
+    shield["groupe"] = _adds("sub78g", "sub77")
+    src, out = ROOT / "output" / base, ROOT / "output" / out_name
     out.mkdir(exist_ok=True)
-    n = 0
+    rm, shielded = 0, {k: 0 for k in shield}
     with open(src / "matching_results.tsv") as fi, open(out / "matching_results.tsv", "w") as fo:
         fo.write(next(fi))
         for line in fi:
             a, _, b = line.rstrip("\n").partition("\t")
-            ids = [x for x in b.split(",") if x]
-            keep = [x for x in ids if (a, x) not in veto]
-            n += len(ids) - len(keep)
+            ids, keep = [x for x in b.split(",") if x], []
+            for x in ids:
+                if (a, x) in veto:
+                    hit = [k for k, sset in shield.items() if (a, x) in sset]
+                    if hit:
+                        for k in hit:
+                            shielded[k] += 1
+                        keep.append(x)
+                    else:
+                        rm += 1
+                        continue
+                else:
+                    keep.append(x)
             fo.write(a + "\t" + ",".join(keep) + "\n")
     cp = out / "candidate_pairs.tsv"
     if not cp.exists():
         shutil.copyfile(src / "candidate_pairs.tsv", cp)
-    print(json.dumps({"tau": float(tau), "seeds": ns, "veto_candidates": len(veto), "removed_from_sub79q": n}))
+    info = {"base": base, "tau": float(tau), "seeds": ns, "veto_candidates_in_frame": len(veto), "removed": rm,
+            "shielded_by_class": shielded, "shield_sizes": {k: len(x) for k, x in shield.items()}}
+    (out / "vt73_build.json").write_text(json.dumps(info, indent=1))
+    print(json.dumps(info))
 
 
 if __name__ == "__main__":

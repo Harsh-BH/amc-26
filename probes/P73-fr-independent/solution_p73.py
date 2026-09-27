@@ -24,7 +24,7 @@ def main(train_dir, test_dir, model_dir, out_dir, params):
             torch.manual_seed(seed)
             _ms, _rng = torch.manual_seed, p13sol.np.random.default_rng
             torch.manual_seed = lambda s, _ms=_ms: _ms(int(s) + seed)
-            p13sol.np.random.default_rng = lambda s=None, _r=_rng: _r(None if s is None else int(s) + seed)
+            p13sol.np.random.default_rng = lambda s=None, _r=_rng: _r(int(s) + seed) if isinstance(s, (int, p13sol.np.integer)) else _r(s)
         tok, sc, pad = job.load("bge")
         job.train("bge", tok, sc, pad, tag, [f"ind{k}"], float(run.get("cap_s", 2400)))
         if seed:
