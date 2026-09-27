@@ -1,25 +1,28 @@
-# P50-idea-batch — RESULT (07:05; P50 is also the master's final-stack integrator, updated as pieces land)
+# P50-idea-batch — RESULT (final, 09:20; P50 also served as the master's final-stack integrator 04:50–09:20)
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
-- **None of the six ideas passes its gate.** A (hn suffixes) and B (legal forms) are already handled by the parser. C (France exclusivity veto) is ≤ +0.00006 LOCO, and France's vetoed pairs are CE-endorsed (r median 0.996), so it would cut true pairs. D (CE order TTA) collapses (swap AUC 0.66). F (20 seeds) is ±0. E (full-holdout refit) is +0.000039 ± 0.000019 for 1.5× vs 1× data: positive in every fold and half, but below the gate.
-- **Staged (all validator --check-ids PASS):**
-  - `sub50e` = #48 + the full-holdout refit, ≈ +0.00006–0.00009;
-  - `sub52_max` = + zoo columns + cls80;
-  - `sub_all_v3` = + P55 + P54 u .995 + dup (ON HOLD);
-  - **`sub_clean`** = the master's audit-driven rebuild of #54 without P46 / P40, + P55 + dup. It is the next upload.
-- Integrator tooling: `asm50.py` (France stage ledger + subset assembler; it reproduces #54 exactly), `splice_lines.py`, `diffc.py`, `overlap.py`, `cc_check.py`, `caps.py`.
+- **None of the six ideas passes its gate.**
+  - A (hn suffixes) and B (legal forms) are already handled by the parser.
+  - C (France exclusivity veto) is ≤ +0.00006 LOCO, and France's vetoed pairs are CE-endorsed (r median 0.996).
+  - D (CE order TTA) collapses (swap AUC 0.66). F (20 seeds) is ±0.
+  - E (full-holdout refit) is +0.000039 ± 0.000019 at 1.5× data: positive everywhere, below the gate. The master kept it: sub54's India/US is this refit + zoo columns.
+- **As integrator I built and validated (--check-ids PASS) the final candidates:**
+  - `sub_iu54_frgc70` (the default final, zipped by P43);
+  - `sub_iu54_best` (upload #2: Qwen France + P55 no-rescue veto + P62 acronym + dup, expected ≈ +0.00035);
+  - fallbacks `sub_iu54_fr38`, `sub_iu54_frgc70_acro`, `sub_iu54_fr38_55n`, `sub_iu54_fr55b(_norescue)`, `sub_clean`, `sub38_clean_p55`.
+- Tooling left for the master: `asm50.py` (France stage ledger + subset assembler; it reproduces #54 exactly), `p55n.py`, `rm_pairs.py`, `acro_fit.py`, `splice_lines.py`, `diffc.py`, `e_ship.py` / `e_zoo.py` (combiner refit + test scoring).
 
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
-- **07:00 master decision:** the DEFAULT final is `output/sub_iu54_frgc70` (sub54 India/US + gc70 France; P57 / P62 found the India/US combiner real on honest frames, while sub54's France rules netted −0.0002–0). P43 is packaging it.
-- Staged on that base, validator PASS:
-  - `sub_iu54_fr38` (Qwen CE swap on gc70 France, +6,885 lines; md5 0a8b2a1f; expected +0.0002) — **my pick for the next France step**;
-  - `sub_iu54_fr55b` (P55 veto-only, −805 pairs; md5 6c8cd096). It empties 154 S1, which are gc70's rescue90 pairs.
-- 07:25: **upload #2 = `output/sub_iu54_best`** (validator PASS, md5 24176ee7… / cand a8b425b0…), expected ≈ default +0.00035. Chain: Qwen France → P55 veto without the rescue stage (−619) → P62 acronym adds re-filtered (+3,538, 2,638 of them new candidates) → dup (+44).
-  - Fallbacks, all PASS: `sub_iu54_frgc70_acro` (default + acronym), `sub_iu54_fr38_55n`, `sub_iu54_fr55b_norescue`.
-  - Tools: `p55n.py` (P55 veto list with stages skipped), `rm_pairs.py` (remove a pair list from any base), `acro_fit.py` (re-filter P62's set on a base: SX owned / caps).
-- The items below were written before that decision. sub_clean and its variants remain the cleaned-rules alternative.
-- **Upload `output/sub_clean`** (md5 4e0e33df…, PASS). Fallbacks: `sub_clean_iu34` (#34's India/US; use it if P57's honest frame rejects the combiner) and `sub38_clean_p55` (the Qwen France variant).
-- **Do not adopt:** C (France exclusivity veto), D (CE order swap), F (more seeds), a hn-suffix veto, or LEGAL changes.
-- **E (full-holdout refit):** ship the refit only if the combiner itself survives P57's audit. Boosters: `data/work/p50/full_s{0..4}.txt` (te44.FINAL + l_r_all) or `fullzoo_s{0..4}.txt` (+16 zoo columns). Apply them with `e_ship.py probs <tag> full` / `e_zoo.py probs`. The test frames are rebuilt in `data/work/p50/T_{India,US}.parquet`.
+- **Upload order** (as in WAKEUP.md):
+  1. `output/sub_iu54_frgc70` (default final, md5 7f559944…);
+  2. `output/sub_iu54_best` (matching 24176ee789f081191deef58cc3cc519b, candidates a8b425b0…, validator p50-iu54best-0722). `run.py --recipe sub_iu54_best` reproduces it byte for byte (P43). If its LB beats #1, it becomes the final; tell P43 to build its small-candidate zip (~25 min).
+- **If #2 disappoints, isolate the France pieces with the staged single-change fallbacks:**
+  - `sub_iu54_fr38`: Qwen only, 0a8b2a1f…, expected +0.0002;
+  - `sub_iu54_frgc70_acro`: acronym only, eb150488…, +0.00015;
+  - `sub_iu54_fr55b_norescue`: P55 veto without the rescue stage, b4878e54…, small;
+  - `sub_iu54_fr38_55n`: Qwen + that veto, a4689807….
+  - `sub_iu54_fr55b` (6c8cd096…) empties 154 S1, all of them gc70's LB-proven rescue90 pairs. Don't prefer it.
+- **Do not adopt:** C (France exclusivity veto), D (CE order swap), F (more seeds), a hn-suffix veto, LEGAL changes, or P52's lower bars on top of P55 (never jointly measured; 41% of its adds have P55 c < .6).
+- **E / zoo:** they are already inside sub54's India/US (boosters `data/work/p50/fullzoo_s{0..4}.txt`, columns te44.FINAL + l_r_all + 16 `z_*`). P43 has ported them to src.
 
 ## Evidence         (table: ledger name | world | key metrics | verdict)
 | idea | ledger name | world | key metrics | verdict |
@@ -44,8 +47,14 @@
 | sub_all_v2 | = #54 (hard links) | — | P54's PASS |
 | sub_all_v3 (hold) | #52_max → P55 (−3,198 / +4,120) → P54 u .995 (+2,770) → dup (+49) | India/US over cap: 37 lines, all pre-existing; France 2, from dup | PASS, md5 7f27d610 |
 | **sub_clean** | build38 clean(bge): recipe (hn .80) → gib +1,434 → P48 −1,160 → P54 u .99 +8,539 → cls80 +1,037 → P55 −3,197 / +1,129 → dup +49 | vs #54: France +1,149 / −11,059, 303 S1 emptied; vs gc70: 195 S1 empty that gc70 filled | **PASS, md5 4e0e33df** |
-| sub_clean_iu34 | #clean France + gc70 India/US + dup (+10) | vs #clean: India +3,266 / −2,713, US +2,846 / −2,555 | submitted |
-| sub38_clean_p55 | P38 sub38_clean (Qwen) → P55 (−2,147 / +2,328) → dup (+50) | vs #clean: France +2,867 / −10,319 | submitted |
+| sub_clean_iu34 | #clean France + gc70 India/US + dup (+10) | vs #clean: India +3,266 / −2,713, US +2,846 / −2,555 | PASS, md5 6acbd1fd (offloaded) |
+| sub38_clean_p55 | P38 sub38_clean (Qwen) → P55 (−2,147 / +2,328) → dup (+50) | vs #clean: France +2,867 / −10,319 | PASS, md5 24733e0d |
+| sub_iu54_fr38 | default (sub54 India/US + gc70 France) with France := P38's sub38 (Qwen CE swap) | 6,885 France lines, +3,685 / −3,431 | PASS, md5 0a8b2a1f |
+| sub_iu54_fr55b | default − P55 band veto (all stages) | −805 pairs, 154 S1 emptied (= rescue90 pairs) | PASS, md5 6c8cd096 |
+| sub_iu54_fr55b_norescue | default − P55 band veto without its rescue stage (p55_veto_norescue.parquet, 3,044 pairs) | −652, 3 emptied | PASS, md5 b4878e54 |
+| sub_iu54_fr38_55n | fr38 − the same list (bge-chain list applied where present; ~480 Qwen-lifted low-c pairs deliberately kept) | −619, 4 emptied | PASS, md5 a4689807 |
+| sub_iu54_frgc70_acro | default + P62 acronym set re-filtered (acro_fit: SX owned / caps) | +3,559 (2,643 new candidates), 81 filled | PASS, md5 eb150488 / cand d1d19094 |
+| **sub_iu54_best** | fr38_55n + acronym re-filtered (+3,538) + dup (+44) | vs default France +7,104 / −3,887, 244 emptied / 218 filled | **PASS, md5 24176ee7 / cand a8b425b0** |
 
 Conflict checks run before stacking:
 - P55's combiner c on other pieces' adds, share below .6:
@@ -79,14 +88,17 @@ Conflict checks run before stacking:
   - build is a subset assembly with India/US from any folder;
   - rebuilding #54 gives 0 differing lines.
 - `splice_lines.py OUT BASE SRC India,US`, `diffc.py NEW REF...` (per-country diff), `overlap.py`, `cc_check.py`, `caps.py`.
+- `p55n.py OUT.parquet v=.6 scope=band skip=2`: P55's veto as a pair list with stages skipped (+ `p55_c_all.parquet`, c for every frame pair).
+- `rm_pairs.py BASE OUT PAIRS.parquet`: remove a pair list from any base. `acro_fit.py BASE OUT.parquet`: P62's acronym set re-filtered on a base (SX owned / caps, T2 → T1 → T3). Apply with `probes/P54-fresh-batch/build54.py BASE OUT adds.parquet [--nodup]`.
 
 ## Risks            (licence, external-data, France/unseen-country, scale, anything you assumed)
 - Everything is LightGBM / rapidfuzz / the existing CE; no new models or external data. France thresholds stay label-free (LOCO / audits).
-- **E / zoo inherit the combiner's holdout caveat.** Competitor rows carry in-sample p (P44). P57 is re-testing the combiner out of sample; if it fails, sub_clean_iu34 is the fallback.
+- E / zoo inherited the combiner's holdout caveat: competitor rows carry in-sample p. P57's honest frame and P62's test-density clones confirmed the combiner (+0.0004–0.0006), so the caveat is resolved.
 - **sub_clean's expected gain is an estimate** from P38's audit precisions (P46 0.08, P40 0.19). #54 under-delivered its LOCO expectation 4–5×, so treat LOCO-based expectations (P55's +0.0003–0.0004) as upper bounds.
 - 195 France S1 are empty in sub_clean where gc70 had matches (P55 and P48 vetoes). Per the master, they were reported, not restored.
+- sub_iu54_best's acronym adds are validated on train only (0.997 / 0.9997). On France the only CE audit is a non-random 113-pair subset (98% Qwen r ≥ .5). Its 2,638 new candidates need the pipeline's own acronym block (P43 ported it).
 
 ## Open questions   (for the master; each with your best guess)
-- Ship the full-holdout refit (sub50e's boosters) under sub_clean's France? Best guess: yes if P57 passes the combiner (+0.00006–0.00009), else #34.
+- Does sub_iu54_best beat sub_iu54_frgc70 on the LB? Best guess: yes, by +0.0002–0.0004. If not, upload the single-change fallbacks (fr38, then frgc70_acro) to find the piece that hurts.
 - P52's lower bars were never measured on top of P55. Best guess: leave them out (41% of its adds have c < .6).
-- Should P54's rescue use u .995 when P55 follows (P54's own LOCO pick)? sub_clean uses u .99 as the master specified. Best guess: u .995 is safer (+0.00105 / +0.00097 measured on P55's decision).
+- P54 rescue on top of P55: u .995 was P54's own LOCO pick. Best guess: it's irrelevant now, since the default France is gc70 without P54.
