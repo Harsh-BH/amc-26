@@ -1,0 +1,34 @@
+{
+ "US_India": {
+  "flagged": 12566,
+  "prec_all": 0.114,
+  "accepted": 1155,
+  "accepted_prec": 0.896,
+  "wilson": [
+   0.877,
+   0.912
+  ],
+  "veto": {
+   "dF_h1": -0.001127,
+   "se_h1": 0.000147,
+   "rm": 1155,
+   "rm_false": 0.104
+  }
+ },
+ "India_US": {
+  "flagged": 60398,
+  "prec_all": 0.015,
+  "accepted": 6675,
+  "accepted_prec": 0.095,
+  "wilson": [
+   0.088,
+   0.103
+  ],
+  "veto": {
+   "dF_h1": 0.011356,
+   "se_h1": 0.000292,
+   "rm": 6675,
+   "rm_false": 0.905
+  }
+ }
+}

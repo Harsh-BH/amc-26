@@ -1,0 +1,54 @@
+{
+ "US_India": {
+  "last-token swap, unique site": {
+   "n_all": 2137,
+   "prec_all": 0.941,
+   "free_n": 141,
+   "free_p": 0.305,
+   "wilson": [
+    0.235,
+    0.385
+   ],
+   "dF_h1": -0.000261,
+   "se_h1": 5.6e-05
+  },
+  "... minus decoy words (lens s > .25)": {
+   "n_all": 2050,
+   "prec_all": 0.98,
+   "free_n": 72,
+   "free_p": 0.597,
+   "wilson": [
+    0.482,
+    0.703
+   ],
+   "dF_h1": -5.3e-05,
+   "se_h1": 3e-05
+  }
+ },
+ "India_US": {
+  "last-token swap, unique site": {
+   "n_all": 16507,
+   "prec_all": 0.997,
+   "free_n": 249,
+   "free_p": 0.96,
+   "wilson": [
+    0.928,
+    0.978
+   ],
+   "dF_h1": 0.000287,
+   "se_h1": 5.2e-05
+  },
+  "... minus decoy words (lens s > .25)": {
+   "n_all": 16500,
+   "prec_all": 0.997,
+   "free_n": 242,
+   "free_p": 0.975,
+   "wilson": [
+    0.947,
+    0.989
+   ],
+   "dF_h1": 0.000276,
+   "se_h1": 5e-05
+  }
+ }
+}
