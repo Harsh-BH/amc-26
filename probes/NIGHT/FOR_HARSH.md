@@ -9,7 +9,7 @@
   matches "France is precision-limited". Expected ≈ +0.0002–0.0003 over sub_iu54_frgc70. Good candidate for **slot 3: (winner of sub_iu54_frgc70 / sub_iu54_best) + N54** — `build output/<winner> output/<winner>_n54 all`.
   The Qwen chain's r < 0.2 veto may already catch some of these pairs; N54 skips pairs not in the base, so it stacks safely.
 **Final-zip ready:** N54 is ported to src (branch night/aditya): `france.decoy_mask` + `run.py` recipe
-**`sub_iu54_frgc70_n54`** (= the final recipe + `decoy=0.25`, applied after every France add rule; default recipe untouched,
+**`sub_iu54_frgc70_n54`** / **`sub_iu54_best_n54`** (merged with P43's iu54_best port; = the recipe + `decoy=0.25`, applied after every France add rule; default recipe untouched,
 DECOY=None). Port check: on the P31 France frame the src mask and p54.py remove the identical 1,718 pairs
 (probes/N54-fr-decoyword-removal/test_port.py). Not run end-to-end here (no full caches on the laptop) — P43 should
 `run.py --split test --stage model --recipe sub_iu54_frgc70_n54` and `cmp` against the p54.py-built file before packaging.
