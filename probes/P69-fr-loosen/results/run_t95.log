@@ -1,0 +1,39 @@
+France: key tier 253,028 pairs, accepted 826,818 -> 829,031
+France: bxneg 523,608 pairs, accepted 829,031 -> 832,766
+France: veto (tau 0.1, rule pairs exempt) 7,753 pairs, accepted 832,766 -> 825,030
+France: cap (their SX lose every pair) 29 pairs, accepted 825,030 -> 825,001
+France: key tier 253,136 pairs, accepted 831,345 -> 832,456
+France: bxneg 523,605 pairs, accepted 832,456 -> 834,909
+France: veto (tau 0.1, rule pairs exempt) 7,753 pairs, accepted 834,909 -> 827,170
+France: cap (their SX lose every pair) 36 pairs, accepted 827,170 -> 827,134
+France: key tier 253,136 pairs, accepted 831,345 -> 832,456
+France: bxneg 523,605 pairs, accepted 832,456 -> 834,909
+France: cap (their SX lose every pair) 44 pairs, accepted 834,909 -> 834,865
+France: t overridden 0.79 -> 0.95
+France: empty-S1 rescue p >= 0.9: +346 pairs to 346 S1
+France: group completion p >= 0.7: +4,764 pairs to 4,550 S1
+France: P55 band veto (P42 stages (2,) kept) 3,043 pairs
+France: P55 no-rescue veto removes 1,220 accepted pairs
+France: recipe (P42) 835,522 pairs
+France: CE veto (P48) 1,160 pairs
+France: 16,786 bare brand SX, 10,744 with a unique hn + street + city S1
+France: brand (P41) added 1,434 pairs
+France: in-band CE rescue (P54) 8,544 pairs
+France: hn-change class (P47) added 1,041 pairs
+France: combiner (P55) vetoed 3,197 pairs
+France: combiner (P55) added 1,129 pairs
+France: duplicate step (P54): 49 copies to 49 S1, 1 new candidates; groups over > 1 S1 skipped 0
+France: acronym block 102,236 one-token SX, rule pairs 11,495, unambiguous 11,371
+France: acronym change set 3,590 pairs {'T1': 2643, 'T3': 711, 'T2': 236}
+France: empty-S1 rescue p >= 0.9: +379 pairs to 379 S1
+France: group completion p >= 0.7: +5,020 pairs to 4,794 S1
+France: address-less exact names with a unique core (P66): 40,822 address-less argmax pairs, class 10,403, adds 696
+France: acronym adds kept on the base 3,511
+France: acronym adds 3,511, 2,637 from the acronym block (not candidates before)
+France: duplicate step (P54): 26 copies to 25 S1, 1 new candidates; groups over > 1 S1 skipped 1
+France: legal-form conflict veto (P64) 443 of 832,428 accepted pairs
+France: address-less adds (P66) 685 on 655 S1; P64 conflicts skipped 0
+France: duplicate step (P54): 0 copies to 0 S1, 0 new candidates; groups over > 1 S1 skipped 1
+France: 259,452 S1, 1,334,861 candidates (5.1/S1), 832,670 matches, 0.939 of S1 matched, t 0.95, peak 1.64 GB
+expected France-only assert: 259452
+P69 France t 0.95: 639s, final 832,670 pairs
