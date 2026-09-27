@@ -1,0 +1,57 @@
+# P70-fr-roles — RESULT (final, 27 Sep 15:45 IST)
+## TL;DR            (3 lines: the answer, the number, the recommendation)
+- **Label-free word-role features make P55's France combiner transfer in both directions.** The features are the pair's name relation, plus the word the pair swaps, adds or drops, described by the country's own sibling-offset share and same-house-number share for that word. **P55's own add arm fails US→India at −0.009; with these three columns (`words_nn`) it is positive both ways.**
+- **On top of what sub66_final ships** (reference minus P55's no-rescue band veto), h1 ± SE:
+  - arm A (veto c < .4, add c > .8): India→US **+0.00496 ± 0.00021**, US→India **+0.00517 ± 0.00039** France-F0.5.
+  - The precise cut (veto + adds at c > .98, add precision .989 / .965) keeps about +0.0017 / +0.0029.
+- **France file `output/sub70a`: +1,991 adds at c > .98, no vetoes, validator PASS.** The Qwen audit puts the adds level with the accepted base. Expected LB is about +0.0001; 1,695 of the adds are also #67's.
+
+## France file
+- **`output/sub70a`** = #66_final + **1,991 France adds on 1,919 S1, nothing removed**. Validator `--check-ids` PASS; md5 f43e96dc…; India/US lines byte-identical; additions only.
+  - Rule: a free own argmax pair (non-sibling, not capped out, p not moved by a tier / bxneg rule) with c > .98. Adds are taken best-first, up to caps 5/6 counted on the base's France line, skipping any SX already listed for a France S1. Then P64's legal-form veto runs last (−14).
+- **Qwen audit** (P38 pooled r, 1,802 of the adds scored): 87.8% have r ≥ .5 and 79.7% r ≥ .9, median .997.
+  - That equals the accepted base (87% / 78%).
+  - LB-proven add classes are lower: rescue90 68% / 49%, gc70 62% / 38%. P55's adds had 82% / 69%.
+- **The veto arm was dropped** (`output/sub70`, c < .4, band, non-rescue). Its 4,127 bge-frame vetoes land on only 295 pairs in the Qwen France, and those pairs are Qwen-supported (78.6% r ≥ .5, median .96).
+- **Overlap:**
+  - 1,695 of the adds are also #67's adds (0 same-SX conflicts), so on top of #67 only about 296 are new.
+  - 289 are also t975ce's.
+- **Change set:** `data/work/p70/changes.parquet` (s1, sx, action, p, c_new, qwen_r). Filtering on c_new ≥ .99 reproduces a u .99 build, because adds are taken best-first.
+- **Rebuild** (≈ 3 min, ≤ 1.7 GB):
+  ```
+  p70.py scores_fr words_nn
+  p70.py build sub66_final sub70a mode=p70words_nn,scope=band_norescue,v=0,u=0.98
+  p70.py changes sub66_final sub70a words_nn
+  ```
+
+## Recommendation   (exactly what the master should adopt: module, function signature, config)
+- **Adopt the adds of `output/sub70a`** (or merge `changes.parquet` into the combined final, P64 last). Expected LB is about +0.0001 alone and about +0.00002 on top of #67's adds.
+- **Better merge:** fit one P55 combiner with P67's synthetic column, P73's electra column and P70's `words_nn` columns, instead of taking the union of three add lists. The LOCO role columns are cached in `data/work/p70/roles_<dir>.parquet`, row-aligned with `p55.loco_frame`.
+
+## Evidence         (France-F0.5 dF on the LOCO target; A→B = fit on A's out-of-domain frame, bars picked on A, applied to B; h1 = report half ± SE)
+| ledger name | world | key metrics (India→US / US→India) | verdict |
+|---|---|---|---|
+| loco-p55-vs-roles | P55 LOCO frames vs recipe + P48 veto | all 9 role columns vs P55 alone. **A:** p55 +0.00786 / −0.00754, roles +0.00560 / +0.00650. **B:** p55 +0.00341 / +0.00107, roles +0.00228 / +0.00303. AUC 0.965 → 0.970 / 0.938 → 0.964 | mixed (costs the France-like India→US) |
+| loco-ablate | same | **words** (kind, w_n, w_s, w_e): A +0.00695 / +0.00624, B +0.00295 / +0.00218, add +0.00399 / +0.00408. words + lf_k / gib_x / noaddr_x: A +0.00475 / +0.00408. all but key_n: A +0.00469 / +0.00447 | words is the keeper |
+| loco-inc-words_r+words_nn | same base | words_r (w_n as a rate per 100k pairs) = words. **words_nn (kind, w_s, w_e): A +0.00496 ± 0.00021 / +0.00517 ± 0.00039; B +0.00085 / +0.00057; add .8 +0.00411 / +0.00461** | words_nn ships (scale-free) |
+| loco-inc-words_nn (add grid) | same base, add-only arm on the target | u .9: 6,681 at .936 +0.00335 / 9,254 at .889 +0.00564. **u .95**: 3,722 at .968 +0.00215 / 6,194 at .935 +0.00473. **u .97**: 2,075 at .985 +0.00132 / 4,150 at .954 +0.00341. **u .98**: 1,257 at .989 +0.00081 / 2,759 at .965 +0.00233. **u .99**: 533 at .996 +0.00035 / 1,178 at .984 +0.00110 | u .98 (LB lesson: only ≥ .98-precision France adds transferred) |
+| loco-inc-words | base = ref minus P55's no-rescue band veto at c55 < .6 (= sub66_final's France) | ship vs ref +0.00305 / +0.00185. On top of it: **words A +0.00493 ± 0.00021 / +0.00457 ± 0.00039** (adds 11,373 at 0.868 / 13,403 at 0.812; vetoes 869 at 68% false / 916 at 55% false). words B +0.00089 / +0.00053. p55 A +0.00546 / **−0.00894** (US→India adds 18,104 at 0.602) | pass |
+
+**Why it works:** the generator draws its noise and decoy words from per-country lists (US "partners" is noise; "group" and "holdings" are decoys; France has "développement" as noise and "participations" as a decoy). A model fit on India or US learns those lists by heart, so it cannot know France's. The role statistics re-derive each list from the target country's own argmax pairs, with no labels:
+- A decoy word sits at the generator's sibling house-number offsets.
+- A noise word keeps the house number.
+
+## What failed      (approaches tried and dropped, with the number that killed them)
+- The full 9-column role set. lf_k (P64 legal-form class), gib_x, noaddr_x, twins1 and key_n (S1 rows at the SX's exact hn + street) each lower India→US A by about 0.002. They let the model memorise the source country's address and legal-form mix.
+
+## Interfaces       (functions in probes/<id>/*.py, inputs/outputs, runtime + RAM at full scale)
+- `p70.py loco` / `ablate <sets>` / `inc <sets>`: LOCO comparisons.
+  - Role frames are cached in `data/work/p70/roles_<dir>.parquet`. The first computation takes ~4 min and peaks at 2.61 GB; later runs take ~5 min at ≤ 2.5 GB.
+- `scores_fr <set>`: bag of 3 seeds fit on both LOCO frames pooled; scores France's 1,182,279 argmax pairs with France's own role statistics. Writes `data/work/p55/cf_p70<set>.npy`.
+- `build BASE OUT mode=p70<set>,scope=band_norescue,v=..,u=..`: runs `p55.build`, then P64's legal-form veto last (`frtest.build`). Candidates and code.zip are hard links.
+- `changes BASE OUT`: writes `data/work/p70/changes.parquet` (s1, sx, action, p, c_new, qwen_r), the Qwen audit, and the overlap with sub67 / sub66_t975ce.
+
+## Risks            (licence, external-data, France/unseen-country, scale, anything you assumed)
+- w_n is a raw count, and France's frame is 1.9–2.9× the LOCO frames. `w_nr` (rate per 100k pairs) and `words_nn` (no count) are the scale-free variants.
+- LOCO's veto can hit any region or stage. France's is limited to band and non-rescue, as shipped, so it is a subset.
+- The dup step is not re-run after the adds.
