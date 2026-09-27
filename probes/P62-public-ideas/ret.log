@@ -1,0 +1,3 @@
+India index 809,986 S1 (88,168 holdout), queries 214,353 of 513,138 world SX
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 3950.37it/s]
