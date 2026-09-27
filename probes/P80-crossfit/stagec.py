@@ -628,6 +628,11 @@ def blend(out, cs=C, ce=True, WS=(0.3, 0.5, 0.7), grid=np.round(np.arange(0.30, 
             for t in grid:
                 fs[(w, float(t))] = per_s1(q1, y, cand & (pq_ >= t), q_s, n_true) - base
         r = {"n_s1": len(S), "argmax_pairs_outside_frame": float(miss.mean())}
+        for w in (0.0,) + tuple(WS) + (1.0,):                                # t on all fold 0 (test uses this t)
+            tb = max((k for k in fs if k[0] == w), key=lambda k: fs[k].mean())
+            d = fs[tb]
+            r[f"w{w}_all"] = dict(t=tb[1], mean=float(d.mean()), se=float(d.std(ddof=1) / np.sqrt(len(d))),
+                                  h0=float(d[h == 0].mean()), h1=float(d[h == 1].mean()))
         for fit_h in (0, 1):
             m_fit, m_rep = h == fit_h, h == 1 - fit_h
             for w in (0.0,) + tuple(WS) + (1.0,):
@@ -642,6 +647,69 @@ def blend(out, cs=C, ce=True, WS=(0.3, 0.5, 0.7), grid=np.round(np.arange(0.30, 
         print(c, json.dumps(r), f"| {time.time() - t0:.0f}s peak {peak():.2f} GB", flush=True)
         (out / f"{mtag}_{c}_blend.json").write_text(json.dumps(r, indent=1))
     return res
+
+
+def w1_test(c, out):
+    """Test decision of blend w = 1.0: today's shipped combiner p (P70 ta, the sub86/sub88 India/US score) on #8c's argmax
+    pairs, stage C + CE (sc_ce boosters, test CE lr sc_rT_<c>) on every other pruned pair, owner re-decision + caps +
+    t (all-fold-0 tuned). -> <out>/w1_test_<c>.parquet (s1, sx)."""
+    import lightgbm as lgb
+    t0 = time.time()
+    t = json.loads((out / f"sc_ce_{c}_blend.json").read_text())["w1.0_all"]["t"]
+    D = attach_r(pd.read_parquet(out / f"sc_T_{c}.parquet"), out / f"sc_rT_{c}.parquet")
+    X = feats(D)
+    s = sum(lgb.Booster(model_file=str(out / f"sc_ce_C{k}_{c}.txt")).predict(X) for k in "AB") / 2
+    del X
+    id1, idx = FT.ids("test", c)
+    ta = pd.read_parquet(W / f"p70/prob_test_{c}_ta.parquet", columns=["s1", "sx", "p", "am"])
+    ta = ta[ta.am.to_numpy()]
+    tq1 = pc.index_in(pa.array(ta.s1.to_numpy(object), pa.large_string()), value_set=id1)
+    tqx = pc.index_in(pa.array(ta.sx.to_numpy(object), pa.large_string()), value_set=idx)
+    assert tq1.null_count == 0 and tqx.null_count == 0
+    tq1, tqx = tq1.to_numpy().astype(np.int64), tqx.to_numpy().astype(np.int64)
+    j = pd.Index(keys(D.q1, D.qx)).get_indexer(keys(tq1, tqx))
+    miss = j < 0
+    lta = logit(ta.p.to_numpy(np.float64))
+    q = logit(s)
+    q[j[~miss]] = lta[~miss]
+    q1 = np.r_[D.q1.to_numpy(np.int64), tq1[miss]]
+    qx = np.r_[D.qx.to_numpy(np.int64), tqx[miss]]
+    s3 = np.r_[D.s3.to_numpy(), ta.sx.str.startswith("S3-").to_numpy()[miss]]
+    q = np.r_[q, lta[miss]]
+    acc = owner_rank(q1, qx, s3, q) & (q >= logit(np.float64(t)))
+    old = (ta.p.to_numpy() >= T_BASE)
+    res = pd.DataFrame({"s1": id1.take(pa.array(q1[acc])).to_numpy(zero_copy_only=False),
+                        "sx": idx.take(pa.array(qx[acc])).to_numpy(zero_copy_only=False)})
+    res.to_parquet(out / f"w1_test_{c}.parquet", index=False)
+    ok = pd.MultiIndex.from_arrays([ta.s1[old], ta.sx[old]])
+    new = pd.MultiIndex.from_arrays([res.s1, res.sx])
+    info = dict(t=t, frame=len(D), lr_cover=float(D.lr.notna().mean()), am=len(ta), am_outside_frame=int(miss.sum()),
+                today_pairs=int(old.sum()), w1_pairs=int(acc.sum()), kept=int(new.isin(ok).sum()),
+                added=int((~new.isin(ok)).sum()), dropped=int((~ok.isin(new)).sum()), s1_with_pairs=int(res.s1.nunique()))
+    (out / f"w1_test_{c}.json").write_text(json.dumps(info, indent=1))
+    print(c, json.dumps(info), f"| {time.time() - t0:.0f}s peak {peak():.2f} GB", flush=True)
+
+
+def compose(out, use, base="sub88"):
+    """India/US pairs for build_sub.py: countries in `use` from w1_test_<c>, the rest = BASE's lines as they are (dups
+    included); plus the dup file = BASE's India/US pairs outside the ta rule, for the `use` countries only.
+    -> <out>/pairs_w1_<use>.parquet, <out>/dup_w1_<use>.parquet"""
+    s1c = pd.read_parquet(W / "test_source1.parquet", columns=["entity_id", "country"]).set_index("entity_id").country
+    rows = []
+    with open(ROOT / "output" / base / "matching_results.tsv", encoding="utf-8") as f:
+        f.readline()
+        for line in f:
+            s1, v = line.rstrip("\n").split("\t", 1)
+            if v and s1c.get(s1) in C and s1c.get(s1) not in use:
+                rows += [(s1, x) for x in v.split(",")]
+    parts = [pd.DataFrame(rows, columns=["s1", "sx"])] + [pd.read_parquet(out / f"w1_test_{c}.parquet") for c in use]
+    tag = "".join(sorted(use))
+    P = pd.concat(parts, ignore_index=True)
+    assert not P.duplicated().any() and not P.sx.duplicated().any(), "one owner per SX"
+    P.to_parquet(out / f"pairs_w1_{tag}.parquet", index=False)
+    d = pd.read_parquet(out / "iu_dup_sub88.parquet")
+    d[d.s1.map(s1c).isin(use)].to_parquet(out / f"dup_w1_{tag}.parquet", index=False)
+    print(f"pairs {len(P):,} ({', '.join(f'{c}: w1' if c in use else f'{c}: {base}' for c in C)}) -> pairs_w1_{tag}.parquet")
 
 
 def _owner(qx, s):
@@ -673,7 +741,8 @@ def selftest():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("frame", "fit", "test", "hybrid", "blend", "ce_r", "ce_cs", "selftest"))
+    ap.add_argument("cmd", choices=("frame", "fit", "test", "hybrid", "blend", "w1_test", "compose", "ce_r", "ce_cs",
+                                    "selftest"))
     ap.add_argument("country", nargs="?")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--ho", action="store_true", help="rehearsal on fold 0 alone (m2_big p, 6 pseudo folds)")
@@ -686,6 +755,10 @@ if __name__ == "__main__":
     frac = 0.01 if a.smoke else 1.0
     if a.cmd == "selftest":
         selftest()
+    elif a.cmd == "compose":
+        compose(a.out, set(a.country.split(",")))
+    elif a.cmd == "w1_test":
+        w1_test(a.country, a.out)
     elif a.cmd == "blend":
         blend(a.out, (a.country,) if a.country else C, a.ce)
     elif a.cmd == "ce_cs":
