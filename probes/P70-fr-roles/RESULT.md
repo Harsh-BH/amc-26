@@ -74,6 +74,21 @@ This round gates each idea on P55's LOCO frames. Precision is measured on the pa
   - The real gaps are number ranges, second numbers, and a leading postcode read as the house number. They hide sibling shifts, and `shift.flag` catches them.
 - Caps don't truncate France's big clusters: truth never exceeds 5 S2 / 6 S3, and France sits at the cap less often than truth (0.77% vs 1.09%).
 
+## Addendum 3 (27 Sep 18:30): the legal-form-only address-less class (lead's P77 q4)
+The class: address-less SX whose name core equals a unique S1 core, with a full name that differs only by the legal form. `xlf_loco.py` runs it through P66's LOCO harness; `xlf_build.py` builds France.
+
+| split | in-domain train precision (India / US) | LOCO unaccepted pool (India target / US target) | France accepted / free |
+|---|---|---|---|
+| (a) form dropped / added | .961 n 853 / .951 n 2,575 | 329 at .91 (+0.00016) / 95 at .46 (−0.00002) | 1,610 / 1,643 |
+| (b) same form, spelled differently | .986 n 1,303 / .978 n 920 | 336 at .96 (+0.00027) / 16 at .63 | 1,149 / 377 |
+| (c) conflicting | .982 n 822 / .575 n 73 | — | 44 / 96 (excluded) |
+
+- Free-share diagnostic:
+  - When a model leaves a large share of a precise class free, as the India target does (39% / 26%), the leftovers stay true (.91 / .96).
+  - When it accepts nearly all of it, as the US target does (4% / 2%), the leftovers are coin flips (.46 / .63).
+  - France leaves 50% / 25% free, like the India target.
+- **`output/sub77_xlf`**: +2,019 adds, validator PASS. Expected +0.0002 to +0.0004 LB if France is India-like, ≈ −0.0001 if US-like.
+
 ## Evidence         (France-F0.5 dF on the LOCO target; A→B = fit on A's out-of-domain frame, bars picked on A, applied to B; h1 = report half ± SE)
 | ledger name | world | key metrics (India→US / US→India) | verdict |
 |---|---|---|---|
