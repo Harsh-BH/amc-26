@@ -45,17 +45,28 @@ order (training included), except the bge cross-encoder: its checkpoint `data/wo
 downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when it is missing. With the caches present
 it only scores, decides and writes.
 
-**The final zip's files are `--recipe sub_clean --drop-sibling-cands`** ([FINAL: the recipe of the final upload]).
-`--recipe sub_clean` is the final pipeline (27 Sep) on top of everything below:
+**The final zip's files are `--recipe sub_iu54_frgc70 --drop-sibling-cands`** (the master's final as of 27 Sep 07:30;
+[FINAL LB]): **India / US = #54's combiner** (below) with P54's duplicate step, **the unseen country (France) = #37_gc70's
+chain** (`sub37` below: #31's chain + veto + empty-S1 rescue 0.90 + group completion 0.70). `--recipe sub_iu54_frgc70`
+rebuilds `output/sub_iu54_frgc70`'s matching file (the duplicate copies written after each line's sorted ids, as P54
+did); `--drop-sibling-cands` gives the small candidate set of the zip.
 
-- **India / US = the combiner (IU_PLACEHOLDER).**
-- **The unseen country (France) = `france.py`'s #31 chain below, then `france.chain`** (t 0.99 on the post-rules of
+- **India / US = the combiner** (`iu_stack.py`, recipe field `iu="fullzoo"`; `--iu a10` falls back to #34): P44's
+  bagged residual combiner over #8c's argmax pairs. Its columns are P34's a10 columns + P44's exclusivity / group /
+  house-number columns + two house-number GBDTs' logits + P10's pruner logit + **P45's r_all** (the shipped bge CE on
+  every argmax pair) + 16 zoo members' logits. 5 boosters are refit on the full India + US holdout (P50,
+  `data/work/p50/fullzoo_s{0..4}.txt`); the argmax stays #8c's, t 0.71. Supplied test inputs (the members' own
+  predictions): `data/work/p10/q_test_{c}.parquet` (170 / 136 MB), `data/work/p45/oof/r_all_test_{c}.parquet`
+  (71 / 56 MB), `data/work/p50/members_test_{c}.parquet` (310 / 238 MB; `iu_stack.py pack` builds it from P50's
+  frames). The boosters' fit path is `probes/P50-idea-batch/e_zoo.py fit` (holdout frames of P44 / P45).
+- **Alternative for the unseen country (`--recipe sub_clean`): `france.py`'s #31 chain below, then `france.chain`** (t 0.99 on the post-rules of
   0.9868): P42's joint recipe (rescue 0.90, group completion 0.70, hn-equal extras 0.80) → P41 brand recovery (0.30,
   computed on the #37-style lists and unioned) → P48 CE veto (rescue / gc band pairs, p unmoved, bge r < 0.2) → P54
   in-band CE rescue (r ≥ 0.99) → P47 hn-change class (p ≥ 0.80) → P55 combiner (3 LightGBM boosters,
   `data/work/p55/fr_plain_s{0,1,2}.txt`; veto band recipe pairs c < 0.6, add free pairs c > 0.95).
-- **Last, every country: P54's duplicate consistency** (`run.dup_add`): an unassigned content-identical copy of an
-  accepted S2 / S3 goes to the same S1 and joins its candidate list.
+- **Last: P54's duplicate consistency** (`run.dup_add`; `dup=True` every country, `dup="seen"` the labelled ones as in
+  the final): an unassigned content-identical copy of an accepted S2 / S3 goes to the same S1 and joins its candidate
+  list.
 - `--recipe sub_clean_iu34` keeps #34's India / US (the a10 stacker); `--recipe sub54` is the uploaded #54 (LB
   0.986685): the same chain with P40's address-less names (0.70) and P46's noise-word tier, in #54's order, no P55.
 - Reproduction ([VERIFY]): `sub_clean`, `sub_clean_iu34` and `sub54` rebuild `output/sub_clean`, `output/sub_clean_iu34`

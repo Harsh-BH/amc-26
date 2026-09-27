@@ -827,10 +827,12 @@ def model_parts(split: str, world=None, only=None, stack: bool = True) -> list:
     return parts
 
 
-def write_lists(f, s1_ids: pa.Array, q1: np.ndarray, sx_ids: pa.Array, qx: np.ndarray, size: int = 200_000):
+def write_lists(f, s1_ids: pa.Array, q1: np.ndarray, sx_ids: pa.Array, qx: np.ndarray, size: int = 200_000,
+                tail: dict | None = None):
     """Append one row per S1 in s1_ids order (empty list allowed): 's1<TAB>sx,sx,...', ids sorted and de-duplicated.
     Pairs come as row numbers (q1 into s1_ids, qx into sx_ids), so the pair ids are Python strings only one chunk
-    of S1 at a time (from probes/P7-scale/chunks.py write_lists)."""
+    of S1 at a time (from probes/P7-scale/chunks.py write_lists). tail: {row: [sx id, ...]} appended after the sorted
+    ids of that row, in order (the duplicate step's copies, as P54 wrote them)."""
     k = np.unique((q1.astype(np.int64) << 32) | qx.astype(np.int64))
     q1, qx = k >> 32, k & 0xFFFFFFFF
     bounds = np.searchsorted(q1, np.arange(len(s1_ids) + 1))
@@ -839,7 +841,8 @@ def write_lists(f, s1_ids: pa.Array, q1: np.ndarray, sx_ids: pa.Array, qx: np.nd
         c1 = min(c0 + size, len(s1))
         ids = sx_ids.take(pa.array(qx[bounds[c0]:bounds[c1]])).to_numpy(zero_copy_only=False)
         cut = bounds[c0:c1 + 1] - bounds[c0]
-        f.write("".join(f"{s}\t{','.join(sorted(ids[cut[i]:cut[i + 1]]))}\n" for i, s in enumerate(s1[c0:c1])))
+        f.write("".join(f"{s}\t{','.join(sorted(ids[cut[i]:cut[i + 1]]) + (tail or {}).get(c0 + i, []))}\n"
+                        for i, s in enumerate(s1[c0:c1])))
 
 
 def sets(keys: np.ndarray, pos: np.ndarray, s1_ids: pa.Array, sx_ids: pa.Array) -> dict:
@@ -895,10 +898,11 @@ def dup_add(d: dict, km: np.ndarray, K: np.ndarray, split: str) -> tuple:
     one = g[(g["count"] > 0) & (g["count"] < g["size"]) & (g["nunique"] == 1)].index
     fix = k[k.key.isin(one) & k.s1.isna()].drop(columns="s1").merge(
         k[k.key.isin(one) & k.s1.notna()][["key", "s1"]].drop_duplicates(), on="key")
-    add = np.unique((fix.s1.to_numpy(np.int64) << 32) | pos.reindex(fix.id).to_numpy(np.int64))
-    new_c = np.setdiff1d(add, K)
+    add = pd.unique((fix.s1.to_numpy(np.int64) << 32) | pos.reindex(fix.id).to_numpy(np.int64))   # P54's order
+    new_c = add[~np.isin(add, K)]
     print(f"{d['c']}: duplicate step (P54): {len(add):,} copies to {fix.s1.nunique():,} S1, {len(new_c):,} new candidates; "
           f"groups over > 1 S1 skipped {int((g['nunique'] > 1).sum()):,}", flush=True)
+    d["tail"] = (add, new_c)                         # written after each line's sorted ids, as P54 appended them
     return np.concatenate([km, add]), np.concatenate([K, new_c])
 
 
@@ -1016,8 +1020,15 @@ def run(split: str, stage: str, out: Path, world=None, log=True, check=True) -> 
         ux = pc.unique(idx.take(pa.array(np.unique(K & 0xFFFFFFFF))))
         assert pc.all(pc.or_(pc.starts_with(ux, "S2-"), pc.starts_with(ux, "S3-"))).as_py() in (True, None), "S2-/S3- only"
         assert len(np.unique(km & 0xFFFFFFFF)) == len(km) or stage == "rules", "each S2/S3 matched to one S1 at most"
-        write_lists(fm, ids, pos[km >> 32], idx, km & 0xFFFFFFFF)
-        write_lists(fc, ids, pos[K >> 32], idx, K & 0xFFFFFFFF)
+        tm, tc = d.get("tail", (np.zeros(0, np.int64), np.zeros(0, np.int64)))
+        tails = []
+        for t in (tm, tc):                               # {row: [sx ids in order]} of the duplicate step's appends
+            tl = {}
+            for a, b in zip(pos[t >> 32].tolist(), idx.take(pa.array(t & 0xFFFFFFFF)).to_pylist()):
+                tl.setdefault(a, []).append(b)
+            tails.append(tl)
+        write_lists(fm, ids, pos[km[~np.isin(km, tm)] >> 32], idx, km[~np.isin(km, tm)] & 0xFFFFFFFF, tail=tails[0])
+        write_lists(fc, ids, pos[K[~np.isin(K, tc)] >> 32], idx, K[~np.isin(K, tc)] & 0xFFFFFFFF, tail=tails[1])
         rows += len(ids)
         if tr is not None:
             truth |= tr
