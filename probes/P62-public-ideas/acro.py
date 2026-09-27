@@ -4,6 +4,7 @@ with the same house number and city (rf tables), is a match. Idea from a public 
     .venv/bin/python probes/P62-public-ideas/acro.py holdout             # precision + misses vs the sub54 recipe
 The join key is (acronym, hn, city); ambiguous keys (>1 S1 on the same SX) are kept and flagged (n_s1).
 """
+import os
 import sys
 
 sys.path[:0] = ["code/business_entity_resolution/src", "."]
@@ -33,27 +34,71 @@ def pairs(split: str, c: str) -> pd.DataFrame:
     j = s1.merge(sx, left_on=["acro", "hn", "city"], right_on=["core", "hn", "city"])[["id_x", "id_y"]]
     j.columns = ["s1", "sx"]
     j["n_s1"] = j.groupby("sx").s1.transform("size").astype(np.int16)
+    j["jac"], j["st"] = addr_jac(split, c, j)
     j.to_parquet(OUT / f"acro_{split}_{c}.parquet", index=False)
     print(split, c, f"acro-like sx {len(sx):,}, rule pairs {len(j):,}, ambiguous sx {(j.n_s1 > 1).sum():,}", flush=True)
     return j
 
 
+# hand-written street-type / article words (en + fr + in); street tokens = the S1 address minus these, its city, state, numbers
+STREETW = set("rue r avenue av ave bd boulevard blvd chemin ch impasse imp allee place pl quai cours route rte square sq "
+              "passage residence res lotissement lot street st road rd drive dr lane ln court ct circle cir way trail trl "
+              "nagar marg floor flr no plot near opp".split())
+ARTW = set("de la du des le les l d the of and".split())
+
+
+def addr_jac(split: str, c: str, j: pd.DataFrame) -> tuple:
+    """Token-set Jaccard of P3's normalised addresses of each rule pair (the 'identical address' check), and the share of
+    the S1's street tokens found in the SX address (NaN when the S1 has none)."""
+    import glob
+    d = "txt" if split == "train" else "txt_test"
+    def grab(files, ids):
+        v = pa.array(sorted(set(ids)), pa.string())
+        t = [pq.read_table(f, columns=["entity_id", "addr"]) for f in files]
+        t = pa.concat_tables([x.filter(pc.is_in(x["entity_id"], value_set=v)) for x in t]).to_pandas()
+        return t.drop_duplicates("entity_id").set_index("entity_id").addr
+    a1 = grab([W / f"p3/{d}/{c}_s1.parquet"], j.s1).reindex(j.s1).fillna("").to_numpy(object)
+    ax = grab(sorted(glob.glob(str(W / f"p3/{d}/{c}_sx_*.parquet"))), j.sx).reindex(j.sx).fillna("").to_numpy(object)
+    rf = pq.read_table(W / f"rf_{split}_s1_{c}.parquet", columns=["id", "city", "state"]).to_pandas().set_index("id")
+    rf = rf.reindex(j.s1)
+    out, st = np.zeros(len(j), np.float32), np.full(len(j), np.nan, np.float32)
+    for i, (u, v, ci, sa) in enumerate(zip(a1, ax, rf.city.fillna("").to_numpy(object), rf.state.fillna("").to_numpy(object))):
+        a, b = set(u.split()), set(v.split())
+        out[i] = len(a & b) / len(a | b) if a | b else 0.0
+        k = {t for t in a - set(ci.split()) - set(sa.split()) - STREETW - ARTW if not t.isdigit() and len(t) > 1}
+        if k:
+            st[i] = len(k & b) / len(k)
+    return out, st
+
+
+JT = float(os.environ.get("ACRO_JAC", "0.6"))
+ST = float(os.environ.get("ACRO_ST", "1.0"))          # share of the S1's street tokens present in the SX address
+
+
+def rule(j: pd.DataFrame, jt: float = None) -> pd.DataFrame:
+    """The rule's pairs: address Jaccard >= jt and street share >= ST, then n_s1 = rule S1 per SX among what is left."""
+    j = j[(j.jac >= (JT if jt is None else jt)) & (j.st >= ST)].copy()
+    j["n_s1"] = j.groupby("sx").s1.transform("size").astype(np.int16)
+    return j
+
+
 def holdout():
     """Train precision of the rule (all folds) and, on fold-0 S1, the pairs the sub54 recipe does not accept."""
-    import os
     os.environ["P44_VARIANT"] = "r"
     sys.path[:0] = ["probes/P44-meta-stack", "probes/P50-idea-batch", "probes/P57-iu-transfer"]
     import ev as E
     import ev57 as V
     import a10
     import features as F
-    gt = pq.read_table(W / "gt_pairs.parquet", columns=["s1", "sx"]).to_pandas()
+    gt = pq.read_table(W / "gt_pairs.parquet", columns=["s1", "sx"])
+    ax = pa.array(pd.concat([pd.read_parquet(OUT / f"acro_train_{c}.parquet", columns=["sx"]).sx for c in E.C]).unique())
+    gt = gt.filter(pc.is_in(gt["sx"], value_set=ax)).to_pandas()
     fo = pd.read_parquet(W / "s1_folds.parquet", columns=["entity_id", "fold"]).set_index("entity_id").fold
     res, S = {}, V.load_s()
     for c in E.C:
-        j = pd.read_parquet(OUT / f"acro_train_{c}.parquet")
-        key = set(zip(gt.s1, gt.sx))
-        j["y"] = [k in key for k in zip(j.s1, j.sx)]
+        j = rule(pd.read_parquet(OUT / f"acro_train_{c}.parquet"))
+        g_ = gt[gt.sx.isin(set(j.sx))]
+        j["y"] = pd.MultiIndex.from_arrays([j.s1, j.sx]).isin(pd.MultiIndex.from_arrays([g_.s1, g_.sx]))
         j["fold"] = fo.reindex(j.s1).to_numpy()
         r = {"pairs": len(j), "prec": float(j.y.mean()), "prec_unamb": float(j.y[j.n_s1 == 1].mean())}
         # decision of the sub54 recipe on the holdout frame (cross-fit halves), P57's full world = P44's frame
