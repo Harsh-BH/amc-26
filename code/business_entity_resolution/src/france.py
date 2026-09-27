@@ -827,6 +827,38 @@ def p42_frame(f: dict, c: dict, s1, sx, is2, sib, hn_eq, g, r, n) -> dict:
     return {"q": q, "am": amq, "st": st, "ref": st["hn"] & ~veto, "veto": veto, "free": free, "unmoved": unmoved, "p0": p0}
 
 
+def p55_frame(f: dict, c: dict, fr42: dict, s1, sx, is2, g, r, n) -> dict:
+    """P55's combiner scores on P42's frame (p55.france_frame + bag_score): rows = the frame's argmax pairs, cf, and per
+    row ref / own (p not moved by a tier or bxneg rule) / region / P42 stage code."""
+    import lightgbm as lgb
+    q, amq, ref, stq = fr42["q"], fr42["am"], fr42["ref"], fr42["st"]
+    rl = np.where(np.isnan(r), f["r_lo"], r)
+    stage_c = np.select([stq["base"], stq["rescue"], stq["gc"], stq["hn"]], [1, 2, 3, 4], 0)
+    rows = np.flatnonzero(amq)
+    X = p55_feats(s1[rows], is2[rows], g[rows], rl[rows], q[rows], hn_rel(f["h1"], f["hx"])[rows], ref[rows], stage_c[rows],
+                  sx_feats(sx, g)[rows], n)
+    cf = p55_score([lgb.Booster(model_file=str(x)) for x in c["p55"][2]], X)
+    p0f, gf = fr42["p0"].astype(np.float32), g.astype(np.float32)
+    own = ~(((p0f == np.float32(1.0)) & (g < 0.99995)) | ((p0f == np.float32(0.99)) & (gf != np.float32(0.99))))[rows]
+    return {"rows": rows, "cf": cf, "ref": ref[rows], "own": own, "rg": X.region.to_numpy(), "stage": stage_c[rows]}
+
+
+def p55_veto(f: dict, c: dict, skip=(2,)) -> np.ndarray:
+    """P50's p55n list as a pair mask: P55's band veto (ref & own & c < v & band) minus the P42 stages in skip (2 =
+    rescue: those are the LB-proven #34v rescues), on P42's frame of the bge chain (f = its post-rules p / p0 / blend)."""
+    import stack as S
+    s1, sx, is2 = f["q1"].astype(np.int64), f["qx"].astype(np.int64), f["is2"]
+    g, r, n = f["g"].astype(np.float64), f["r"].astype(np.float64), f["n"]
+    sib, hn_eq = S.sib_mask(f["h1"], f["hx"]), (f["h1"] != "") & (f["h1"] == f["hx"])
+    fr42 = p42_frame(f, c, s1, sx, is2, sib, hn_eq, g, r, n)
+    z = p55_frame(f, c, fr42, s1, sx, is2, g, r, n)
+    m = z["ref"] & z["own"] & (z["cf"] < c["p55"][0]) & (z["rg"] == 1) & ~np.isin(z["stage"], skip)
+    out = np.zeros(len(g), bool)
+    out[z["rows"][m]] = True
+    print(f"{C}: P55 band veto (P42 stages {tuple(skip)} kept) {int(out.sum()):,} pairs", flush=True)
+    return out
+
+
 ORDER_CLEAN = ("veto", "brand", "u", "cls", "p55")                  # build38.clean + P55 (sub_clean)
 ORDER_54 = ("brand", "xf", "swap", "veto54", "cls", "u54")          # the #43 -> #48 -> #52 -> #54 lineage
 
@@ -913,17 +945,10 @@ def chain(f: dict, c: dict) -> np.ndarray:
             say("hn-change class (P47) added", m)
             lines |= m
         elif stage == "p55":
-            v55, u55, files = c["p55"]
-            q, amq, ref, stq = fr42["q"], fr42["am"], fr42["ref"], fr42["st"]
-            rl = np.where(np.isnan(r), f["r_lo"], r)
-            stage_c = np.select([stq["base"], stq["rescue"], stq["gc"], stq["hn"]], [1, 2, 3, 4], 0)
-            rows = np.flatnonzero(amq)
-            X = p55_feats(s1[rows], is2[rows], g[rows], rl[rows], q[rows], hn_rel(h1, hx)[rows], ref[rows], stage_c[rows],
-                          sx_feats(sx, g)[rows], n)
-            cf = p55_score([lgb.Booster(model_file=str(x)) for x in files], X)
-            p0f, gf = fr42["p0"].astype(np.float32), g.astype(np.float32)
-            own = ~(((p0f == np.float32(1.0)) & (g < 0.99995)) | ((p0f == np.float32(0.99)) & (gf != np.float32(0.99))))[rows]
-            rg = X.region.to_numpy()
+            v55, u55, _ = c["p55"]
+            q, ref = fr42["q"], fr42["ref"]
+            z = p55_frame(f, c, fr42, s1, sx, is2, g, r, n)
+            rows, cf, own, rg = z["rows"], z["cf"], z["own"], z["rg"]
             rm = np.zeros(len(p), bool)
             rm[rows[ref[rows] & own & (cf < v55) & (rg == 1)]] = True
             used = np.bincount(sx[lines], minlength=int(sx.max()) + 1) > 0      # SX of any line before the veto
@@ -945,6 +970,110 @@ def chain(f: dict, c: dict) -> np.ndarray:
         else:
             raise ValueError(stage)
     return lines
+
+
+# ---------------------------------------------------------------- P62: the acronym block + rule (sub_iu54_best)
+STREETW = set("rue r avenue av ave bd boulevard blvd chemin ch impasse imp allee place pl quai cours route rte square sq "
+              "passage residence res lotissement lot street st road rd drive dr lane ln court ct circle cir way trail trl "
+              "nagar marg floor flr no plot near opp".split())      # domain: hand-written street-type words (en / fr / in)
+ARTW = set("de la du des le les l d the of and".split())
+
+
+def acro_pairs(jac: float = 0.6, st_min: float = 1.0) -> pd.DataFrame:
+    """P62's acronym block: an SX whose core is one token of <= 8 characters equal to the acronym of the S1's core
+    (normalize.acronym, >= 2 tokens), with the same house number and city (rules.feats), is a candidate pair; the rule
+    keeps it when the two P3 addresses' token-set Jaccard >= jac and every S1 street token (address minus city, state,
+    street-type / article words and numbers) is in the SX address. -> the unambiguous pairs (one S1 per SX): s1, sx.
+    Train precision 0.997 (India) / 0.9997 (US)."""
+    import glob
+    import block as B
+    s1 = pq.read_table(WORK / f"rf_test_s1_{C}.parquet", columns=["id", "core", "hn", "city"]).to_pandas()
+    s1["acro"] = N.acronym(s1.core)
+    s1 = s1[(s1.acro != "") & (s1.hn != "") & (s1.city != "")].drop(columns="core")
+    fx, out = pq.ParquetFile(WORK / f"rf_test_sx_{C}.parquet"), []
+    for i in range(fx.num_row_groups):
+        t = fx.read_row_group(i, columns=["id", "core", "hn", "city"])
+        out.append(t.filter(pc.and_(pc.less_equal(pc.utf8_length(t["core"]), 8),
+                                    pc.invert(pc.match_substring(t["core"], " ")))).to_pandas())
+    sx = pd.concat(out)
+    sx = sx[(sx.hn != "") & (sx.city != "")]
+    j = s1.merge(sx, left_on=["acro", "hn", "city"], right_on=["core", "hn", "city"])[["id_x", "id_y"]]
+    j.columns = ["s1", "sx"]
+
+    def grab(files, ids):
+        v = pa.array(sorted(set(ids)), pa.string())
+        t = [pq.read_table(x, columns=["entity_id", "addr"]) for x in files]
+        t = pa.concat_tables([x.filter(pc.is_in(x["entity_id"], value_set=v)) for x in t]).to_pandas()
+        return t.drop_duplicates("entity_id").set_index("entity_id").addr
+    a1 = grab([B.TXT["test"] / f"{C}_s1.parquet"], j.s1).reindex(j.s1).fillna("").to_numpy(object)
+    ax = grab(sorted(glob.glob(str(B.TXT["test"] / f"{C}_sx_*.parquet"))), j.sx).reindex(j.sx).fillna("").to_numpy(object)
+    rf = pq.read_table(WORK / f"rf_test_s1_{C}.parquet", columns=["id", "city", "state"]).to_pandas().set_index("id").reindex(j.s1)
+    ja, st = np.zeros(len(j), np.float32), np.full(len(j), np.nan, np.float32)
+    for i, (u, w, ci, sa) in enumerate(zip(a1, ax, rf.city.fillna("").to_numpy(object), rf.state.fillna("").to_numpy(object))):
+        a, b = set(u.split()), set(w.split())
+        ja[i] = len(a & b) / len(a | b) if a | b else 0.0
+        k = {x for x in a - set(ci.split()) - set(sa.split()) - STREETW - ARTW if not x.isdigit() and len(x) > 1}
+        if k:
+            st[i] = len(k & b) / len(k)
+    j = j[(ja >= jac) & (st >= st_min)].copy()
+    j["n_s1"] = j.groupby("sx").s1.transform("size")
+    print(f"{C}: acronym block {len(sx):,} one-token SX, rule pairs {len(j):,}, unambiguous {int((j.n_s1 == 1).sum()):,}",
+          flush=True)
+    return j[j.n_s1 == 1][["s1", "sx"]].reset_index(drop=True)
+
+
+def acro_tiers(u: pd.DataFrame, ref: pd.DataFrame, ref_cand: pd.DataFrame, f8: pd.DataFrame) -> pd.DataFrame:
+    """P62's change set, referenced as it was staged (acro_fr.py + acro_cs.py): the rule pairs that a reference France
+    decision `ref` (s1, sx; P62 used #clean's lines) neither accepts nor gives the SX to another S1; tier T1 = not a
+    candidate of `ref_cand`, T2 = #8c's argmax (f8 = #8c's France frame: s1, sx, p), T3 = the rest; dropped when another S1
+    of the SX has #8c p >= 0.5, or past the caps on ref's lines (highest #8c p first). -> s1, sx, tier."""
+    key = lambda d: pd.MultiIndex.from_arrays([d.s1, d.sx])
+    u = u.copy()
+    u["matched"] = key(u).isin(key(ref))
+    owner = ref.drop_duplicates("sx").set_index("sx").s1
+    u["taken"] = u.sx.map(owner).notna() & ~u.matched
+    u["in_cand"] = key(u).isin(key(ref_cand))
+    b = f8[f8.sx.isin(set(u.sx))]
+    am = b.sort_values("p", ascending=False).drop_duplicates("sx").set_index("sx").s1
+    u["argmax"] = u.sx.map(am).to_numpy() == u.s1.to_numpy()
+    u["p8c"] = pd.Series(b.set_index(["s1", "sx"]).p).reindex(key(u)).to_numpy()
+    f = u[~u.matched & ~u.taken].copy()
+    f["tier"] = np.select([~f.in_cand, f.argmax], ["T1", "T2"], "T3")
+    b = f8[f8.sx.isin(set(f.sx))]
+    o = b.merge(f[["s1", "sx"]].assign(rule=True), on=["s1", "sx"], how="left")
+    f["comp_p"] = o[o.rule.isna()].groupby("sx").p.max().reindex(f.sx).fillna(0).to_numpy()
+    f = f[f.comp_p < 0.5].copy()
+    f["s3"] = f.sx.str.startswith("S3-")
+    cur = ref.assign(s3=ref.sx.str.startswith("S3-")).groupby(["s1", "s3"]).size()
+    f["cur"] = cur.reindex(pd.MultiIndex.from_arrays([f.s1, f.s3])).fillna(0).to_numpy()
+    f = f.sort_values("p8c", ascending=False, na_position="last")
+    f["k"] = f.groupby(["s1", "s3"]).cumcount() + 1
+    f = f[f.cur + f.k <= np.where(f.s3, 6, 5)]
+    print(f"{C}: acronym change set {len(f):,} pairs {f.tier.value_counts().to_dict()}", flush=True)
+    return f[["s1", "sx", "tier"]].reset_index(drop=True)
+
+
+def acro_fit(t: pd.DataFrame, lines: pd.DataFrame) -> list:
+    """P50's acro_fit on a base decision (lines: s1, sx of the country's accepted pairs): tiers T2, T1, T3 in turn (then
+    s1, sx); a pair is kept when its SX is in no line and its S1 stays within 5 S2 / 6 S3. -> [(s1, sx)] in that order."""
+    used = set(lines.sx)
+    cnt = {}
+    for a, x in zip(lines.s1, lines.sx):
+        c = cnt.setdefault(a, [0, 0])
+        c[0 if x.startswith("S2-") else 1] += 1
+    keep = []
+    for r in t.assign(o=t.tier.map({"T2": 0, "T1": 1, "T3": 2})).sort_values(["o", "s1", "sx"]).itertuples():
+        if r.sx in used:
+            continue
+        j = 0 if r.sx.startswith("S2-") else 1
+        c = cnt.setdefault(r.s1, [0, 0])
+        if c[j] >= CAPS[j]:
+            continue
+        c[j] += 1
+        used.add(r.sx)
+        keep.append((r.s1, r.sx))
+    print(f"{C}: acronym adds kept on the base {len(keep):,}", flush=True)
+    return keep
 
 
 def argmax(qx, p):

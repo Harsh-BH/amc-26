@@ -13,6 +13,9 @@
 - Staged on that base, validator PASS:
   - `sub_iu54_fr38` (Qwen CE swap on gc70 France, +6,885 lines; md5 0a8b2a1f; expected +0.0002) — **my pick for the next France step**;
   - `sub_iu54_fr55b` (P55 veto-only, −805 pairs; md5 6c8cd096). It empties 154 S1, which are gc70's rescue90 pairs.
+- 07:25: **upload #2 = `output/sub_iu54_best`** (validator PASS, md5 24176ee7… / cand a8b425b0…), expected ≈ default +0.00035. Chain: Qwen France → P55 veto without the rescue stage (−619) → P62 acronym adds re-filtered (+3,538, 2,638 of them new candidates) → dup (+44).
+  - Fallbacks, all PASS: `sub_iu54_frgc70_acro` (default + acronym), `sub_iu54_fr38_55n`, `sub_iu54_fr55b_norescue`.
+  - Tools: `p55n.py` (P55 veto list with stages skipped), `rm_pairs.py` (remove a pair list from any base), `acro_fit.py` (re-filter P62's set on a base: SX owned / caps).
 - The items below were written before that decision. sub_clean and its variants remain the cleaned-rules alternative.
 - **Upload `output/sub_clean`** (md5 4e0e33df…, PASS). Fallbacks: `sub_clean_iu34` (#34's India/US; use it if P57's honest frame rejects the combiner) and `sub38_clean_p55` (the Qwen France variant).
 - **Do not adopt:** C (France exclusivity veto), D (CE order swap), F (more seeds), a hn-suffix veto, or LEGAL changes.

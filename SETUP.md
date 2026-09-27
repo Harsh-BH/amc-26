@@ -115,6 +115,7 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `models/p55/fr_plain_s{0,1,2}.txt` (#clean's P55 France combiner, 3 seeds; S3 `amc26-offload/final/models/p55/`) | `data/work/p55/` | 0.7 MB each | `4341e582…` / `efa788a6…` / `95b418bf…` (first 16 hex) |
 | `work/p48/r_lo_France.parquet` (#clean: P48's bge scores of the France pairs outside the CE band, AWS GPU) | `data/work/p48/r_lo_France.parquet` | 2.3 MB | `ea4142ad…` |
 | `work/p36/morph_test.json` (the 44 brand syllables; rebuilt from the test names when absent) | `data/work/p36/morph_test.json` | 0.3 kB | `dbfbd6ef…` |
+| `work/p38/r/r_qwen_pool_test_France.parquet` (`sub_iu54_fr38*` / `best`: Qwen3-Reranker-4B + LoRA scores of France's band, AWS L40S; S3 `amc26-p38/results/p38-pool-0927-0145/r/`) | `data/work/p38/r/` | 7.2 MB | — |
 | `models/p50/fullzoo_s{0..4}.txt` (the final India / US combiner, 5 seeds; `full_s*` = without the zoo columns) | `data/work/p50/` | 0.7 MB each | S3 `amc26-offload/final/models/p50/` |
 | `work/p10/q_test_{India,US}.parquet` (P10's pruner score of every blocked test pair: a combiner column) | `data/work/p10/` | 170 / 136 MB | — |
 | `work/p45/oof/r_all_test_{India,US}.parquet` (P45: the bge CE on every #8c test argmax pair, AWS GPU) | `data/work/p45/oof/` | 71 / 56 MB | — |

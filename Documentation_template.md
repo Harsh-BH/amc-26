@@ -394,6 +394,15 @@ rule on the same France pair rows, applied in this order after the post-rules (t
 - vs #54: France only, 11,838 lines (+1,149 / −11,059 pairs). vs #37: France +32,731 / −3,241 pairs.
 - Shape before P55: 3.26 matches per France S1 (India / US 3.38), 5.9% empty, 76.7% of S1 with both sources.
 
+### 4.10 France variants on the final base (27 Sep; recipes `sub_iu54_fr38`, `sub_iu54_fr38_55n`, `sub_iu54_best`)
+On #54's India / US + #37's France, three France changes that passed their checks, stacked in this order:
+
+| change | rule | France test | evidence |
+|---|---|---|---|
+| Qwen France CE (P38) | the band blend uses Qwen3-Reranker-4B + LoRA (Apache-2.0, 4.02B, fine-tuned on India + US on AWS) instead of bge, with out-of-domain weights [0.8943, 0.3729, −0.0521]; the rest of #37's chain unchanged (the veto keeps bge's r) | 6,885 lines, +3,685 / −3,431 pairs | LOCO Qwen − bge **+0.00141 ± 0.00017 / +0.00109 ± 0.00014** France-F0.5 (8 SE both ways); band AUC 0.857 / 0.868 vs 0.821 / 0.829 |
+| P55 veto without its rescue stage | P55's band veto (4.9) on the bge chain's frame, minus its P42 rescue-stage pairs (the LB-proven #34v rescues) | −619 pairs | P55 veto arm LOCO positive both ways |
+| P62 acronym rule | an acronym block (the S1 core's acronym = the SX's one-token core, same house number and city) + an address check (token Jaccard ≥ 0.6, every S1 street token present), unambiguous pairs only; free SX, caps; the block's pairs join the candidate list | +3,538 pairs (2,638 new candidates) | train precision 0.997 (India) / 0.9997 (US) |
+
 ## 5. Results & Error Analysis
 
 - **F_0.5 Score (macro): 0.98984 on the report half** of the full-corpus holdout (India 0.99020, US 0.98960), with
