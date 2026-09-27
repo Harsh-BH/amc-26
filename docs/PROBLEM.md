@@ -254,3 +254,13 @@ so a learned pruning stage (meta-blocking) before the matcher legitimately shrin
    HF pretrained weights (MIT/Apache, ≤ 8B) are allowed; best public score decides the final entry.
 Still unanswered: daily-cap reset time, where/when the final zip goes, and the final deadline (a team asked whether it
 is 27 Sep 21:00 IST; we plan the last upload by 21:00 to be safe, not 22:00).
+
+## Organiser rulings (Query Form export of 27 Sep ~20:10)
+- Submission cap raised from 15 to **17 in total** for every team, "usable until midnight today, irrespective of any other
+  limits" (no per-day cap on the last day). Deadline: midnight 27 Sep IST.
+- **Only matching_results.tsv is uploaded in this round. The ZIP (code, candidate_pairs.tsv, methodology) is required for
+  Round 2**, via instructions to come.
+- "Final ranking (beyond public/private leaderboard) will be decided based on complete evaluation of the approach,
+  **computationally efficient candidate generation process and code**." So candidate-set size / efficiency and code quality
+  count in Round 2. Our shipped change-set parquets (final_build / final_patch) should be ported to real pipeline steps before then.
+- Coding assistants are allowed. Models: MIT/Apache-2.0, ≤ 8B, offline, fine-tuned only on the provided data (per model).
