@@ -5,6 +5,15 @@
 - **US holdout (55% of the SX files) is the same:** 1,812,611 new pairs, **254 true, 46 at p ≥ 0.71**. Best arm (all, t 0.71): h1 **+0.00004 ± 0.00001**, i.e. ≈ +0.000014 LB-eq on the sample. That misses the lead's gate (+0.00015 LB at 3 SE) by ~10×.
 - **Recommendation: no file for either country; stop spending on retrieval.** The missed pairs are now retrieved, but the matcher cannot confirm them.
 
+## France exact-key add (lead's request, 15:00): `output/sub68fr`
+- **Rule:** a free SX whose (core, hn, city) key belongs to exactly one France S1, when that pair is not in sub66_final's candidates.
+  - P64's legal-form conflict veto drops **1,068 of 1,907** (56%: most never-retrieved key matches carry a *different* legal form).
+  - Caps block 4. Result: **+835 pairs, 734 S1, 48 empties filled**; the pairs are added to candidate_pairs.tsv.
+- **Qwen r:** no coverage (these pairs were never candidates).
+- **India analogue** (same rule and veto): 55/65 = 0.846, Wilson 95% [0.739, 0.914]. US: 0 pairs.
+- **Expected** ≈ +0.00003 LB (+0.0002 France F0.5). Validator `--check-ids` PASS. Only France rows change, additions only, matches ⊆ candidates.
+- Rebuild: `.venv/bin/python probes/P68-iu-retrieval/fr_key.py build output/sub66_final output/sub68fr` (~4 min).
+
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
 - **Adopt nothing (India and US both fail).** The commands below stay for the record (a stronger matcher could reuse the retrieval):
 ```
