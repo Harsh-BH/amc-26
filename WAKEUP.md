@@ -9,12 +9,13 @@ show sub54's India/US combiner alone is worth +0.0004–0.0006, so sub54's extra
 This file keeps the proven India/US gain and drops the unproven France changes.
 
 ## Upload order for the remaining slots (round closes 27 Sep 23:59 IST)
-1. `sub_iu54_frgc70` — the safe best (above).
-2. `sub_clean` — gc70-era France rules, cleaned (no P46 "Développement", no P40 no-address names) + P55 combiner, with the same
-   India/US. If it beats #1, the cleaned French rules help; if not, gc70's France stays.
-3. Variants P50 is staging on #1 (see SUBMISSIONS.md): `sub_iu54_fr38` (France reranker swapped to Qwen, +0.0002 expected),
-   `sub_iu54_fr55b` (P55 veto only), and P61 co-training / P59–P60 bigger-data rerankers if they pass.
-4. Keep one slot spare.
+1. **`sub_iu54_frgc70`** (safe best): sub54 India/US + gc70 France. Expected ≈ 0.9867–0.9869.
+2. **`sub_iu54_best`**: #1 + France extras that all passed checks: Qwen reranker for France (LOCO +0.0011–0.0014 France-F,
+   8 SE both ways), P55 veto that leaves LB-proven rescues alone (−619), acronym rule from public-repo ideas (+3,538; 99.7–99.97%
+   precise on train), dup consistency. Expected ≈ 0.9870–0.9873. If #2 > #1 → #2 is the final base.
+3. `sub_clean` (old France rules cleaned + P55) — only if you want to test whether post-gc70 French rules can help at all.
+4. Keep one slot spare for the final combined file (+ P59/P60 bigger-data rerankers if they pass).
+Fallbacks staged: sub_iu54_fr38 (Qwen only), sub_iu54_frgc70_acro (acronym only), sub_iu54_fr55b_norescue, sub61h9.
 
 ## LB history
 D4 0.981142 → sub9ab 0.984072 → sub31 0.9856 → sub34_veto 0.985647 → rescue90 0.98596 → gc70 0.986304 → **sub54 0.986685**.
