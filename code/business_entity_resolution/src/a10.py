@@ -177,6 +177,15 @@ def apply(b, split: str, c: str, q1, qx, p, p_m2, r, id1, idx, scored=None) -> t
     the argmax from p' changes ~600 test decisions per country). id1 / idx: S1 / SX id arrays the q1 / qx codes index;
     split: whose text files ('train' for the holdout, 'test'); scored: rows whose S1 is scored (default all).
     id1 / idx may be arrow arrays (run.py's), only the ids in a pair are materialised."""
+    am, a = frame(split, c, q1, qx, p, p_m2, r, id1, idx, scored)
+    out = np.asarray(p, np.float64).copy()
+    out[a.row.to_numpy()] = stacked(b, a)
+    return out, am, a
+
+
+def frame(split: str, c: str, q1, qx, p, p_m2, r, id1, idx, scored=None) -> tuple:
+    """(am, features) of #8c's rows of one country: the text lookup + the columns (apply's input; iu_stack's base).
+    The frame's q1 / qx are compact codes (only the records in a pair); row indexes the inputs."""
     import model as M
     q1, qx, p = np.asarray(q1), np.asarray(qx), np.asarray(p, np.float64)
     am = M.argmax_sx(qx, p)
@@ -186,10 +195,7 @@ def apply(b, split: str, c: str, q1, qx, p, p_m2, r, id1, idx, scored=None) -> t
         else np.asarray(ids, object)[u]
     s1t, sxt = texts(split, c, take(id1, u1), take(idx, ux))
     a = features(k1, kx, p, p_m2, r, am, np.ones(len(p), bool) if scored is None else scored, s1t, sxt)
-    del s1t, sxt
-    out = p.copy()
-    out[a.row.to_numpy()] = stacked(b, a)
-    return out, am, a
+    return am, a
 
 
 def fb(tp, npred, ntrue) -> np.ndarray:

@@ -112,6 +112,8 @@ RECIPES["sub34_veto"] = dict(RECIPES["sub34"], veto=RECIPES["sub31_veto"]["veto"
 RECIPES["sub37"] = dict(RECIPES["sub34_veto"], rescue=0.90, gc=0.70)
 RECIPES["sub37_small"] = dict(RECIPES["sub37"], drop_sib_cands=True)
 RECIPES["sub37_hn90"] = dict(RECIPES["sub37"], hn_extra=0.90)       # staged #37_gc70_hn90 (P37): + two-sided hn extras
+# #52_max's India / US: P50's full-holdout refit of the P44 combiner + P45 r_all / zoo columns in a10's place (iu_stack)
+RECIPES["sub52_iu"] = dict(RECIPES["sub37"], iu="fullzoo")
 # staged #42_both (P42's joint re-tune): decision t 0.99 on the post-rules of t 0.9868, rescue 0.97, hn extras 0.80
 RECIPES["sub42_both"] = dict(RECIPES["sub37"], t_france=0.99, t_post=0.9868, rescue=0.97, hn_extra=0.80)
 # staged #41 / #41_hn90 (P41): + synthetic-brand recovery at p >= 0.30 (france.brand_mask)
@@ -147,6 +149,7 @@ CAP = None                  # --cap 5,6: at most 5 S2 and 6 S3 matches per S1 (t
 DROP_SIB_CANDS = False      # --drop-sibling-cands: unaccepted decoy-offset pairs leave candidate_pairs.tsv
 VETO = None                 # (tau, r file): fr31's P30 veto (recipe sub31_veto)
 A10 = None                  # P34's a10 booster (data/work-relative) for the CE countries (recipe sub34 / sub37)
+IU = None                   # --iu: the CE countries' stage, overriding the recipe's iu (a10 default | full | fullzoo)
 RESCUE = GC = HN_EXTRA = None   # the unseen country's decision-time bars (france.complete; recipe sub37: 0.90 / 0.70)
 SWAP = None                 # --swap: P46's noise-word swap tier, its lens s_max (france.swap_mask), the last stage
 NOADDR = None               # --noaddr: P40's address-less exact-name bar (france.noaddr_mask), after the brand stage
@@ -712,6 +715,21 @@ def a10_stage(split: str, c: str, q1, qx, p: np.ndarray, pm, r, id1: pa.Array, i
     return d.p.to_numpy(np.float32), d.am.to_numpy(bool)
 
 
+def iu_stage(tag: str, split: str, c: str, q1, qx, p: np.ndarray, pm, r, id1: pa.Array, idx: pa.Array) -> tuple:
+    """a10_stage's slot for iu = full / fullzoo (iu_stack.py: #50e / #52_max's combiner) -> (p'' float32, am). Cached
+    per booster set and input p (data/work/p9/iu_*): the features take ~5 min and ~1.3 GB per country."""
+    import iu_stack as I
+    path = M.CACHE / f"iu_{tag}_{split}_{c}_{I.booster_tag(tag)}_{hashlib.sha1(np.ascontiguousarray(p).tobytes()).hexdigest()[:8]}.parquet"
+    if not path.exists():
+        t0 = time.time()
+        pn, am = I.apply(tag, split, c, q1, qx, p, pm, r, id1, idx)
+        pd.DataFrame({"p": pn, "am": am}).to_parquet(path, index=False)
+        print(f"{c}: iu {tag} combined {int(am.sum()):,} argmax pairs in {time.time() - t0:.0f}s, peak "
+              f"{B.peak_gb():.2f} GB", flush=True)
+    d = pd.read_parquet(path)
+    return d.p.to_numpy(np.float32), d.am.to_numpy(bool)
+
+
 def ensure_a10():
     """P34's a10 booster (the recipe's A10 path); fit from the holdout when absent, as probes/P34-a10-stack/ho.py did:
     #8c's holdout rows of each CE country (P17's stack on, a10 off; band pairs without a cached bge r take #7's e5
@@ -777,7 +795,10 @@ def model_parts(split: str, world=None, only=None, stack: bool = True) -> list:
                 xs, side, c, id1 if side == "s1" else idx, q1 if side == "s1" else qx)
             ids = id1 if split == "test" else arr(s1.entity_id[s1.country == c])
             am = None
-            if A10 and stack and c in RR.CFG["countries"]:
+            iu = IU or RECIPES[RECIPE].get("iu", "a10")
+            if iu != "a10" and stack and c in RR.CFG["countries"]:
+                p, am = iu_stage(iu, split, c, q1, qx, p, pm, r, id1, idx)
+            elif A10 and stack and c in RR.CFG["countries"]:
                 p, am = a10_stage(split, c, q1, qx, p, pm, r, id1, idx, ids)
             parts.append({"c": c, "id1": id1, "idx": idx, "ids": ids, "q1": q1, "qx": qx, "p_m2": pm, "p": p, "r": r,
                           "am": am, "hn": hn, "truth": None if split == "test" else truth_of(ids.to_pylist(), t)})
@@ -1056,6 +1077,8 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
     ap.add_argument("--stage", choices=["rules", "model"], default="rules")
     ap.add_argument("--out", type=Path, default=Path("output"))
     ap.add_argument("--recipe", choices=sorted(RECIPES), default=RECIPE)
+    ap.add_argument("--iu", choices=["a10", "full", "fullzoo"],
+                    help="India / US stage after the CE: a10 (P34) | full / fullzoo (P50's combiner; default: recipe's)")
     ap.add_argument("--france", choices=["m2", "idf144", "idfdom", "bge", "sib", "idf144_bge", "fr31"],
                     help="the unseen country's scorer (default: the recipe's); its t: --t-country <label>=<t>")
     ap.add_argument("--ce-missing", choices=["score", "fallback", "keep"], default="score",
@@ -1079,6 +1102,7 @@ if __name__ == "__main__":        # forkserver workers (rules.feats) re-import t
                     help="fixed thresholds per country, e.g. France=0.88 (default: France and unseen labels by P6's rule)")
     a = ap.parse_args()
     use(a.recipe)
+    IU = a.iu
     FRANCE, CE_MISSING, DROP_SIB_CANDS = a.france or FRANCE, a.ce_missing, DROP_SIB_CANDS or a.drop_sibling_cands
     CAP = tuple(int(x) for x in a.cap.split(",")) if a.cap else None
     bar = lambda x, dflt: dflt if x is None else x or None      # 0 turns a bar off
