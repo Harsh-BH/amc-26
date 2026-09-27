@@ -219,7 +219,8 @@ US: +0.0005 on the US.
   independent judge found those two older rules mostly wrong (8% and 19% right), so they were dropped.
 - **Copies of the same record.** When two rows are exact copies and one is matched, the other now goes to the same
   business (P54): in the training answers that is right 100% of the time (60,319 groups).
-- **[FINAL LB] The final: `sub84` (27 Sep 20:02): `sub77` + the evening France change sets — xlf (address-less, legal form differs only), groupe swaps, P73 #79q, P76 R3, P80 (address-less, legal form kept), broad type-word veto, sub68fr, never-candidate noise swaps, narrow P73 veto; rebuilt byte for byte by `final_build.py … --upto 41` then `final_patch.py output/sub77 output/sub84`; public LB 0.988475 (+0.00018 over `sub77`).**
+- **[FINAL LB] The final: `sub88` (27 Sep 22:32): `sub84` + the India/US combiner upgrade (P70 `ta_ship.py`: 7 generator traces + 5 verified-merge anchors, holdout +0.00005) + 10,689 France adds from the post-hoc ADD rules of the public MIT repo PundarikakshNTripathi/present-day-ber-amlc-2026 (P81 ran its passes 1+2 on our file; P88 dropped veto re-adds and different- / typo-street pairs); rebuilt byte for byte by `final_patch.py output/sub77 output/sub88`; public LB 0.989023 (+0.00055 over `sub84`).**
+- **The previous final (`sub84`, 27 Sep 20:02):** `sub77` + the evening France change sets — xlf (address-less, legal form differs only), groupe swaps, P73 #79q, P76 R3, P80 (address-less, legal form kept), broad type-word veto, sub68fr, never-candidate noise swaps, narrow P73 veto; rebuilt byte for byte by `final_build.py … --upto 41` then `final_patch.py output/sub77 output/sub84`; public LB 0.988475 (+0.00018 over `sub77`).
 - **The previous final (`sub77`, public LB 0.988292, +0.0009 over `sub66_final`):** `sub66_final` plus six
   France change sets: a France judge trained on made-up pairs built from France's own records (P67), word-role pairs
   (P70), pairs just under France's bar that the language model strongly backs (P69), **removal** of decoy pairs where
@@ -262,7 +263,9 @@ rank smaller shortlists higher. The matches are exactly the ones of our best upl
 | #37_gc70 | + half-finished France groups completed (≥ 0.70) | = #34 | 0.986304 |
 | **#54** | the combined India/US checker + four new France stages (with P46 / P40) | India/US +0.0007 | **0.986685** (best so far) |
 | `sub66_final` (27 Sep 14:22) | #54's India/US checker + #37's France + the France judge, acronym rule, legal-form veto and address-less names | = #54 India/US | 0.987391 |
-| **final** (27 Sep 16:56, `sub77`) | `sub66_final` + France judge trained on synthetic French pairs, word-role pairs, strongly-backed near-bar pairs, noise-word swaps + synthetic-brand pairs − decoy org-word pairs | = #54 India/US | **0.988292** (best) |
+| `sub77` (27 Sep 16:56) | `sub66_final` + France judge trained on synthetic French pairs, word-role pairs, strongly-backed near-bar pairs, noise-word swaps + synthetic-brand pairs − decoy org-word pairs | = #54 India/US | 0.988292 |
+| `sub84` (27 Sep 20:02) | `sub77` + the evening France change sets (xlf, groupe, P80, R3, type-word and narrow P73 vetoes) | = #54 India/US | 0.988475 |
+| **final** (27 Sep 22:32, `sub88`) | `sub84` + India/US generator-trace / anchor columns + 10,689 France adds from a public repo's post-hoc rules (filtered) | India/US +0.00005 | **0.989023** (best) |
 
 The jump from rules to a trained model (+21 points) was the biggest win: the model learned when a same-name business
 at a different street is *not* the same business.

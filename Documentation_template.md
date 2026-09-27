@@ -48,7 +48,7 @@ France's threshold and rules were validated with leaderboard uploads that change
 
 - **Holdout F0.5 (India + US, report half): 0.98984** with the a10 stacker (0.98956 before it; all S1 at #8c: 0.98990),
   against 0.7708 for an exact-key rule baseline.
-- **[FINAL LB] Best public leaderboard: 0.988475** (the final entry, `sub84` (27 Sep 20:02): `sub77` + the evening France change sets — xlf (address-less, legal form differs only), groupe swaps, P73 #79q, P76 R3, P80 (address-less, legal form kept), broad type-word veto, sub68fr, never-candidate noise swaps, narrow P73 veto; rebuilt byte for byte by `final_build.py … --upto 41` then `final_patch.py output/sub77 output/sub84`). Before it: 0.988292 (`sub77`, 27 Sep 16:56). The path there: 0.980017 (#5) →
+- **[FINAL LB] Best public leaderboard: 0.989023** (the final entry, `sub88` (27 Sep 22:32): `sub84` + the India/US combiner upgrade (P70 `ta_ship.py`: 7 generator traces + 5 verified-merge anchors, holdout +0.00005) + 10,689 France adds from the post-hoc ADD rules of the public MIT repo PundarikakshNTripathi/present-day-ber-amlc-2026 (P81 ran its passes 1+2 on our file; P88 dropped veto re-adds and different- / typo-street pairs); rebuilt byte for byte by `final_patch.py output/sub77 output/sub88`). Before it: 0.988475 (`sub84` (27 Sep 20:02): `sub77` + the evening France change sets — xlf (address-less, legal form differs only), groupe swaps, P73 #79q, P76 R3, P80 (address-less, legal form kept), broad type-word veto, sub68fr, never-candidate noise swaps, narrow P73 veto; rebuilt byte for byte by `final_build.py … --upto 41` then `final_patch.py output/sub77 output/sub84`). Before it: 0.988292 (`sub77`, 27 Sep 16:56). The path there: 0.980017 (#5) →
   0.981142 (D4, France stricter) → 0.984072 (#9ab) → 0.9856 (#31, the France chain) → 0.985647 (#34_veto) → 0.98596
   (#34v, empty-S1 rescue) → 0.986304 (#37, group completion) → **0.986685** (#54, 27 Sep: the India/US combiner + the
   France chain of 4.9) → **0.987391** (`sub66_final`: #54's India/US + #37's France with the Qwen CE, P55's veto, the
@@ -436,7 +436,7 @@ also adds P41's synthetic-brand rule on `sub66_final` (+5,824 pairs, `sub77`, md
   - The holdout's competing (non-holdout) band pairs keep the e5 blend, since bge scores were computed only for the
     holdout's own band.
   - Two independent audits (at #3) found no label leakage. The threshold-tuning optimism is at most 0.00003.
-  - **[FINAL LB] Public leaderboard: best 0.988475 (`sub84`, 27 Sep 20:02), the final entry; `sub77` 0.988292 before it** (= the best public upload):
+  - **[FINAL LB] Public leaderboard: best 0.989023 (`sub88`, 27 Sep 22:32), the final entry; `sub84` 0.988475 and `sub77` 0.988292 before it** (= the best public upload):
     +0.000901 over `sub66_final` (0.987391), +0.001607 over #54 (0.986685), +0.001988 over #37_gc70 (0.986304).
 
 ### 5.1 Ablation — every step on the same full-corpus holdout
