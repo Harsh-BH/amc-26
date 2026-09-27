@@ -87,6 +87,16 @@ The class: address-less SX whose name core equals a unique S1 core, with a full 
   - When a model leaves a large share of a precise class free, as the India target does (39% / 26%), the leftovers stay true (.91 / .96).
   - When it accepts nearly all of it, as the US target does (4% / 2%), the leftovers are coin flips (.46 / .63).
   - France leaves 50% / 25% free, like the India target.
+- **Split, for trimming** (`xlf_loco_split.py`, `xlf_qwen.py`; change set `data/work/p70/changes_sub77_xlf_split.parquet`):
+
+  | split | France adds | France p median | LOCO pool, India target | LOCO pool, US target |
+  |---|---|---|---|---|
+  | (b) spelled differently | 377 | .94 | .964, +0.00027 | 16 at .63 |
+  | (a2) SX drops the form | 1,063 | .91 | .884, +0.00010 | 62 at .47 |
+  | (a3) SX adds a form | 579 | .80 | .954, +0.00007 | 33 at .45 |
+
+  - Pooled Qwen scores every (a) France add below .5. That is blindness, not evidence: on labelled LOCO pairs, true (a) pairs reach r ≥ .5 only 3% (US→India) / 25% (India→US) of the time.
+  - Trim order if the file disappoints: a3, then a2; keep b.
 - **`output/sub77_xlf`**: +2,019 adds, validator PASS. Expected +0.0002 to +0.0004 LB if France is India-like, ≈ −0.0001 if US-like.
 
 ## Evidence         (France-F0.5 dF on the LOCO target; A→B = fit on A's out-of-domain frame, bars picked on A, applied to B; h1 = report half ± SE)
