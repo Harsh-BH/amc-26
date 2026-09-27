@@ -152,5 +152,85 @@ def smoke(n: int = 400, split: str = "A"):
     print(f"smoke ok, peak {peak():.2f} GB")
 
 
+SDATA = "amc26/p80/ce/score_data"                    # channel of the checkpoint-scoring jobs (mode 'score')
+
+
+def score_channel():
+    """Stage C's missing rows -> s3://.../score_data/: keys/<c>/train69 = sc_<c> frame rows of folds 6-9 (q1, qx, fold),
+    keys/<c>/test = every test X pair with cross-fit M2 p >= stagec.PMIN (p80-sct files, = stagec.apply_test's set);
+    txt/ (train texts, server-side copy), txt_test/ (P3's India/US test texts), holdout/ (2k-pair samples)."""
+    import boto3
+    PMIN = 0.01                                        # = stagec.PMIN (checked below against its source)
+    assert "PMIN, ANC, T_BASE = 0.01," in (HERE / "stagec.py").read_text()
+    global DATA
+    DATA, s3 = SDATA, boto3.Session(profile_name="harsh", region_name="ap-south-1").client("s3")
+    sct = ROOT / "out/p80-sct-g4dn16xlarge-0927-2143"
+    for c in ("India", "US"):
+        t = pq.read_table(W / f"p80/sc_{c}.parquet", columns=["q1", "qx", "fold"], filters=[("fold", ">=", 6)]).to_pandas()
+        _put(t.astype({"q1": np.int32, "qx": np.int32, "fold": np.int8}), f"keys/{c}/train69.parquet")
+        parts = []
+        for xf in sorted(X.glob(f"test_{c}_sx_*.parquet")):
+            (tp,) = sorted(sct.rglob(f"*{xf.name}"))
+            o = pq.read_table(tp, columns=["q1", "qx", "p"]).to_pandas()
+            assert len(o) == pq.read_metadata(xf).num_rows
+            parts.append(o.loc[o.p.to_numpy() >= PMIN, ["q1", "qx"]].astype(np.int32))
+        _put(pd.concat(parts, ignore_index=True), f"keys/{c}/test.parquet")
+        _put(pd.read_parquet(W / f"p13/sm_data/holdout_{c}.parquet").sample(2000, random_state=0), f"holdout/holdout_{c}.parquet")
+    for o in s3.list_objects_v2(Bucket=BUCKET, Prefix="amc26/p80/ce/data/txt/")["Contents"]:
+        s3.copy_object(Bucket=BUCKET, Key=f"{SDATA}/txt/{Path(o['Key']).name}", CopySource={"Bucket": BUCKET, "Key": o["Key"]})
+    aws = ["--profile", "harsh", "--region", "ap-south-1", "--only-show-errors"]
+    subprocess.run(["aws", "s3", "sync", str(W / "p3/txt_test"), f"s3://{BUCKET}/{SDATA}/txt_test/", "--exclude", "France*", *aws],
+                   check=True)
+    subprocess.run(["aws", "s3", "ls", "--recursive", "--summarize", f"s3://{BUCKET}/{SDATA}/", "--profile", "harsh"], check=True)
+
+
+def smoke_score(n: int = 300):
+    """Score mode on n keys per set (train69 + test, one slice), two local e5-small 'checkpoints' (P13 save format)."""
+    import boto3, shutil, torch
+    sys.path[:0] = [str(HERE), str(ROOT / "probes/P13-aws-rerank"), str(ROOT / "probes/P4b-rerank")]
+    import launch_ce, rerank, solution_p13 as P, solution_p80ce as S
+    n, tmp = int(n), Path(os.environ["SMOKE_DIR"])
+    shutil.rmtree(tmp, ignore_errors=True)
+    ch = tmp / "train"
+    s3 = boto3.Session(profile_name="harsh", region_name="ap-south-1").client("s3")
+    get = lambda key: pd.read_parquet(io.BytesIO(s3.get_object(Bucket=BUCKET, Key=f"{SDATA}/{key}")["Body"].read()))
+    for c in ("India", "US"):
+        (ch / "keys" / c).mkdir(parents=True)
+        for nm in ("train69", "test"):
+            get(f"keys/{c}/{nm}.parquet").sample(n, random_state=0).to_parquet(ch / "keys" / c / f"{nm}.parquet", index=False)
+    (ch / "holdout").mkdir()
+    for c in ("India", "US"):
+        get(f"holdout/holdout_{c}.parquet").to_parquet(ch / "holdout" / f"holdout_{c}.parquet", index=False)
+    for d, src in (("txt", W / "p3/txt"), ("txt_test", W / "p3/txt_test")):
+        (ch / d).mkdir()
+        for f in src.glob("*.parquet"):
+            (ch / d / f.name).symlink_to(f)
+    os.environ.update(HF_HOME=str(Path.home() / ".cache/huggingface"), HF_HUB_OFFLINE="1", CUDA_VISIBLE_DEVICES="")
+    S.WORK = tmp / "work"
+    ck = {}
+    for nm, seed in (("A", 0), ("B", 1)):                      # two different random heads = two distinct "checkpoints"
+        torch.manual_seed(seed)
+        job = P.Job(ch, tmp / "mk", {"bge": "intfloat/multilingual-e5-small", "checkpoint_dir": str(tmp / "ck")})
+        _, sc, _ = job.load("bge")
+        frozen = {k for k, p in sc.named_parameters() if not p.requires_grad}
+        ck[nm] = str(tmp / f"ce_{nm}.pt")
+        torch.save({k: v.half() for k, v in sc.state_dict().items() if k not in frozen}, ck[nm])
+        del job, sc
+    for c in ("India", "US"):
+        hp = launch_ce.score_hp(c, 0, 1, "smoke") | {"bge": "intfloat/multilingual-e5-small", "s3": "", "ckpts": ck}
+        S.main(ch, None, tmp / f"model_{c}", tmp / "out", hp | {"checkpoint_dir": str(tmp / "ck")})
+        o = pd.read_parquet(tmp / f"model_{c}" / "score" / f"score_{c}_0of1.parquet")
+        assert len(o) == 2 * n and (o.fold == -1).sum() == n and (o.r_A != o.r_B).any() and o.r.between(0, 1).all(), c
+        for split, m in (("train", o.fold >= 6), ("test", o.fold == -1)):
+            q1, qx = rerank.rows(split, c, o.s1[m], o.sx[m])
+            assert (q1 == o.q1[m].to_numpy()).all() and (qx == o.qx[m].to_numpy()).all(), f"{split} ids = P3 rows"
+            ta, tb = rerank.texts(split, c, q1, qx)
+            w = pd.read_parquet(S.WORK / f"test_{c}.parquet")[m.to_numpy()]
+            assert (w.ta.to_numpy() == ta).all() and (w.tb.to_numpy() == tb).all(), f"{split} texts = rerank.texts"
+        print(c, o.shape, o.columns.tolist(), o.head(2).to_dict("records"))
+    print(f"smoke_score ok, peak {peak():.2f} GB")
+
+
 if __name__ == "__main__":
-    {"band": band, "keys": keys, "static": static, "smoke": smoke}[sys.argv[1]](*sys.argv[2:])
+    {"band": band, "keys": keys, "static": static, "smoke": smoke, "score_channel": score_channel,
+     "smoke_score": smoke_score}[sys.argv[1]](*sys.argv[2:])

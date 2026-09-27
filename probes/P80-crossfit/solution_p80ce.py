@@ -68,11 +68,76 @@ def build(src: Path, split: str) -> dict:
     return score
 
 
-def main(train_dir, test_dir, model_dir, out_dir, params):
+def _p13():
     try:
         import p13sol                                   # shipped next to this file (launch_ce.py)
     except ModuleNotFoundError:
         import solution_p13 as p13sol                   # laptop smoke
+    return p13sol
+
+
+def score_main(train_dir, model_dir, params):
+    """mode 'score': slice part = [k, n] of keys/<country>/{train69,test}.parquet, scored by EVERY checkpoint in
+    params['ckpts'] ({name: s3 uri}) through P13's bge_ckpt phase (tokens shared between checkpoints) ->
+    score/score_<c>_<k>of<n>.parquet: q1, qx, fold (-1 = test), s1, sx, r_<name>..., r = sigmoid(mean logit)."""
+    import os
+    p13sol, src = _p13(), Path(train_dir)
+    c, (k, n) = params["country"], params["part"]
+    os.environ.setdefault("HF_HOME", str(Path(params.get("checkpoint_dir", "/tmp")) / "hf"))
+    os.environ.setdefault("TOKENIZERS_PARALLELISM", "true")
+    K = pd.concat([pd.read_parquet(src / "keys" / c / "train69.parquet"),
+                   pd.read_parquet(src / "keys" / c / "test.parquet").assign(fold=np.int8(-1))], ignore_index=True)
+    K = K.iloc[len(K) * k // n: len(K) * (k + 1) // n].reset_index(drop=True)
+    WORK.mkdir(parents=True, exist_ok=True)
+    cols = {nm: np.empty(len(K), dtype=object) for nm in ("s1", "sx", "ta", "tb")}
+    for m, txt in ((K.fold.to_numpy() >= 0, src / "txt"), (K.fold.to_numpy() < 0, src / "txt_test")):
+        if m.any():
+            q1, qx = K.q1.to_numpy()[m], K.qx.to_numpy()[m]
+            (cols["s1"][m], cols["sx"][m]), (cols["ta"][m], cols["tb"][m]) = \
+                lookup(txt, c, q1, qx, ["entity_id"], ids), lookup(txt, c, q1, qx, ["name", "addr"], join)
+    pd.DataFrame(cols).to_parquet(WORK / f"test_{c}.parquet", index=False)
+    print(f"[p80ce] score {c} part {k}/{n}: {len(K):,} pairs ({int((K.fold >= 0).sum()):,} train folds 6-9)", flush=True)
+    del cols
+    for f in (src / "holdout").glob("*.parquet"):                 # small holdout samples: restore check + planner
+        shutil.copy(f, WORK / f.name)
+    h = pd.read_parquet(WORK / "holdout_India.parquet").head(64)
+    for o in ("India", "US"):
+        h[["ta", "tb", "y", "p"]].to_parquet(WORK / f"val_{o}.parquet", index=False)
+    for o in {"India", "US", "France"} - {c}:
+        h[["s1", "sx", "ta", "tb", "p"]].to_parquet(WORK / f"test_{o}.parquet", index=False)
+    prev, R = None, {}
+    for nm, uri in params["ckpts"].items():
+        job = p13sol.Job(WORK, Path(model_dir) / nm, {**params, "ckpt": uri, "s3": params["s3"] and f"{params['s3']}/{nm}"})
+        if prev is not None:
+            job.D, job.tok = prev.D, prev.tok                       # same tokenizer, same files
+        job.log(ev="start", ckpt=uri, part=[k, n], country=c)
+        try:
+            job.run()
+        finally:
+            job.flush_log()
+        r = pd.read_parquet(Path(model_dir) / nm / "r" / f"r_bge_pool_test_{c}.parquet")
+        assert len(r) == len(K), (nm, len(r), len(K))
+        R[nm], prev = r, job
+    ref = R[next(iter(R))]
+    out = K.assign(s1=ref.s1.to_numpy(), sx=ref.sx.to_numpy())
+    L = []
+    for nm, r in R.items():
+        assert (r.s1.to_numpy() == ref.s1.to_numpy()).all() and (r.sx.to_numpy() == ref.sx.to_numpy()).all()
+        out[f"r_{nm}"] = r.r.to_numpy(np.float32)
+        x = np.clip(r.r.to_numpy(np.float64), 1e-6, 1 - 1e-6)
+        L.append(np.log(x / (1 - x)))
+    out["r"] = (1 / (1 + np.exp(-np.mean(L, 0)))).astype(np.float32)
+    g = Path(model_dir) / "score" / f"score_{c}_{k}of{n}.parquet"
+    g.parent.mkdir(parents=True, exist_ok=True)
+    out.to_parquet(g, index=False)
+    p13sol.S3(params["s3"]).put(g, f"score/{g.name}")
+    print(f"[p80ce] {g.name}: {len(out):,} rows", flush=True)
+
+
+def main(train_dir, test_dir, model_dir, out_dir, params):
+    if params.get("mode") == "score":
+        return score_main(train_dir, model_dir, params)
+    p13sol = _p13()
     split = params["split"]
     assert split in ("A", "B") and params.get("phases") == ["bge_pool"], params
     score = build(Path(train_dir), split)

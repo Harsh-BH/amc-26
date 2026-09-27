@@ -1,3 +1,9 @@
 p80ce-A-0927-2141 ml.g6e.2xlarge
 p80ce-B-0927-2141 ml.g6e.4xlarge STOPPED while Pending (no capacity, never billed)
 p80ce-B-0927-2149 ml.g6e.xlarge
+p80cs-India0-g6e4xlarge-0927-2236 ml.g6e.4xlarge
+p80cs-India1-g6e8xlarge-0927-2236 ml.g6e.8xlarge
+p80cs-US0-g54xlarge-0927-2237 ml.g5.4xlarge
+p80cs-US1-g52xlarge-0927-2237 ml.g5.2xlarge
+p80cs-India0-g64xlarge-0927-2237 ml.g6.4xlarge
+p80cs-India1-g62xlarge-0927-2237 ml.g6.2xlarge
