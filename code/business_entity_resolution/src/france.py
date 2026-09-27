@@ -1076,6 +1076,111 @@ def acro_fit(t: pd.DataFrame, lines: pd.DataFrame) -> list:
     return keep
 
 
+# ---------------------------------------------------------------- P64: legal-form conflict veto (the last France stage)
+LF_CANON = {"incorporated": "inc", "corporation": "corp", "company": "co", "limited": "ltd", "private": "pvt",
+            "etablissement": "ets", "etablissements": "ets"}
+LF_LONG = {"private": "pvt", "limited": "ltd", "incorporated": "inc", "corporation": "corp", "company": "co"}
+
+
+def _lf_canon(t: str) -> str:
+    from rapidfuzz.fuzz import ratio
+    if t in N.LEGAL:
+        return LF_CANON.get(t, t)
+    return LF_LONG[max(LF_LONG, key=lambda w: ratio(t, w))]      # a typo of a long form ('pirvate', 'Limted')
+
+
+def _lf_sig(x: str) -> str:
+    toks = x.split()
+    leg = [t for i, t in enumerate(toks) if not (i == 0 and t == "co" and len(toks) > 1)      # 'Co-op ...', 'Co Name'
+           and N._is_legal(t, toks[i + 1] if i + 1 < len(toks) else "")]
+    if len(leg) == len(toks):          # only legal tokens: an acronym ('PC' = the initials of a 2-word core) or a bare form
+        return ""
+    return "+".join(sorted({_lf_canon(t) for t in leg}))
+
+
+def lf_sig(names) -> np.ndarray:
+    """P64: the legal-form signature of names ('Acme Pvt. Limited' -> 'ltd+pvt', 'Bar SARL' -> 'sarl', none -> ''), with
+    normalize's own detector (LEGAL + typos of the long forms); computed once per distinct name."""
+    u, inv = np.unique(np.asarray(names).astype(str), return_inverse=True)
+    return np.array([_lf_sig(x) for x in N.name_norm(pd.Series(u))], object)[inv]
+
+
+def lf_class(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """0 both none, 1 same, 2 S1 only, 3 SX only, 4 both present and disjoint (the conflict), 5 overlap."""
+    ea, eb = a == "", b == ""
+    ov = np.array([bool(set(u.split("+")) & set(v.split("+"))) for u, v in zip(a, b)], bool)
+    return np.select([ea & eb, a == b, eb, ea, ov], [0, 1, 2, 3, 5], 4).astype(np.int8)
+
+
+def text_names(q1: np.ndarray, qx: np.ndarray) -> tuple:
+    """(S1 names at q1, SX names at qx) from P3's cached text tables (the rows q1 / qx index)."""
+    import block as B
+    import features as F
+    n1 = pq.read_table(B.TXT["test"] / f"{C}_s1.parquet", columns=["name"]).column(0).combine_chunks() \
+        .take(pa.array(q1)).to_numpy(zero_copy_only=False)
+    files, offs = F.sx_files("test", C)
+    nx = np.empty(len(qx), object)
+    for fx, lo, hi in zip(files, offs[:-1], offs[1:]):
+        m = (qx >= lo) & (qx < hi)
+        if m.any():
+            nx[m] = pq.read_table(fx, columns=["name"]).column(0).combine_chunks().take(pa.array(qx[m] - lo)) \
+                .to_numpy(zero_copy_only=False)
+    return n1, nx
+
+
+def lf_veto(q1: np.ndarray, qx: np.ndarray) -> np.ndarray:
+    """P64's veto per accepted pair (q1 / qx rows): S1 and SX both carry a legal form and the forms are disjoint
+    (SARL vs SAS, SAS vs SA, SCI vs SNC). LOCO (gc70, chain) +0.00300 / +0.00074; the unseen country only (India / US
+    class-4 pairs are 0.89 / 0.99 precise: the combiner already prices them)."""
+    n1, nx = text_names(q1, qx)
+    k = lf_class(lf_sig(n1), lf_sig(nx))
+    print(f"{C}: legal-form conflict veto (P64) {int((k == 4).sum()):,} of {len(k):,} accepted pairs", flush=True)
+    return k == 4
+
+
+# ---------------------------------------------------------------- P66: address-less exact full names with a unique core
+NULLS = {"", "NULL", "<NULL>"}
+
+
+def xfc(n1, nx, ax, c1, full_count, core_count) -> np.ndarray:
+    """P66 rule66.xfc: the SX's address is empty (or NULL), its full normalised name (fkey, legal form kept) equals the
+    S1's, a name >= 5 characters no other S1 of the country carries, and the S1's name core is unique in the country
+    (the core guard drops xf_noaddr's false adds: 97% belonged to another S1 with the same core, 'X SARL' vs 'X')."""
+    return np.array([(adr or "").strip().upper() in NULLS and a == b and len(a) >= 5 and full_count.get(a, 0) == 1
+                     and core_count.get(c, 0) == 1
+                     for a, b, adr, c in zip(map(fkey, n1), map(fkey, nx), ax, c1)], bool)
+
+
+def raw_rows(ids, sources: tuple, cols: list) -> pd.DataFrame:
+    """Raw test rows of ids (entity_id index)."""
+    v = pa.array(sorted(set(ids)), pa.large_string())
+    t = pd.concat([pq.read_table(WORK / f"test_source{i}.parquet", columns=["entity_id", *cols],
+                                 filters=[("entity_id", "in", v)]).to_pandas() for i in sources])
+    return t.drop_duplicates("entity_id").set_index("entity_id")
+
+
+def xfc_adds(q1, qx, is2, p, am, base, sib, s1, sx, t: float = 0.3) -> np.ndarray:
+    """P66's adds on a #37-style frame (p, argmax am, base = its accepted lines): xfc pairs among the address-less argmax
+    pairs, then rule40.add (free SX, non-sibling, p >= t, caps 5 / 6, best p first, any S1). -> mask."""
+    raw = lambda k, cols: pq.read_table(WORK / f"test_source{k}.parquet", columns=cols,
+                                        filters=[("country", "==", C)]).to_pandas()
+    a = pd.concat([raw(k, ["entity_id", "business_address"]) for k in (2, 3)], ignore_index=True)
+    na = set(a.entity_id[a.business_address.str.strip().str.upper().isin(NULLS)])
+    del a
+    w = np.flatnonzero(am & pd.Series(sx).isin(na).to_numpy())       # np.isin loops per value on object arrays
+    full = pd.Series([fkey(x) for x in raw(1, ["business_name"]).business_name]).value_counts().to_dict()
+    core = pd.read_parquet(WORK / f"rf_test_s1_{C}.parquet", columns=["id", "core"]).set_index("id").core
+    n1 = raw_rows(s1[w], (1,), ["business_name"]).business_name.reindex(s1[w]).fillna("").to_numpy(object)
+    rx = raw_rows(sx[w], (2, 3), ["business_name", "business_address"]).reindex(sx[w])
+    cls = np.zeros(len(p), bool)
+    cls[w] = xfc(n1, rx.business_name.fillna("").to_numpy(object), rx.business_address.fillna("").to_numpy(object),
+                 core.reindex(s1[w]).fillna("").to_numpy(object), full, core.value_counts().to_dict())
+    add = gc_add(q1, qx, is2, p, am, base, sib | ~cls, t, np.ones(len(p), bool), empty=True)
+    print(f"{C}: address-less exact names with a unique core (P66): {len(w):,} address-less argmax pairs, "
+          f"class {int(cls.sum()):,}, adds {int(add.sum()):,}", flush=True)
+    return add
+
+
 def argmax(qx, p):
     import model as M
     return M.argmax_sx(qx, p)
@@ -1117,6 +1222,16 @@ def _check():
         [True, True, True, False, False]
     assert btoks("M/s Brixpyra Pvt") == ["m", "s", "brixpyra", "pvt"] and n_syll("zephcalobrix", {"zeph", "calo", "brix"}) == 3
     assert fkey("Club des Africa & Fils SARL") == "club des africa and fils sarl" and fkey("Maison Léts") == "maison lets"
+    t = lf_sig(["Acme Pvt. Limited", "Foo L.L.C.", "Bar SARL", "Baz", "Qux Pirvate Ltd", "Co-op Stores Inc.",
+                "Société Dupont S.A.S.", "Company", "PC", "S A S U Dupont"]).tolist()
+    assert t == ["ltd+pvt", "llc", "sarl", "", "ltd+pvt", "inc", "sas", "", "", "sasu"], t
+    assert lf_class(np.array(["", "llc", "llc", "", "llc", "ltd+pvt"], object),
+                    np.array(["", "llc", "", "inc", "inc", "ltd"], object)).tolist() == [0, 1, 2, 3, 4, 5]
+    got = xfc(["Club des Africa SARL", "Club des Africa SARL", "Maison Lets", "Club des Africa SARL", "Dupont"],
+              ["CLUB DES AFRICA SARL", "Club des Africa SARL", "Maison Léts", "Club des Africa SARL", "Dupont"],
+              ["", "1 Rue X", "NULL", "<NULL>", ""], ["club africa", "club africa", "maison lets", "club africa", "dupont"],
+              {"club des africa sarl": 1, "maison lets": 1, "dupont": 1}, {"club africa": 1, "maison lets": 2, "dupont": 1})
+    assert list(got) == [True, False, False, True, True], got
     e = np.r_[False, acc[1:]]                                                                 # xf: an empty S1 0 may take it
     assert complete(q1, qx, is2, p, am, e, np.array([""] * 7, object), np.array([""] * 7, object),
                     noaddr=(.9, np.r_[no[:6], True])).tolist() == e.tolist()[:6] + [True]
