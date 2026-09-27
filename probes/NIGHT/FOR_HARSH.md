@@ -1,9 +1,15 @@
 # From Aditya's laptop (night run, 27 Sep 03:00–05:30 IST) — for Harsh / the master
 
-**TL;DR — two France-only files to stack on the current best (sub44r or sub48):**
-`p54.py cells && p54.py build output/sub48 output/sub48_n54 all` (−≈6.0k decoy-word swaps/adds at any hn, est. +0.0005–0.0007;
+**Re the #54 shortfall (LB +0.00038 vs +0.0015–0.002 expected):** one France component that the gates never isolated is
+P42's hn-extra (p ≥ 0.8, no word check). In a local LOCO rebuild (US→India, France-like chain) the simulated hn-extra adds
+7,050 pairs at precision 0.445 (ΔF −0.0059); gc and rescue also let in decoy-word pairs without a house number (0% true).
+France's decoy-word lens profile matches India's (e ≈ 0.5). N54 removes exactly that family — so it is also a diagnostic
+for the shortfall. Use the CURRENT best (sub54) as the base below.
+
+**TL;DR — two France-only files to stack on the current best (sub54, LB 0.986685):**
+`p54.py cells && p54.py build output/sub54 output/sub54_n54 all` (−≈6.0k decoy-word swaps/adds at any hn, est. +0.0005–0.0007;
 **LOCO PASSES both ways, both halves**: US→India +0.027, India→US +0.00015 France-F0.5 — N54 RESULT addenda 3–5),
-then `n55.py analyse && n55.py build output/sub48_n54 output/sub48_n54_n55 strict` (+≈10k noise-word variants,
+then `n55.py analyse && n55.py build output/sub54_n54 output/sub54_n54_n55 strict` (+≈10k noise-word variants,
 est. +0.0004–0.0006; strict ONLY — the groupe band (lens s .05–.1) is 90% true in US but 5% in India). Each is one validator run away (use system python3 for the validator if memory is tight).
 If you want a LOCO read first: both are cell rules, so P42's solution_p42.py analogue can score them.
 
