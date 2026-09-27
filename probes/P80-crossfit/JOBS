@@ -23,3 +23,6 @@ p80cs-India2-g4dnxlarge-0927-2310 ml.g4dn.xlarge
 p80cs-India3-g4dn2xlarge-0927-2310 ml.g4dn.2xlarge
 p80cs-India4-g4dn4xlarge-0927-2311 ml.g4dn.4xlarge
 p80cs-India5-g4dn8xlarge-0927-2311 ml.g4dn.8xlarge
+p80cs-India3-g6exlarge-0927-2315 ml.g6e.xlarge
+p80cs-India10-g4dn12xlarge-0927-2326 ml.g4dn.12xlarge
+p80cs-India11-g54xlarge-0927-2332 ml.g5.4xlarge
