@@ -1,0 +1,34 @@
+{
+ "sub61": {
+  "parts": {
+   "readmit": 1167,
+   "newveto": 23,
+   "add_gain": 1613,
+   "add_lost": 91
+  },
+  "India->US": {
+   "est": -8.6e-05,
+   "est_h1": -4.2e-05
+  },
+  "US->India": {
+   "est": 0.000157,
+   "est_h1": -1.8e-05
+  }
+ },
+ "sub61h": {
+  "parts": {
+   "readmit": 0,
+   "newveto": 0,
+   "add_gain": 1613,
+   "add_lost": 91
+  },
+  "India->US": {
+   "est": 0.000405,
+   "est_h1": 0.000411
+  },
+  "US->India": {
+   "est": 4.7e-05,
+   "est_h1": 3.5e-05
+  }
+ }
+}

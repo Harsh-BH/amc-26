@@ -1,4 +1,4 @@
-# P50-idea-batch — RESULT (06:10; P50 is also the master's sub_all integrator, updated as pieces land)
+# P50-idea-batch — RESULT (07:05; P50 is also the master's final-stack integrator, updated as pieces land)
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
 - **None of the six ideas passes its gate.** A (hn suffixes) and B (legal forms) are already handled by the parser. C (France exclusivity veto) is ≤ +0.00006 LOCO, and France's vetoed pairs are CE-endorsed (r median 0.996), so it would cut true pairs. D (CE order TTA) collapses (swap AUC 0.66). F (20 seeds) is ±0. E (full-holdout refit) is +0.000039 ± 0.000019 for 1.5× vs 1× data: positive in every fold and half, but below the gate.
 - **Staged (all validator --check-ids PASS):**
@@ -9,6 +9,11 @@
 - Integrator tooling: `asm50.py` (France stage ledger + subset assembler; it reproduces #54 exactly), `splice_lines.py`, `diffc.py`, `overlap.py`, `cc_check.py`, `caps.py`.
 
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
+- **07:00 master decision:** the DEFAULT final is `output/sub_iu54_frgc70` (sub54 India/US + gc70 France; P57 / P62 found the India/US combiner real on honest frames, while sub54's France rules netted −0.0002–0). P43 is packaging it.
+- Staged on that base, validator PASS:
+  - `sub_iu54_fr38` (Qwen CE swap on gc70 France, +6,885 lines; md5 0a8b2a1f; expected +0.0002) — **my pick for the next France step**;
+  - `sub_iu54_fr55b` (P55 veto-only, −805 pairs; md5 6c8cd096). It empties 154 S1, which are gc70's rescue90 pairs.
+- The items below were written before that decision. sub_clean and its variants remain the cleaned-rules alternative.
 - **Upload `output/sub_clean`** (md5 4e0e33df…, PASS). Fallbacks: `sub_clean_iu34` (#34's India/US; use it if P57's honest frame rejects the combiner) and `sub38_clean_p55` (the Qwen France variant).
 - **Do not adopt:** C (France exclusivity veto), D (CE order swap), F (more seeds), a hn-suffix veto, or LEGAL changes.
 - **E (full-holdout refit):** ship the refit only if the combiner itself survives P57's audit. Boosters: `data/work/p50/full_s{0..4}.txt` (te44.FINAL + l_r_all) or `fullzoo_s{0..4}.txt` (+16 zoo columns). Apply them with `e_ship.py probs <tag> full` / `e_zoo.py probs`. The test frames are rebuilt in `data/work/p50/T_{India,US}.parquet`.
