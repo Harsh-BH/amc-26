@@ -112,6 +112,14 @@ Download `amc26-offload/models/` and place the files exactly here:
 | `work/p26/bge/r/`, `work/p29/r/`, `work/p31/r/` (#31; bge scores of the France band pairs new on c_hn / the rebuild) | `data/work/{p26/bge,p29,p31}/r/r_bge_pool_test_*.parquet` | 1.5 MB | — |
 | `work/p30/r/r_pool_France.parquet` (the veto of `sub31_veto`, `sub34_veto`, `sub37*`; bge scores of the confident France pairs) | `data/work/p30/r/r_pool_France.parquet` | 15 MB | — |
 | `models/p34/a10_h0.txt` (#34 / #37's a10 stacker; also on S3 `amc26-offload/final/models/p34/`) | `data/work/p34/a10_h0.txt` | 0.7 MB | `2ecb55bb0c626bc724c85b832884f4dda274d5499dde661255ad029285285052` |
+| `models/p55/fr_plain_s{0,1,2}.txt` (#clean's P55 France combiner, 3 seeds; S3 `amc26-offload/final/models/p55/`) | `data/work/p55/` | 0.7 MB each | `4341e582…` / `efa788a6…` / `95b418bf…` (first 16 hex) |
+| `work/p48/r_lo_France.parquet` (#clean: P48's bge scores of the France pairs outside the CE band, AWS GPU) | `data/work/p48/r_lo_France.parquet` | 2.3 MB | `ea4142ad…` |
+| `work/p36/morph_test.json` (the 44 brand syllables; rebuilt from the test names when absent) | `data/work/p36/morph_test.json` | 0.3 kB | `dbfbd6ef…` |
+| IU_INPUTS_PLACEHOLDER | | | |
+
+**Disk-tight machines:** a model file moved to cold storage can leave `<file>.tag` (its sha1[:8], e.g.
+`echo 3bd0b930 > data/work/p13/ckpt/ce_bge_pool.pt.tag`); runs whose scores are all cached then resolve the caches
+without the file (`model.tag`). Anything that must score with the model still needs the file.
 
 **bge needs a GPU to score fresh.** With P13's cached scores above, #8c / #9 need no GPU at all. Scoring the bge band
 anew needs two things:

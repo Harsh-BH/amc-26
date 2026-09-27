@@ -45,8 +45,28 @@ order (training included), except the bge cross-encoder: its checkpoint `data/wo
 downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when it is missing. With the caches present
 it only scores, decides and writes.
 
-**The final zip's files are `--recipe sub37_small`** (below); **the default recipe `sub37`** has the same
-`matching_results.tsv` (public LB **0.986304**, our best as of 27 Sep 01:00) and the pruner's full candidate list.
+**The final zip's files are `--recipe sub_clean --drop-sibling-cands`** ([FINAL: the recipe of the final upload]).
+`--recipe sub_clean` is the final pipeline (27 Sep) on top of everything below:
+
+- **India / US = the combiner (IU_PLACEHOLDER).**
+- **The unseen country (France) = `france.py`'s #31 chain below, then `france.chain`** (t 0.99 on the post-rules of
+  0.9868): P42's joint recipe (rescue 0.90, group completion 0.70, hn-equal extras 0.80) → P41 brand recovery (0.30,
+  computed on the #37-style lists and unioned) → P48 CE veto (rescue / gc band pairs, p unmoved, bge r < 0.2) → P54
+  in-band CE rescue (r ≥ 0.99) → P47 hn-change class (p ≥ 0.80) → P55 combiner (3 LightGBM boosters,
+  `data/work/p55/fr_plain_s{0,1,2}.txt`; veto band recipe pairs c < 0.6, add free pairs c > 0.95).
+- **Last, every country: P54's duplicate consistency** (`run.dup_add`): an unassigned content-identical copy of an
+  accepted S2 / S3 goes to the same S1 and joins its candidate list.
+- `--recipe sub_clean_iu34` keeps #34's India / US (the a10 stacker); `--recipe sub54` is the uploaded #54 (LB
+  0.986685): the same chain with P40's address-less names (0.70) and P46's noise-word tier, in #54's order, no P55.
+- Reproduction ([VERIFY]): `sub_clean`, `sub_clean_iu34` and `sub54` rebuild `output/sub_clean`, `output/sub_clean_iu34`
+  and `output/sub54` as sets per line (the staged files append the duplicate copies at the line's end; run.py sorts).
+- Extra inputs of the final chain: `data/work/p55/fr_plain_s{0,1,2}.txt` (P55's boosters, fit on the LOCO frames by
+  `probes/P55-fr-combiner/p55.py scores`), `data/work/p48/r_lo_France.parquet` (P48's bge scores of the France pairs
+  outside the CE band, AWS GPU job), `data/work/p36/morph_test.json` (the brand syllables; recomputed from the test
+  names when absent).
+
+**Before 27 Sep:** `--recipe sub37_small` holds #37_gc70's matching file (public LB 0.986304) with the small candidate
+set; `--recipe sub37` the same with the pruner's full candidate list.
 
 - **India / US = #34:** the pruner, then m2_big on the kept pairs, **P13's bge-reranker-v2-m3 cross-encoder** on the
   band (w fit on holdout half 0), then **P17's house-number stacker on US only**, then **P34's a10 residual stacker**

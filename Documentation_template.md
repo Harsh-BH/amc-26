@@ -259,6 +259,33 @@ shared ledger; nothing was merged without its number.
 - Label-free test check: its flip rates on test are ≤ 1.5× the holdout's for every kind of change (adds, drops, S1
   changed). 12,848 test Source 1 change (India 7,574, US 5,274).
 
+### 4.4c India / US combiner (P44 → P45 → P50; #44r … #54, the final India / US; `iu_stack.py`)
+The a10 idea (re-score each Source 2/3 record's argmax pair from its competition) grew into a bagged combiner:
+- **Base:** #8c's argmax pairs; each record keeps its #8c argmax Source 1, and the pair is kept when p″ ≥ 0.71.
+  p″ = σ(mean over 5 bagged residual LightGBMs (init = logit #8c p) of logit p′). A sibling-offset pair keeps #8c's p.
+- **Columns:** P34's a10 columns; P44's exclusivity mass (the record's #8c p summed over its candidate Source 1),
+  same-source group counts, Source 1 rank gaps, competitor counts and house-number corruption features; logits of two
+  extra house-number GBDTs; P10's pruner logit; **P45's r_all** = the shipped bge cross-encoder scored on *every*
+  argmax pair, not only the 0.02–0.98 band (it vetoes p ≥ 0.98 pairs the CE rejects, 74–90% false, and rescues
+  p < 0.02 pairs, 80–100% true); and **16 zoo members** (P22 / P25 / P45: LightGBM bags, GOSS, DART, extra-trees and
+  feature-subset variants, CatBoost, two small MLPs, two rank models; MIT / Apache-2.0 / BSD) as logits. Their test
+  predictions are the stage's cached inputs.
+- **Fit:** P44 fit on holdout half 0 and reported on half 1. The shipped boosters (P50) are refit on the **full**
+  holdout, 5 seeds.
+
+| step | holdout (India + US, report half) | source |
+|---|---|---|
+| P44 combiner over #34 | LB-eq +0.000306 ± 0.000048 (6.4 SE) | P44 |
+| + r_all (#44r) | **LB-eq +0.000656 ± 0.000062 (10.6 SE)**; India +0.000813, US +0.000719 | P44 / P45 |
+| full-holdout refit (#50e) | +0.000039 ± 0.000019 for 1.5× vs 1× data (the learning curve still rises) | P50 |
+| + 16 zoo columns (#52_max) | +0.000025 ± 0.000029 (noise level) | P50 |
+
+- **Label-free test profile:** flip rates on test are ≤ 1.45× the holdout's for every kind of change.
+- **The caveat P57 audits:** the competitors' rows carry in-sample #8c p on the holdout, which can flatter the
+  exclusivity columns. The fallback is #34's a10 (`--iu a10`).
+- **Duplicate step (P54, last):** an unassigned content-identical copy of an accepted record goes to the same Source 1
+  (India +8, US +6 on #54).
+
 ### 4.5 Threshold selection method
 - Each Source 2/3 record goes to its argmax Source 1 among its kept candidates, and the pair is kept if p ≥ t.
 - For India and US, t = 0.71 on the final p. It was swept for F0.5 on holdout half 0 and reported on half 1; the curve
@@ -342,6 +369,28 @@ sibling house-number offset. They run in this order after argmax + t.
 - The leaderboard has tracked the India→US LOCO direction or done better in both measured France additions, and
   France's addresses behave like US ones (92% of its accepted pairs share the house number).
 
+### 4.9 France's final chain, 27 Sep (#54 → #clean; `france.chain`, recipe `sub_clean`)
+The 26 Sep additions were re-tuned jointly and extended with four CE- and model-driven stages. Each stage is its probe's
+rule on the same France pair rows, applied in this order after the post-rules (tier / bxneg / veto / cap at t 0.9868):
+
+| stage | rule | France test (#clean) | evidence |
+|---|---|---|---|
+| P42 joint recipe | accept at t 0.99 on the post-rules of 0.9868, then empty-S1 rescue 0.90, group completion 0.70, hn-equal extras 0.80 for non-empty groups; caps 5 S2 / 6 S3; bars chosen on a 49,392-cell LOCO grid (both directions, both analogues) | 835,532 pairs (hn stage 28,197) | chain LOCO vs #37 +0.00003 / +0.00321 |
+| P41 brand recovery | a free argmax SX whose whole name is one generator brand (P36's 44 syllables, learned label-free from the test names) joins the only S1 with its exact house number + street + city, p ≥ 0.30; computed on the #37-style lists and unioned, as staged | +1,434 | LOCO +0.00008 / +0.00010, precision 0.98–1.00 |
+| P48 CE veto | a rescue- or gc-stage pair in the CE band whose p no rule moved is dropped when bge r < 0.2 (the band blend gives the CE only weight 0.26) | −1,160 | chain LOCO +0.0071 / +0.00041 |
+| P54 in-band CE rescue | free argmax non-sibling band pairs (p unmoved), SX in no line, bge r ≥ 0.99, best r first up to the caps | +8,539 | chain LOCO +0.00225 / +0.00243, precision 0.94 / 0.89 |
+| P47 hn-change class | free argmax pairs whose house number differs by −1 / −2 or by any non-sibling amount, p ≥ 0.80, caps | +1,037 | chain LOCO +0.00092 / +0.00057 (precision 0.83 / 0.80) |
+| P55 combiner | P44's combiner idea transferred to the unseen country: LightGBM on country-invariant inputs (densities of p and g, CE r, SX competitor mass and gap, S1 group counts / ranks / gaps, stage, region, hn relation), fit on both LOCO frames (out-of-domain scores + labels), 3 seeds. Band recipe pairs with c < 0.6 are dropped; free argmax pairs with c > 0.95 are added, caps | −3,198 / +1,129 | LOCO h1 India→US +0.0052 ± 0.0002, US→India +0.0046 ± 0.0003 |
+| P54 duplicate consistency (last, all countries) | every unassigned content-identical copy (case-folded name + address + country) of an accepted SX goes to the same S1, past the cap, and joins its candidate list | France +49 (India / US: see 4.4c) | train truth: 60,319 such groups, 100% one owner |
+
+- **Audit before the final (P38 + P52):** Qwen3-Reranker-4B as an independent judge, with P52's France-weighted LOCO,
+  estimated the precision of the P46 noise-word tier's pairs at 0.08 and of P40's address-less exact names at 0.19. Both
+  CEs reject what those two rules add, and #54 (which had them, without P55) scored only a quarter of its expected gain
+  (0.986685, +0.00038 vs #37). So #clean drops both. They stay available as stages (`--swap`, `--noaddr`; the #54 order is
+  recipe `sub54`).
+- vs #54: France only, 11,838 lines (+1,149 / −11,059 pairs). vs #37: France +32,731 / −3,241 pairs.
+- Shape after the chain: 3.26 matches per France S1 (India / US 3.38), 5.9% empty, 76.7% of S1 with both sources.
+
 ## 5. Results & Error Analysis
 
 - **F_0.5 Score (macro): 0.98984 on the report half** of the full-corpus holdout (India 0.99020, US 0.98960), with
@@ -392,13 +441,13 @@ The public leaderboard is a subset of test (all three countries).
 | #31 — 26 Sep 18:04 | #8c + France chain (section 4.7): rebuild + c_hn + bge + tier / bxneg / cap, t 0.9868 | 0.9856 | +0.0015 vs #9ab, France ≈ 0.962 |
 | #34_veto — 22:54 | #31 + a10 stacker on India / US (4.4b) + the France veto (4.7) | 0.985647 | +0.00005: the two together ≈ flat |
 | #34v_r90 — 23:00 | #34_veto + France empty-S1 rescue at p ≥ 0.90 (4.8) | 0.98596 | +0.00031 |
-| **#37_gc70 — 23:32** | #34v_r90 + France group completion at p ≥ 0.70 (4.8) | **0.986304** | **best**: +0.00034, France ≈ 0.966 |
-| 27 Sep, slot 1 | [e.g. #37_gc70_hn90: + hn-equal extras] | [LB] | [Δ vs 0.986304] |
-| 27 Sep, slot 2 | [later winner] | [LB] | |
-| 27 Sep, slot 3 | [later winner] | [LB] | |
-| 27 Sep, slot 4 | [later winner] | [LB] | |
-| 27 Sep, slot 5 | [later winner] | [LB] | |
-| **final entry** | the best public upload (organiser ruling) | [0.986304 or the 27 Sep best] | the zip's `output/` holds its matching file with the 4.42-per-S1 candidates |
+| #37_gc70 — 23:32 | #34v_r90 + France group completion at p ≥ 0.70 (4.8) | 0.986304 | +0.00034, France ≈ 0.966 |
+| **#54 — 27 Sep 05:32** | India / US: the combiner + r_all + zoo, full-holdout refit (4.4c); France: the chain of 4.9 with P46 / P40 and without P55 | **0.986685** | **best**: +0.00038, about a quarter of the expected +0.0015–0.002 |
+| 27 Sep, slot 2 | [#clean: #54 without P46 / P40, + P55 (4.9)] | [LB] | [Δ vs 0.986685] |
+| 27 Sep, slot 3 | [later upload] | [LB] | |
+| 27 Sep, slot 4 | [later upload] | [LB] | |
+| 27 Sep, slot 5 | [later upload] | [LB] | |
+| **final entry** | the best public upload (organiser ruling) | **[FINAL LB]** | the zip's `output/` holds its matching file with the small candidate set |
 
 Every France test sits on the same India/US files, so each leaderboard delta measures one France change (#34_veto
 changed both: India / US by the a10 stacker, France by the veto).

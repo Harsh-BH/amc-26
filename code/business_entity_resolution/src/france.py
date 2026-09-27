@@ -822,13 +822,13 @@ def p42_frame(f: dict, c: dict, s1, sx, is2, sib, hn_eq, g, r, n) -> dict:
     bl = 1 / (1 + np.exp(-(W_BLEND[0] * _logit(g) + W_BLEND[1] * _logit(np.nan_to_num(r, nan=0.5)) + W_BLEND[2])))
     unmoved = np.abs(p0 - bl) <= 1e-4
     added = (st["rescue"] & ~st["base"]) | (st["gc"] & ~st["rescue"])
-    ref = st["hn"] & ~(added & (g > LO) & (g < HI) & unmoved & (rn < 0.2))
+    veto = added & (g > LO) & (g < HI) & unmoved & (rn < c.get("veto", 0.2))    # build48.veto_mask
     _, free = p42_base(s1, is2, q, amq, sib, 0.99)
-    return {"q": q, "am": amq, "st": st, "ref": ref, "free": free, "unmoved": unmoved, "p0": p0}
+    return {"q": q, "am": amq, "st": st, "ref": st["hn"] & ~veto, "veto": veto, "free": free, "unmoved": unmoved, "p0": p0}
 
 
 ORDER_CLEAN = ("veto", "brand", "u", "cls", "p55")                  # build38.clean + P55 (sub_clean)
-ORDER_54 = ("brand", "xf", "swap", "veto", "cls", "u54")            # build38.full + fr54 (the uploaded #54)
+ORDER_54 = ("brand", "xf", "swap", "veto54", "cls", "u54")          # the #43 -> #48 -> #52 -> #54 lineage
 
 
 def chain(f: dict, c: dict) -> np.ndarray:
@@ -843,6 +843,7 @@ def chain(f: dict, c: dict) -> np.ndarray:
       xf     P40 address-less exact names at c["xf"], computed on the gc70-style lists + brand, unioned
       swap   P46 noise-word swap tier (lens s <= c["swap"], flips at the anchor), merged: free SX, caps
       veto   P48: the recipe's rescue / gc stage pairs in the band whose p no rule moved and whose CE r < c["veto"]
+      veto54 the same veto as #48 was built (build48.veto_mask on P42's frame: p0 on the blend of g and r)
       u      P54 in-band CE rescue: free argmax non-sibling band pairs (p unmoved), SX in no line, r >= c["u"], caps
       u54    the same rescue as fr54 built #54: on P42's frame, pairs outside its recipe reference
       cls    P47 class: free argmax pairs with an hn change of class -1/-2 or other non-sibling, p >= c["cls"], caps
@@ -871,7 +872,7 @@ def chain(f: dict, c: dict) -> np.ndarray:
             gc70 = am & (p >= c["anchor"])
             gc70 |= rescue(s1, p, am, gc70, sib, 0.90)
             gc70 |= gc_add(s1, sx, is2, p, am, gc70, sib, 0.70)
-        if stage in ("u54", "p55") and fr42 is None:
+        if stage in ("u54", "p55", "veto54") and fr42 is None:
             fr42 = p42_frame(f, c, s1, sx, is2, sib, hn_eq, g, r, n)
         if stage == "brand":
             gib = gc_add(s1, sx, is2, p, am, gc70, sib | ~brand_mask(f["s1"], f["sx"], f["v"]), c["brand"], ones)
@@ -892,6 +893,9 @@ def chain(f: dict, c: dict) -> np.ndarray:
             veto = added & band & unmoved & (r < c["veto"])
             say("CE veto (P48)", veto & lines)
             lines &= ~veto
+        elif stage == "veto54":
+            say("CE veto (P48, as #48)", fr42["veto"] & lines)
+            lines &= ~fr42["veto"]
         elif stage == "u":
             rr = np.nan_to_num(r, nan=0.0)
             m = fill_add(s1, is2, rr, lines, np.flatnonzero(free & ~lines & band & unmoved & ~taken() & (rr >= c["u"])), n)

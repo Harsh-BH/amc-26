@@ -140,7 +140,7 @@ RECIPES["sub_iu54_frgc70"] = dict(RECIPES["sub37"], iu="fullzoo", dup="seen")
 # #54 (uploaded 27 Sep 05:32, LB 0.986685): the chain in the order it was staged (build38.full + fr54): recipe -> brand and
 # P40 address-less (both on the gc70-style lists, unioned) -> P46 tier -> P48 veto -> P47 class -> P54 rescue; no P55
 RECIPES["sub54"] = dict(RECIPES["sub_clean"], chain=dict(_CHAIN, xf=0.70, swap=0.05, p55=None,
-                                                         order=("brand", "xf", "swap", "veto", "cls", "u54")))
+                                                         order=("brand", "xf", "swap", "veto54", "cls", "u54")))
 RECIPE = "sub37"            # LB 0.986304 (best); later bars: --rescue / --gc / --hn-extra / --veto / --t-country
 CHN = WORK / "p31" / "c_hn.txt"   # P26's hn-aware matcher (AWS: probes/P26-france-da, SETUP.md), for fr31
 CAP = None                  # --cap 5,6: at most 5 S2 and 6 S3 matches per S1 (the train truth never exceeds them)
@@ -628,7 +628,7 @@ def france31(c: str) -> dict:
     if CHAIN is not None:                               # france.chain's inputs: the blend, CE r, no-veto p, P48's r
         assert veto is not None, "the final chain reads the veto's CE r (P30's pool first, then the cache)"
         extra = {"pbl": pbl, "r_all": veto[1], "v": v}
-        if CHAIN.get("p55") is not None or "u54" in CHAIN.get("order", ()):
+        if CHAIN.get("p55") is not None or {"u54", "veto54"} & set(CHAIN.get("order", ())):
             print(f"{c}: post-rules again without the veto (P42's frame for P55 / fr54)", flush=True)
             extra["p0"] = FR.post(q1, qx, id1, idx, pbl, pm, t, v, learn, None)
             lo = seed_keys(WORK / R_LO.format(c=c), id1, idx)
