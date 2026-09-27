@@ -340,6 +340,7 @@ def fit(frac, out, ho=False, cs=C, ce=False):
         r = dict(rows=len(D), s1_fold0=int(ev.sum()), trees={k: b.best_iteration for k, b in bs.items()})
         if ce:
             r["r_cover_by_fold"] = {int(k): round(float(v), 4) for k, v in D.lr.notna().groupby(D.fold).mean().items()}
+            r["r69"] = bool(r["r_cover_by_fold"].get(6, 0) > 0.5)             # False: test must mask like folds 6-9
         fs = {"base": base[ev]}
         for arm, sc in (("stageB", D.p.to_numpy(np.float64)), ("stageC", s)):
             cand = owner_rank(q1, qx, s3, sc)
@@ -657,6 +658,8 @@ def w1_test(c, out):
     t0 = time.time()
     t = json.loads((out / f"sc_ce_{c}_blend.json").read_text())["w1.0_all"]["t"]
     D = attach_r(pd.read_parquet(out / f"sc_T_{c}.parquet"), out / f"sc_rT_{c}.parquet")
+    r69 = json.loads((out / f"sc_ce_{c}_fit.json").read_text())[c].get("r69", False)
+    # r69 False: boosters were fit with folds 6-9 (40% of rivals) lacking r, test rivals all have it (mismatch, reported)
     X = feats(D)
     s = sum(lgb.Booster(model_file=str(out / f"sc_ce_C{k}_{c}.txt")).predict(X) for k in "AB") / 2
     del X
@@ -683,7 +686,7 @@ def w1_test(c, out):
     res.to_parquet(out / f"w1_test_{c}.parquet", index=False)
     ok = pd.MultiIndex.from_arrays([ta.s1[old], ta.sx[old]])
     new = pd.MultiIndex.from_arrays([res.s1, res.sx])
-    info = dict(t=t, frame=len(D), lr_cover=float(D.lr.notna().mean()), am=len(ta), am_outside_frame=int(miss.sum()),
+    info = dict(t=t, r69=r69, frame=len(D), lr_cover=float(D.lr.notna().mean()), am=len(ta), am_outside_frame=int(miss.sum()),
                 today_pairs=int(old.sum()), w1_pairs=int(acc.sum()), kept=int(new.isin(ok).sum()),
                 added=int((~new.isin(ok)).sum()), dropped=int((~ok.isin(new)).sum()), s1_with_pairs=int(res.s1.nunique()))
     (out / f"w1_test_{c}.json").write_text(json.dumps(info, indent=1))
