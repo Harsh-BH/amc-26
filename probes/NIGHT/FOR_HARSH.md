@@ -6,6 +6,18 @@ P42's hn-extra (p ≥ 0.8, no word check). In a local LOCO rebuild (US→India, 
 France's decoy-word lens profile matches India's (e ≈ 0.5). N54 removes exactly that family — so it is also a diagnostic
 for the shortfall. Use the CURRENT best (sub54) as the base below.
 
+**Re P38's audit ("P46 is the prime suspect", 06:08):** a label-free counter-check (probes/NIGHT/slot_test.py). A candidate
+that truly belongs to its S1 fills one of the S1's truth slots, so that S1 has FEWER other accepted members than an S1
+whose candidate is a decoy. Calibration, US holdout (rejected argmax candidates): true 3.07 vs false 3.52 other accepted
+(all-S1 mean 3.57). France (P31 proxy): S1s of the noise-word variants (P46's développement AND N55's fils / cie / associés
+/ groupe) have **2.88–2.98** other accepted members; S1s of the N54 decoy-word pairs have **3.26** (France mean 3.21).
+The noise-word variants look like true members (slot missing), the decoy-word pairs look like decoys. The CE audit
+cannot see French noise words (as P38 itself notes). Weak-ish evidence (within a p band the US gap is only ≈ 0.1), but
+it points the other way from the audit.
+**Suggested slot use:** upload **sub54 + N54 all** (France-only removal, LOCO-positive both ways) as the diagnostic
+BEFORE sub54 − P46. If sub54 − P46 is tested and the LB DROPS, P46 is right → add N55 strict (3× P46's volume, same
+template). If it RISES, skip N55 too.
+
 **TL;DR — two France-only files to stack on the current best (sub54, LB 0.986685):**
 `p54.py cells && p54.py build output/sub54 output/sub54_n54 all` (−≈6.0k decoy-word swaps/adds at any hn, est. +0.0005–0.0007;
 **LOCO PASSES both ways, both halves**: US→India +0.027, India→US +0.00015 France-F0.5 — N54 RESULT addenda 3–5),
