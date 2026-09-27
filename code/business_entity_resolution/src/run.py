@@ -141,6 +141,15 @@ RECIPES["sub_clean_iu34"] = dict(RECIPES["sub_clean"], iu="a10")
 # the default final (27 Sep, master): #37_gc70's unseen-country recipe + #54's India / US (the combiner) with P54's
 # duplicate step on the labelled countries only, as #54 staged those lines (the unseen country's lines are #37's).
 RECIPES["sub_iu54_frgc70"] = dict(RECIPES["sub37"], iu="fullzoo", dup="seen")
+# P38 / P50 variants: the unseen country's band blended with Qwen3-Reranker-4B + LoRA scores (w refit OOD by P38; the
+# post-rules' veto keeps bge's r), then P50's P55 band veto without its rescue stage (computed on the bge chain's frame)
+RECIPES["sub_iu54_fr38"] = dict(RECIPES["sub_iu54_frgc70"], fr_r=("p38/r/r_qwen_pool_test_{c}.parquet",),
+                                w_france=[0.8943, 0.3729, -0.0521])
+RECIPES["sub_iu54_fr38_55n"] = dict(RECIPES["sub_iu54_fr38"], r_lo="p48/r_lo_{c}.parquet",
+                                    p55n=dict(rescue=0.90, gc=0.70, hn=0.80, veto=0.20, p55=_CHAIN["p55"], skip=(2,)))
+# #iu54_best (P50, upload #2): + P62's acronym block / rule (its change set referenced on #clean's France lines, as staged,
+# then fit on this base), then P54's duplicate step on every country
+RECIPES["sub_iu54_best"] = dict(RECIPES["sub_iu54_fr38_55n"], acro=_CHAIN, dup=True)
 # #54 (uploaded 27 Sep 05:32, LB 0.986685): the chain in the order it was staged (build38.full + fr54): recipe -> brand and
 # P40 address-less (both on the gc70-style lists, unioned) -> P46 tier -> P48 veto -> P47 class -> P54 rescue; no P55
 RECIPES["sub54"] = dict(RECIPES["sub_clean"], chain=dict(_CHAIN, xf=0.70, swap=0.05, p55=None,
@@ -153,6 +162,9 @@ VETO = None                 # (tau, r file): fr31's P30 veto (recipe sub31_veto)
 A10 = None                  # P34's a10 booster (data/work-relative) for the CE countries (recipe sub34 / sub37)
 IU = None                   # --iu: the CE countries' stage, overriding the recipe's iu (a10 default | full | fullzoo)
 RESCUE = GC = HN_EXTRA = None   # the unseen country's decision-time bars (france.complete; recipe sub37: 0.90 / 0.70)
+FR_R = None                 # the unseen country's band CE scores when not the recipe CE's (files, first wins; P38 Qwen)
+ACRO = None                 # P62's acronym block + rule: the #clean chain bars its change set is referenced on (sub_iu54_best)
+P55N = None                 # P50's P55 band veto without given P42 stages, on the bge chain's frame (france.p55_veto)
 SWAP = None                 # --swap: P46's noise-word swap tier, its lens s_max (france.swap_mask), the last stage
 NOADDR = None               # --noaddr: P40's address-less exact-name bar (france.noaddr_mask), after the brand stage
 CHAIN = None                # the unseen country's final chain (france.chain bars), recipe sub_clean*
@@ -169,7 +181,7 @@ GPU_LOCK = "/tmp/amc-gpu.lock"
 def use(recipe: str):
     """Switch booster, blend weights, thresholds, pruner, CE, stacker and France to one submission's recipe."""
     global T, T_M2, T_FRANCE_OVERRIDE, RECIPE, FRANCE, W_FRANCE, STACK, R_SEED, W_STACK_FIT, VETO, DROP_SIB_CANDS, \
-        A10, RESCUE, GC, HN_EXTRA, T_POST, BRAND, NOADDR, SWAP, CHAIN, R_LO, DUP
+        A10, RESCUE, GC, HN_EXTRA, T_POST, BRAND, NOADDR, SWAP, CHAIN, R_LO, DUP, FR_R, P55N, ACRO
     r = RECIPES[recipe]
     M.BOOSTER, M.FOLDS, M.TAU, M._M, RR.CFG["w"] = WORK / "p4" / r["booster"], r["folds"], r["tau"], None, list(r["w"])
     RR.CE, RR.EPOCHS, RR.FAMILY = WORK / r["ce"], r["ce_epochs"], r["ce_base"]
@@ -179,6 +191,7 @@ def use(recipe: str):
     A10, RESCUE, GC, HN_EXTRA, T_POST = r.get("a10"), r.get("rescue"), r.get("gc"), r.get("hn_extra"), r.get("t_post")
     BRAND, NOADDR, SWAP = r.get("brand"), r.get("noaddr"), r.get("swap")
     CHAIN, R_LO, DUP = r.get("chain"), r.get("r_lo"), r.get("dup", False)
+    FR_R, P55N, ACRO = r.get("fr_r"), r.get("p55n"), r.get("acro")
 
 
 @functools.cache
@@ -619,8 +632,18 @@ def france31(c: str) -> dict:
     q1, qx, pm = d.q1.to_numpy(), d.qx.to_numpy(), d.p.to_numpy(np.float32)
     del d
     id1, idx = F.ids("test", c)
-    cache = r_cache("test", c, id1, idx)
-    p, r = rerank(c, q1, qx, pm, lambda a, b: RR.texts("test", c, a, b), cache)
+    cache = r_cache("test", c, id1, idx)                # the recipe CE's (bge) scores: the veto reads them
+    rc = cache
+    if FR_R:                                            # the band blended with another CE's cached scores (P38: Qwen)
+        rc = M.CACHE / f"r_test_{c}_fr_{hashlib.sha1('|'.join(FR_R).encode()).hexdigest()[:8]}.parquet"
+        if not rc.exists():
+            pd.concat([seed_keys(WORK / x.format(c=c), id1, idx) for x in FR_R]).drop_duplicates("k").to_parquet(rc, index=False)
+        lo, hi = RR.CFG["band"]
+        b = np.flatnonzero((pm > lo) & (pm < hi))
+        miss = ~np.isin((q1[b].astype(np.int64) << 32) | qx[b].astype(np.int64), pd.read_parquet(rc, columns=["k"]).k.to_numpy())
+        assert not miss.any(), f"{int(miss.sum()):,} band pairs lack a score in {FR_R}: score them with that CE first"
+    text = lambda a, b: RR.texts("test", c, a, b)
+    p, r = rerank(c, q1, qx, pm, text, rc)
     veto = None
     if VETO:                                            # P30's pool scores first, then the cache (P31's order)
         k = (q1.astype(np.int64) << 32) | qx.astype(np.int64)
@@ -630,6 +653,30 @@ def france31(c: str) -> dict:
     pbl = p
     p = FR.post(q1, qx, id1, idx, pbl, pm, t, v, learn, veto)
     extra = {}
+    if P55N is not None or ACRO is not None:            # the bge chain's frame for P55 / the acronym reference
+        w, W_FRANCE_ = W_FRANCE, RECIPES["sub37"]["w_france"]
+        globals()["W_FRANCE"] = W_FRANCE_
+        try:
+            pb, _ = rerank(c, q1, qx, pm, text, cache)
+        finally:
+            globals()["W_FRANCE"] = w
+        lo_ = seed_keys(WORK / R_LO.format(c=c), id1, idx)
+        k = (q1.astype(np.int64) << 32) | qx.astype(np.int64)
+        extra["v"] = v
+        extra["bge"] = {"pbl": pb, "p": FR.post(q1, qx, id1, idx, pb, pm, t, v, learn, veto),
+                        "p0": FR.post(q1, qx, id1, idx, pb, pm, t, v, learn, None), "r": veto[1],
+                        "r_lo": pd.Series(lo_.r.to_numpy(np.float64), index=lo_.k.to_numpy()).reindex(k).to_numpy(np.float64)}
+    if ACRO is not None:                                # #8c's France frame (main-world M2 + the bge blend): P62's reference p
+        d8 = M.split_probs("test", c)
+        q8, x8, pm8 = d8.q1.to_numpy(), d8.qx.to_numpy(), d8.p.to_numpy(np.float32)
+        del d8
+        w = W_FRANCE
+        globals()["W_FRANCE"] = RECIPES["sub37"]["w_france"]
+        try:
+            p8, _ = rerank(c, q8, x8, pm8, text, cache)
+        finally:
+            globals()["W_FRANCE"] = w
+        extra["f8"] = (q8, x8, p8)
     if CHAIN is not None:                               # france.chain's inputs: the blend, CE r, no-veto p, P48's r
         assert veto is not None, "the final chain reads the veto's CE r (P30's pool first, then the cache)"
         extra = {"pbl": pbl, "r_all": veto[1], "v": v}
@@ -876,6 +923,34 @@ def dup_keys(split: str) -> pd.DataFrame:
     return k[k.key.duplicated(keep=False)].reset_index(drop=True)
 
 
+def acro_change_set(d: dict, split: str) -> pd.DataFrame:
+    """P62's acronym change set as staged: the reference is #clean's France decision (france.chain, ORDER_CLEAN, on the
+    bge chain's frame) with its duplicate copies and candidates, and #8c's France frame (main-world M2 + bge blend)."""
+    import france as FR
+    FR.C = d["c"]
+    K, bg = d["K"], d["bge"]
+    qx = K & 0xFFFFFFFF
+    ids = lambda a, q: a.take(pa.array(q)).to_numpy(zero_copy_only=False)
+    f = {"q1": K >> 32, "qx": qx, "p": bg["p"], "p0": bg["p0"], "g": d["p_m2"], "pbl": bg["pbl"], "r": bg["r"],
+         "r_lo": bg["r_lo"], "h1": d["hn"]("s1"), "hx": d["hn"]("sx"), "s1": ids(d["id1"], K >> 32), "sx": ids(d["idx"], qx),
+         "is2": pc.starts_with(d["idx"].take(pa.array(qx)), "S2-").to_numpy(zero_copy_only=False), "n": len(d["id1"]),
+         "v": d["v"]}
+    cfg = dict(ACRO, t=0.99, p55=(*ACRO["p55"][:2], [WORK / x for x in ACRO["p55"][2]]))
+    ref = K[FR.chain(f, cfg)]
+    del f
+    scratch = {"c": d["c"], "idx": d["idx"]}
+    ref, rK = dup_add(scratch, ref, K, split)             # #clean's lines carry P54's duplicate copies
+    u = FR.acro_pairs()
+    q8, x8, p8 = d["f8"]
+    s8 = ids(d["idx"], x8)
+    m = np.isin(s8, u.sx.to_numpy())                      # #8c's frame rows of the rule's SX (all acro_tiers reads)
+    f8 = pd.DataFrame({"s1": ids(d["id1"], q8[m]), "sx": s8[m], "p": p8[m]})
+    lines = pd.DataFrame({"s1": ids(d["id1"], ref >> 32), "sx": ids(d["idx"], ref & 0xFFFFFFFF)})
+    rc = rK[np.isin(rK >> 32, codes(d["id1"], u.s1.unique()))]
+    cand = pd.DataFrame({"s1": ids(d["id1"], rc >> 32), "sx": ids(d["idx"], rc & 0xFFFFFFFF)})
+    return FR.acro_tiers(u, lines, cand, f8)
+
+
 _DUPK = {}
 
 
@@ -904,7 +979,8 @@ def dup_add(d: dict, km: np.ndarray, K: np.ndarray, split: str) -> tuple:
     new_c = add[~np.isin(add, K)]
     print(f"{d['c']}: duplicate step (P54): {len(add):,} copies to {fix.s1.nunique():,} S1, {len(new_c):,} new candidates; "
           f"groups over > 1 S1 skipped {int((g['nunique'] > 1).sum()):,}", flush=True)
-    d["tail"] = (add, new_c)                         # written after each line's sorted ids, as P54 appended them
+    t0m, t0c = d.get("tail", (np.zeros(0, np.int64), np.zeros(0, np.int64)))
+    d["tail"] = (np.concatenate([t0m, add]), np.concatenate([t0c, new_c]))   # written after each line's sorted ids
     return np.concatenate([km, add]), np.concatenate([K, new_c])
 
 
@@ -998,12 +1074,34 @@ def run(split: str, stage: str, out: Path, world=None, log=True, check=True) -> 
                     del s1i, sxi
                 acc = FR.complete(d["K"] >> 32, qx, is2, d["p"], am, acc, d["hn"]("s1"), d["hn"]("sx"), RESCUE, GC,
                                   HN_EXTRA, brand, noaddr, swap)
+                if P55N is not None:                    # P50: P55's band veto (bge chain's frame) without its rescue stage
+                    bg = d["bge"]
+                    fb = {"q1": d["K"] >> 32, "qx": qx, "is2": is2, "p": bg["p"], "p0": bg["p0"], "g": d["p_m2"],
+                          "pbl": bg["pbl"], "r": bg["r"], "r_lo": bg["r_lo"], "h1": d["hn"]("s1"), "hx": d["hn"]("sx"),
+                          "n": len(d["id1"])}
+                    cfg = dict(P55N, p55=(*P55N["p55"][:2], [WORK / x for x in P55N["p55"][2]]))
+                    vm = FR.p55_veto(fb, cfg, P55N["skip"])
+                    print(f"{d['c']}: P55 no-rescue veto removes {int((acc & vm).sum()):,} accepted pairs", flush=True)
+                    acc &= ~vm
+            tiers = None
+            if d["c"] in unseen() and ACRO is not None:   # P62: the change set on #clean's France lines (its reference)
+                tiers = acro_change_set(d, split)
             if DROP_SIB_CANDS:
                 acc = drop_sib_cands(d, acc)              # d["K"] loses the unaccepted decoys; acc realigned
             d["km"] = d["K"][acc]
+            if tiers is not None:                         # P50's acro_fit on this base; the block's pairs join the candidates
+                import france as FR
+                ids = lambda a, q: a.take(pa.array(q)).to_numpy(zero_copy_only=False)
+                keep = FR.acro_fit(tiers, pd.DataFrame({"s1": ids(d["id1"], d["km"] >> 32), "sx": ids(d["idx"], d["km"] & 0xFFFFFFFF)}))
+                a = (codes(d["id1"], [x for x, _ in keep]) << 32) | codes(d["idx"], [y for _, y in keep]) if keep \
+                    else np.zeros(0, np.int64)
+                new_c = a[~np.isin(a, d["K"])]
+                d["km"], d["K"] = np.concatenate([d["km"], a]), np.concatenate([d["K"], new_c])
+                d["tail"] = (a, new_c)
+                print(f"{d['c']}: acronym adds {len(a):,}, {len(new_c):,} from the acronym block (not candidates before)", flush=True)
             if DUP and world is None and (DUP is True or d["c"] not in unseen()):   # P54's duplicate step, last
                 d["km"], d["K"] = dup_add(d, d["km"], d["K"], split)
-            for k in ("p", "p_m2", "r", "hn", "pbl", "r_all", "p0", "r_lo", "v"):
+            for k in ("p", "p_m2", "r", "hn", "pbl", "r_all", "p0", "r_lo", "v", "bge", "f8"):
                 d.pop(k, None)
     else:
         parts, ts = rules_parts(split, world), {}

@@ -67,6 +67,14 @@ did); `--drop-sibling-cands` gives the small candidate set of the zip.
 - **Last: P54's duplicate consistency** (`run.dup_add`; `dup=True` every country, `dup="seen"` the labelled ones as in
   the final): an unassigned content-identical copy of an accepted S2 / S3 goes to the same S1 and joins its candidate
   list.
+- **The final's France variants (P38 / P50 / P62, 27 Sep):** `--recipe sub_iu54_fr38` blends the France band with
+  Qwen3-Reranker-4B + LoRA scores (`data/work/p38/r/r_qwen_pool_test_France.parquet`, w [0.8943, 0.3729, −0.0521];
+  the post-rules' veto keeps bge's r); `sub_iu54_fr38_55n` then removes P55's band veto pairs outside its rescue stage,
+  computed on the bge chain's frame (`france.p55_veto`); **`sub_iu54_best`** adds P62's acronym block + rule
+  (`france.acro_pairs`: an SX whose one-token core is the acronym of the S1 core, same house number, city, address
+  Jaccard ≥ 0.6, every S1 street token present; change set referenced on #clean's France lines as staged, then fit on
+  this base: `acro_tiers`, `acro_fit`) and P54's duplicate step on every country. The acronym block's pairs join the
+  candidate list.
 - `--recipe sub_clean_iu34` keeps #34's India / US (the a10 stacker); `--recipe sub54` is the uploaded #54 (LB
   0.986685): the same chain with P40's address-less names (0.70) and P46's noise-word tier, in #54's order, no P55.
 - Reproduction: `sub_iu54_frgc70` rebuilds its folder's matching file byte for byte; `sub_clean_iu34` its folder with 0
