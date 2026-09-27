@@ -48,3 +48,4 @@ Branch `night/aditya` (local, never push main). origin/main fetched every 30 min
 - 07:00 WAKEUP.md plan = sub_iu54_frgc70 (gc70 France). LOCO N54 on gc70-style chain: +0.0296 / +0.00015 both halves; ≈2.4k France removals on gc70-like proxy. FOR_HARSH top section rewritten for that base.
 - 08:15 N54 ported to src (france.decoy_mask + run.py recipe sub_iu54_frgc70_n54, default untouched); port == p54.py on P31 frame (1,718 = 1,718).
 - 08:30 N56 Gemini review: no bugs in builds / LOCO / src port; two reasoning notes answered (priced in LOCO). Gemini quota back at 08:21.
+- 08:35 N57 (Gemini) systematic LOCO cell scan: NO survivors (both chains, adds + removals); best near-misses flip sign between directions. N54 is the only generalizable France cell rule.
