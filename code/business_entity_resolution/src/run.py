@@ -145,6 +145,7 @@ RECIPES["sub_iu54_frgc70"] = dict(RECIPES["sub37"], iu="fullzoo", dup="seen")
 # P40 address-less (both on the gc70-style lists, unioned) -> P46 tier -> P48 veto -> P47 class -> P54 rescue; no P55
 RECIPES["sub54"] = dict(RECIPES["sub_clean"], chain=dict(_CHAIN, xf=0.70, swap=0.05, p55=None,
                                                          order=("brand", "xf", "swap", "veto54", "cls", "u54")))
+RECIPES["sub_iu54_frgc70_n54"] = dict(RECIPES["sub_iu54_frgc70"], decoy=0.25)   # + N54 decoy-word removal (night/aditya)
 RECIPE = "sub_iu54_frgc70"   # the final (27 Sep 07:30, master); #37_gc70 = sub37 (LB 0.986304), #54 = sub54 (0.986685)
 CHN = WORK / "p31" / "c_hn.txt"   # P26's hn-aware matcher (AWS: probes/P26-france-da, SETUP.md), for fr31
 CAP = None                  # --cap 5,6: at most 5 S2 and 6 S3 matches per S1 (the train truth never exceeds them)
@@ -157,6 +158,7 @@ SWAP = None                 # --swap: P46's noise-word swap tier, its lens s_max
 NOADDR = None               # --noaddr: P40's address-less exact-name bar (france.noaddr_mask), after the brand stage
 CHAIN = None                # the unseen country's final chain (france.chain bars), recipe sub_clean*
 R_LO = None                 # P48's CE scores of the pairs outside the band (data/work-relative, {c} = the label): P55 input
+DECOY = None                # N54: drop unseen-country pairs that swap in / add one lens decoy word (s > DECOY)
 DUP = False                 # P54's duplicate step: True = every country, "seen" = the labelled ones (recipe sub_iu54_frgc70)
 BRAND = None                # --brand: P41's synthetic-brand recovery bar (france.brand_mask), after the others
 T_POST = None               # --t-post: fr31's post-rules at this t, the decision at its own (P42's #42_both: 0.9868 / 0.99)
@@ -169,7 +171,7 @@ GPU_LOCK = "/tmp/amc-gpu.lock"
 def use(recipe: str):
     """Switch booster, blend weights, thresholds, pruner, CE, stacker and France to one submission's recipe."""
     global T, T_M2, T_FRANCE_OVERRIDE, RECIPE, FRANCE, W_FRANCE, STACK, R_SEED, W_STACK_FIT, VETO, DROP_SIB_CANDS, \
-        A10, RESCUE, GC, HN_EXTRA, T_POST, BRAND, NOADDR, SWAP, CHAIN, R_LO, DUP
+        A10, RESCUE, GC, HN_EXTRA, T_POST, BRAND, NOADDR, SWAP, CHAIN, R_LO, DUP, DECOY
     r = RECIPES[recipe]
     M.BOOSTER, M.FOLDS, M.TAU, M._M, RR.CFG["w"] = WORK / "p4" / r["booster"], r["folds"], r["tau"], None, list(r["w"])
     RR.CE, RR.EPOCHS, RR.FAMILY = WORK / r["ce"], r["ce_epochs"], r["ce_base"]
@@ -179,6 +181,7 @@ def use(recipe: str):
     A10, RESCUE, GC, HN_EXTRA, T_POST = r.get("a10"), r.get("rescue"), r.get("gc"), r.get("hn_extra"), r.get("t_post")
     BRAND, NOADDR, SWAP = r.get("brand"), r.get("noaddr"), r.get("swap")
     CHAIN, R_LO, DUP = r.get("chain"), r.get("r_lo"), r.get("dup", False)
+    DECOY = r.get("decoy")
 
 
 @functools.cache
@@ -998,6 +1001,11 @@ def run(split: str, stage: str, out: Path, world=None, log=True, check=True) -> 
                     del s1i, sxi
                 acc = FR.complete(d["K"] >> 32, qx, is2, d["p"], am, acc, d["hn"]("s1"), d["hn"]("sx"), RESCUE, GC,
                                   HN_EXTRA, brand, noaddr, swap)
+            if d["c"] in unseen() and len(acc) and DECOY is not None:   # N54: drop decoy-word pairs, after every add rule
+                import france as FR
+                FR.C, qx = d["c"], d["K"] & 0xFFFFFFFF
+                ids = lambda a, q: a.take(pa.array(q)).to_numpy(zero_copy_only=False)
+                acc = acc & ~FR.decoy_mask(ids(d["id1"], d["K"] >> 32), ids(d["idx"], qx), am, acc, DECOY)
             if DROP_SIB_CANDS:
                 acc = drop_sib_cands(d, acc)              # d["K"] loses the unaccepted decoys; acc realigned
             d["km"] = d["K"][acc]
