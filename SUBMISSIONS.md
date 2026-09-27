@@ -150,3 +150,4 @@ runs `--check-ids` on SageMaker in 1 min), then `package.py --team Yeti --out ou
 #7, #7s, #8a, #8b, #8p are superseded (same tests on a weaker base).
 
 To regenerate #2: `.venv/bin/python code/business_entity_resolution/src/rules.py test` (13 min, per country), then the validator.
+| 75a | staged, validator PASS --check-ids (lead, `probes/P75-combine/combine.py`) — combined France add-ons | `output/sub75a/…` (candidates = sub66_final_small + 33 missing add pairs; code.zip = #66_final's) | = #66_final (India/US byte-identical) | #66_final + P67q adds (2,793, Qwen-gated synthetic-French bge combiner) + P70a new adds (424 of 1,991; the rest are P67's) + P69 t975ce (4,904 of 5,270; 1 SX conflict to P70). All add-only, one owner, caps 5/6 re-checked, each set already P64-vetoed. Expected ≈ +0.0002–0.0003 over #66_final. md5 d9624408… |
