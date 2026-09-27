@@ -1,20 +1,22 @@
-# P43-final-package — RESULT (27 Sep 07:45: second task, the final package for sub_iu54_frgc70; night task below)
+# P43-final-package — RESULT (27 Sep 08:35: second task, the final package for sub_iu54_frgc70; night task below)
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
-- **The final zip is built, validated and backed up.** `output/final/Yeti_submission.zip` (md5 102fd239…) holds
-  `output/sub_iu54_frgc70_small`. Its `matching_results.tsv` is **byte-identical to the master's final
-  `output/sub_iu54_frgc70`** (md5 7f559944…). The candidate set is small: 7,658,108 pairs, 4.42 per S1.
+- **The final zip is built, validated and backed up** (27 Sep 08:50). `output/final/Yeti_submission.zip` (md5 96ef3224…,
+  93.8 MB, 30 files, the rulings' layout) holds `output/sub_iu54_frgc70_small`.
+  - Its `matching_results.tsv` is **byte-identical to the master's final `output/sub_iu54_frgc70`** (md5 7f559944…).
+  - The candidate set is small: 7,658,108 pairs, 4.42 per S1.
   - The official validator with `--check-ids` passes on the folder and on the unzipped zip.
-  - Backups: S3 `amc26-offload/final/` and `gdrive:amc26-offload/final/`.
-- **`run.py` (default recipe `sub_iu54_frgc70`) rebuilds that matching file byte for byte from cached inputs.**
-  - India/US: new `src/iu_stack.py` (P44 combiner + P45 r_all + 16 zoo members, P50's full-holdout boosters). It
-    matches sub52_max with 0 differing lines. Then `run.dup_add` (P54's duplicate step).
-  - France: #37's recipe.
-  - Other 27 Sep recipes:
-    - `sub_clean_iu34` rebuilds its folder with 0 differing lines as sets.
-    - `sub_clean`'s France chain (`france.chain`: P42 / P41 / P48 / P54 / P47 / P55) equals the staged France lines.
-    - `sub54`'s France is 2 pairs off.
-- **Main = 7be52fb** (committed, not pushed). In progress: porting `sub_iu54_best`'s stages (Qwen France CE, P55
-  no-rescue veto, P62 acronym rule with its candidate block), in case the LB makes it final.
+  - Backups: S3 `amc26-offload/final/` (zip, folder, standby, boosters, stage inputs; older zips in `archive/`) and
+    `gdrive:amc26-offload/final/` (zip, folder, standby). Copy only; nothing deleted.
+- **`run.py` (default recipe `sub_iu54_frgc70`) rebuilds every current candidate's matching file byte for byte from cached
+  inputs:** `sub_iu54_frgc70`, `sub_iu54_best`, `sub_iu54_fr38_55n` and `sub_clean`.
+  - `sub_clean_iu34` rebuilds as ID sets, 0 lines.
+  - `sub54` is 2 France lines off: it descends from the union #43_r90, which is not a sequential rule.
+  - New code: `src/iu_stack.py` (India/US combiner, by a subagent), `france.chain` (27 Sep France stages), P62's
+    acronym block, `run.dup_add`. Country logic stays keyed on `unseen()`.
+- **Standby: `output/sub_iu54_best_small`** has the same matching file as `sub_iu54_best` and 7,660,700 candidates;
+  validator PASS. If the LB makes `sub_iu54_best` the final, re-zip in ~5 min:
+  `package.py --team Yeti --out output/sub_iu54_best_small --dest output/final`, then `solution_p43.py` on SageMaker,
+  then copy to S3 and Drive. Main = c1f94bb, pushed.
 
 ### Second task (27 Sep 06:30 → 07:45): what was ported and verified
 | ledger name | world | key metrics | verdict |
@@ -23,6 +25,8 @@
 | (subagent iu-port) sub52_iu | test | `iu_stack` p'' bit-identical to P50's fullzoo probs on every argmax pair (India 3,685,878 / US 2,910,231). India/US lines = sub52_max's (0 lines; vs sub54 only the 14 dup copies). `--iu a10` = sub37_gc70 byte for byte. 580 s, 1.41 GB | keep |
 | fr-chain-port-vs-sub_clean_fr | test | `france.chain` (ORDER_CLEAN) on P42's frame = sub_clean_fr, 0 S1 differ. Stage counts = P38's: recipe 835,532 / brand +1,434 / veto −1,160 / rescue +8,539 / class +1,037. + P55 (−3,198 / +1,129) = sub_clean but for its 49 dup copies | keep |
 | sub_clean_iu34-recipe-set-repro | test | full run.py run = s3 sub_clean_iu34: 0 differing lines as sets, both files; dup France 49 / India 7 / US 3. 11 min, 1.32 GB | keep |
+| sub_iu54_fr38_55n-recipe-byte-repro | test | matching byte-identical; Qwen rescue +1,043 / gc +9,155 (= P38); P55 no-rescue veto list 3,044, 619 present (= P50) | keep |
+| sub_iu54_best-recipe-byte-repro | test | matching **byte-identical** (md5 24176ee7…). Acronym: block 102,236 one-token SX → 11,495 rule pairs → 11,371 unambiguous → change set 3,590 (on #clean's lines, as staged) → 3,538 kept on the base, 2,638 new candidates (= P50). France dup +44. Candidates: 1 France line differs (a #54-file dup candidate this lineage does not produce). 13 min, 1.42 GB | keep |
 | (chaincheck s54) | test | ORDER_54 (brand ∪, xf ∪, P46 swap, #48's veto on P42's frame, class, fr54 rescue): 34 France S1 differ from sub54 = 32 dup copies + 2 pairs (P38's on43 rebuild of the union #43_r90 is 2 rows short too) | keep (reported) |
 
 Code changed (main): `src/france.py` (chain + P42/P47/P54/P55 stage functions, veto54), `src/run.py` (recipes sub_iu54_frgc70
