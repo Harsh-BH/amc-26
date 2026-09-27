@@ -1,0 +1,10 @@
+import pandas as pd, numpy as np
+pd.set_option("display.width",250); pd.set_option("display.max_colwidth",55)
+f=pd.read_parquet(f"data/work/n64/frfree.parquet")
+x=f[(f.name_rel=="eq")&(f.hn_cls==0)&(f.p>=.7)].copy()
+x["hnst"]=np.select([(x.hn_1!="")&(x.hn_1==x.hn_x),(x.hn_1=="")&(x.hn_x==""),x.hn_1==""],["eq","both_none","s1_none"],"sx_none")
+x["rb"]=pd.cut(x.r.fillna(-1),[-2,-.5,.1,.5,.9,1.01],labels=["noR","<.1",".1-.5",".5-.9",">=.9"])
+print(pd.crosstab(x.hnst,x.rb,margins=True))
+print(pd.crosstab(x.hnst,x.k1.clip(0,5)))
+print("city_eq",x.groupby("hnst").city_eq.mean().round(3).to_dict(), "n_x mean", x.groupby("hnst").n_x.mean().round(2).to_dict())
+print(x[x.hnst=="eq"].sample(25,random_state=1)[["name_1","name_x","addr_1","addr_x","p","r","k1"]].round(3).to_string())

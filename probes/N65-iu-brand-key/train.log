@@ -1,0 +1,4 @@
+== train India bare: unique key on holdout S1 1,515 | key==truth 0.963 | pred==key 0.925 | FREE 108 (0.071) key==truth among free 0.528 | free & not in dump 69 truth 0.391
+== train India non-bare: unique key on holdout S1 2,305 | key==truth 0.980 | pred==key 0.975 | FREE 41 (0.018) key==truth among free 0.244 | free & not in dump 34 truth 0.118
+== train US bare: unique key on holdout S1 3,460 | key==truth 0.998 | pred==key 0.957 | FREE 148 (0.043) key==truth among free 0.993 | free & not in dump 78 truth 1.000
+== train US non-bare: unique key on holdout S1 10,023 | key==truth 0.964 | pred==key 0.964 | FREE 360 (0.036) key==truth among free 0.003 | free & not in dump 3 truth 0.000

@@ -1,0 +1,10 @@
+keys test India s1: 809,986 rows, 6s
+keys test India sx: 4,717,565 rows, 145s
+== test India: gib SX 88,440  assigned 0.898  | unique key 35,164 (owner==key 0.961, free 0.022)
+   bare    : unique-key 13,743  owner==key 0.933  owner other 0.018  FREE 667  (free & key S1 empty 23)
+   non-bare: unique-key 21,421  owner==key 0.978  owner other 0.016  FREE 118  (free & key S1 empty 5)
+keys test US s1: 663,106 rows, 4s
+keys test US sx: 3,817,031 rows, 66s
+== test US: gib SX 111,360  assigned 0.733  | unique key 72,068 (owner==key 0.935, free 0.065)
+   bare    : unique-key 18,243  owner==key 0.981  owner other 0.000  FREE 352  (free & key S1 empty 11)
+   non-bare: unique-key 53,825  owner==key 0.920  owner other 0.000  FREE 4,308  (free & key S1 empty 289)
