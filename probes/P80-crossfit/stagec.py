@@ -225,6 +225,18 @@ def feats(D):
     for r in ("a_n", "a_name", "a_addr"):
         put(r, D[r])
     put("d_a_name", F["a_name"] - F["rv_a_name"])
+    if "lr" in D:                                          # CE: own logit r, its ranks, gap to the S1's best, rival margins
+        lr = D.lr.to_numpy(np.float64)
+        ok = ~np.isnan(lr)
+        put("lr", lr)
+        put("rr1", np.where(ok, ranks(q1, lr)["rank"], np.nan))           # NaN r sorts last: ranks among scored rows
+        R = ranks(qx, lr)
+        put("rrx", np.where(ok, R["rank"], np.nan))
+        best = np.full(q1.max() + 1, -np.inf)
+        np.fmax.at(best, q1, lr)
+        put("rg1", np.where(ok, best[q1] - lr, np.nan))
+        put("rmx", lr - at(lr, rv))                                        # vs the p-rival's r
+        put("rmx2", lr - at(lr, R["oth"]))                                 # vs the best other r of the SX
     return pd.DataFrame(F)
 
 
@@ -295,11 +307,14 @@ def fit_c(X, y, f):
     return s, bs
 
 
-def fit(frac, out, ho=False, cs=C):
+def fit(frac, out, ho=False, cs=C, ce=False):
+    mtag = "sc_ho" if ho else ("sc_ce" if ce else "sc")                   # boosters / fold-0 scores / json
     t0 = time.time()
     res = {}
     for c in cs:
         D = pd.read_parquet(out / f"{'sc_ho' if ho else 'sc'}_{c}.parquet")
+        if ce:
+            D = attach_r(D, out / f"sc_r_{c}.parquet")
         id1, n_true, s1_fold = s1_pool(c)
         if ho:
             s1_fold = np.where(s1_fold == 0, pseudo_fold(np.arange(len(id1))), -1)
@@ -312,17 +327,19 @@ def fit(frac, out, ho=False, cs=C):
         s, bs = fit_c(X, y, f)
         del X
         for k, b in bs.items():                                         # test side: mean of both, like folds 0/1/6-9
-            b.save_model(str(out / f"{'sc_ho' if ho else 'sc'}_C{k}_{c}.txt"), num_iteration=b.best_iteration)
+            b.save_model(str(out / f"{mtag}_C{k}_{c}.txt"), num_iteration=b.best_iteration)
         m0 = f == 0                                                     # fold-0 scores for hybrid checks vs p54
         own = _owner(qx, s) == np.arange(len(s))
         pd.DataFrame({"q1": q1[m0], "qx": qx[m0], "p": D.p.to_numpy()[m0], "s": s[m0].astype(np.float32),
                       "own": own[m0]}).to_parquet(
-            out / f"{'sc_ho' if ho else 'sc'}_s0_{c}.parquet", index=False)
+            out / f"{mtag}_s0_{c}.parquet", index=False)
         base, q_s, nt_s, half = baseline(c, id1)
         assert (n_true[q_s] == nt_s).all(), "gt n_true != P76 S n_true"
         ev = samp[q_s] & (s1_fold[q_s] == 0)                          # fold-0 S1 evaluated (all of S unless smoke / ho)
         sel1 = np.flatnonzero((s1_fold == 1) & samp)
         r = dict(rows=len(D), s1_fold0=int(ev.sum()), trees={k: b.best_iteration for k, b in bs.items()})
+        if ce:
+            r["r_cover_by_fold"] = {int(k): round(float(v), 4) for k, v in D.lr.notna().groupby(D.fold).mean().items()}
         fs = {"base": base[ev]}
         for arm, sc in (("stageB", D.p.to_numpy(np.float64)), ("stageC", s)):
             cand = owner_rank(q1, qx, s3, sc)
@@ -341,24 +358,25 @@ def fit(frac, out, ho=False, cs=C):
         print(c, json.dumps({k: v for k, v in r.items() if k != "gain_top"}), f"| {time.time() - t0:.0f}s", flush=True)
         del D, s
     if cs != C:                                                          # one country: early read only
-        (out / f"stagec_{cs[0]}{'_ho' if ho else ''}.json").write_text(json.dumps(res, indent=1))
+        (out / f"{mtag}_{cs[0]}_fit.json").write_text(json.dumps(res, indent=1))
         return
     for k in ("C_vs_base", "B_vs_base", "C_vs_B"):
         res[f"lbeq_{k}"] = dict(mean=sum(LB_W[c] * res[c][k]["mean"] for c in C),
                                 se=float(np.sqrt(sum((LB_W[c] * res[c][k]["se"]) ** 2 for c in C))))
     res["sec"] = round(time.time() - t0)
-    dest = HERE / ("stagec_ho.json" if ho else "stagec.json") if frac == 1 else out / "stagec_smoke.json"
+    dest = HERE / {"sc_ho": "stagec_ho.json", "sc_ce": "stagec_ce.json", "sc": "stagec.json"}[mtag] if frac == 1 \
+        else out / "stagec_smoke.json"
     dest.write_text(json.dumps(res, indent=1))
     print(json.dumps({k: v for k, v in res.items() if k.startswith("lbeq")}), "->", dest, flush=True)
 
 
-def apply_test(c, test_p, out):
-    """The fold-0 recipe on TEST: pruned test pairs (p = cf boosters' logit mean from score_test.py / p80-sct, files named
-    like the X files under test_p), anchors on P3's test texts, mean of sc_CA / sc_CB, owner re-decision, fold-1 t, caps.
-    -> <out>/sc_test_<c>.parquet: accepted (s1, sx, s) entity ids."""
-    import lightgbm as lgb
+def test_frame(c, test_p, out):
+    """sc_T_<c>.parquet: pruned TEST pairs (p = cf boosters' logit mean from score_test.py / p80-sct, files named like the
+    X files under test_p) + RAW + anchors on P3's test texts; the train frame's columns, fold -1, y False."""
+    f = out / f"sc_T_{c}.parquet"
+    if f.exists():
+        return pd.read_parquet(f)
     t0 = time.time()
-    t = json.loads((HERE / "stagec.json").read_text())[c]["stageC"]["t"]
     parts = []
     for xf in sorted((W / "p4/X").glob(f"test_{c}_sx_*.parquet")):
         tp = sorted(Path(test_p).rglob(f"*{xf.name}"))
@@ -375,18 +393,81 @@ def apply_test(c, test_p, out):
         del d, o, po
     D = pd.concat(parts, ignore_index=True)
     anchors(c, D, split="test")
+    D.to_parquet(f, index=False)
+    print(f"{c} test frame: {len(D):,} pruned pairs | {time.time() - t0:.0f}s peak {peak():.2f} GB", flush=True)
+    return D
+
+
+def apply_test(c, test_p, out, ce=False):
+    """The fold-0 recipe on TEST: test_frame, mean of the two stage-C boosters, owner re-decision, fold-1 t, caps.
+    -> <out>/<tag>_test_<c>.parquet: accepted (s1, sx, s) entity ids."""
+    import lightgbm as lgb
+    t0 = time.time()
+    tag = "sc_ce" if ce else "sc"
+    D = test_frame(c, test_p, out)
+    if ce:
+        D = attach_r(D, out / f"sc_rT_{c}.parquet")
+    t = json.loads((HERE / f"{'stagec_ce' if ce else 'stagec'}.json").read_text())[c]["stageC"]["t"]
     X = feats(D)
-    s = sum(lgb.Booster(model_file=str(out / f"sc_C{k}_{c}.txt")).predict(X) for k in "AB") / 2
+    s = sum(lgb.Booster(model_file=str(out / f"{tag}_C{k}_{c}.txt")).predict(X) for k in "AB") / 2
     q1, qx, s3 = D.q1.to_numpy(), D.qx.to_numpy(), D.s3.to_numpy()
     acc = owner_rank(q1, qx, s3, s) & (s >= t)
     id1, idx = FT.ids("test", c)
     pd.DataFrame({"s1": id1.take(q1[acc]).to_numpy(zero_copy_only=False), "sx": idx.take(qx[acc]).to_numpy(zero_copy_only=False),
-                  "s": s[acc].astype(np.float32)}).to_parquet(out / f"sc_test_{c}.parquet", index=False)
+                  "s": s[acc].astype(np.float32)}).to_parquet(out / f"{tag}_test_{c}.parquet", index=False)
     print(f"{c} test: {len(D):,} pruned pairs, {acc.sum():,} accepted over {len(np.unique(q1[acc])):,} S1 (t {t}) | "
           f"{time.time() - t0:.0f}s peak {peak():.2f} GB", flush=True)
 
 
-def hybrid(out, ho=False, cs=C):
+CE_JOBS = {"A": "p80ce-A-0927-2141", "B": "p80ce-B-0927-2149"}           # A: OOF on folds 4-5, B: on 2-3; both: 0-1
+CE_S3 = "sagemaker-114872709824-ap-south-1/amc26/p80/ce/results"
+
+
+def ce_r(c, out):
+    """sc_r_<c>.parquet (q1, qx, lr) over the frame's rows: the p80ce CE logit, out of fold on folds 2-5, the logit mean of
+    CE_A and CE_B on folds 0-1 (read straight from S3, one country at a time; folds 6-9 absent until scored)."""
+    import os
+    from pyarrow import fs
+    os.environ.setdefault("AWS_PROFILE", "harsh")
+    s3 = fs.S3FileSystem(region="ap-south-1")
+    t0 = time.time()
+    fk = pd.read_parquet(out / f"sc_{c}.parquet", columns=["q1", "qx"])
+    want = pd.Index(keys(fk.q1, fk.qx))
+    del fk
+    got = {}
+    for sp, job in CE_JOBS.items():
+        t = pq.read_table(f"{CE_S3}/{job}/oof/oof_{sp}_{c}.parquet", filesystem=s3, columns=["q1", "qx", "fold", "r"])
+        k = keys(t.column("q1").to_numpy(), t.column("qx").to_numpy())
+        m = want.get_indexer(k) >= 0
+        r = np.clip(t.column("r").to_numpy().astype(np.float64)[m], 1e-4, 1 - 1e-4)
+        got[sp] = pd.DataFrame({"k": k[m], "fold": t.column("fold").to_numpy()[m], "lr": np.log(r / (1 - r))})
+        print(f"  {c} CE_{sp}: {len(t):,} scored, {m.sum():,} in the frame, folds {sorted(set(got[sp].fold))} | "
+              f"{time.time() - t0:.0f}s peak {peak():.2f} GB", flush=True)
+        del t
+    a, b = got["A"], got["B"]
+    assert set(a.fold) <= {0, 1, 4, 5} and set(b.fold) <= {0, 1, 2, 3}
+    ab = pd.concat([a[a.fold <= 1], b[b.fold <= 1]]).groupby("k").lr.mean()        # folds 0-1: mean of both
+    R = pd.concat([pd.Series(a.lr.to_numpy(), index=a.k)[a.fold.to_numpy() >= 4],
+                   pd.Series(b.lr.to_numpy(), index=b.k)[b.fold.to_numpy() >= 2], ab])
+    assert R.index.is_unique
+    kk = R.index.to_numpy(np.int64)
+    pd.DataFrame({"q1": (kk >> 32).astype(np.int32), "qx": (kk & 0xFFFFFFFF).astype(np.int32),
+                  "lr": R.to_numpy(np.float32)}).to_parquet(out / f"sc_r_{c}.parquet", index=False)
+    print(f"{c}: CE lr on {len(R):,} of {len(want):,} frame rows | {time.time() - t0:.0f}s", flush=True)
+
+
+def attach_r(D, path):
+    """CE logit lr per frame row (NaN where the CE has not scored the pair)."""
+    R = pd.read_parquet(path)
+    lr = pd.Series(R.lr.to_numpy(np.float32), index=keys(R.q1, R.qx))
+    assert lr.index.is_unique
+    D["lr"] = lr.reindex(keys(D.q1, D.qx)).to_numpy(np.float32)
+    print(f"  CE r on {D.lr.notna().mean():.4f} of rows ({path.name})", flush=True)
+    return D
+
+
+def hybrid(out, ho=False, cs=C, ce=False):
+    mtag = "sc_ho" if ho else ("sc_ce" if ce else "sc")
     """Today's decision (P76 p54 >= .71 on #8c argmax pairs) edited by stage C, knob tuned on one fold-0 half and reported
     on the other (both directions). veto: drop accepted pairs with s < v. steal: drop accepted pairs whose SX stage C
     gives to another S1, unless s >= w. rescue: add unaccepted argmax pairs that stage C owns with s >= u."""
@@ -400,7 +481,7 @@ def hybrid(out, ho=False, cs=C):
         q = pc.index_in(pa.array(S.id.to_numpy(object), pa.large_string()), value_set=id1).to_numpy()
         qx = pc.index_in(pa.array(F.sx_id.to_numpy(object), pa.large_string()), value_set=idx)
         assert qx.null_count == 0
-        s0 = pd.read_parquet(out / f"{'sc_ho' if ho else 'sc'}_s0_{c}.parquet")
+        s0 = pd.read_parquet(out / f"{mtag}_s0_{c}.parquet")
         k0 = pd.Series(np.arange(len(s0)), index=keys(s0.q1, s0.qx))
         j = k0.reindex(keys(q[F.g.to_numpy()], qx.to_numpy())).to_numpy()
         hit = ~np.isnan(j)
@@ -426,10 +507,11 @@ def hybrid(out, ho=False, cs=C):
         res[c] = r
         print(c, json.dumps(r), flush=True)
     if cs != C:
+        (out / f"{mtag}_{cs[0]}_hybrid.json").write_text(json.dumps(res, indent=1))
         return
     for arm in ("veto", "steal", "rescue"):
         res[f"lbeq_{arm}"] = {k: sum(LB_W[c] * res[c][arm][k]["mean"] for c in C) for k in ("h0->h1", "h1->h0")}
-    (HERE / ("hybrid_ho.json" if ho else "hybrid.json")).write_text(json.dumps(res, indent=1))
+    (HERE / {"sc_ho": "hybrid_ho.json", "sc_ce": "hybrid_ce.json", "sc": "hybrid.json"}[mtag]).write_text(json.dumps(res, indent=1))
     print(json.dumps({k: v for k, v in res.items() if k.startswith("lbeq")}), flush=True)
 
 
@@ -462,10 +544,11 @@ def selftest():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("frame", "fit", "test", "hybrid", "selftest"))
+    ap.add_argument("cmd", choices=("frame", "fit", "test", "hybrid", "ce_r", "selftest"))
     ap.add_argument("country", nargs="?")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--ho", action="store_true", help="rehearsal on fold 0 alone (m2_big p, 6 pseudo folds)")
+    ap.add_argument("--ce", action="store_true", help="add the p80ce CE features (sc_r_<c> / sc_rT_<c>)")
     ap.add_argument("--out", type=Path, default=W / "p80")
     ap.add_argument("--test-p", type=Path, help="test: dir with score_test.py's per-X-file test p")
     a = ap.parse_args()
@@ -473,11 +556,13 @@ if __name__ == "__main__":
     frac = 0.01 if a.smoke else 1.0
     if a.cmd == "selftest":
         selftest()
+    elif a.cmd == "ce_r":
+        ce_r(a.country, a.out)
     elif a.cmd == "hybrid":
-        hybrid(a.out, a.ho, (a.country,) if a.country else C)
+        hybrid(a.out, a.ho, (a.country,) if a.country else C, a.ce)
     elif a.cmd == "test":
-        apply_test(a.country, a.test_p, a.out)
+        apply_test(a.country, a.test_p, a.out, a.ce)
     elif a.cmd == "frame":
         frame(a.country, frac, a.out, a.ho)
     else:
-        fit(frac, a.out, a.ho, (a.country,) if a.country else C)
+        fit(frac, a.out, a.ho, (a.country,) if a.country else C, a.ce)
