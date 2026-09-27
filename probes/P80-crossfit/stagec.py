@@ -295,10 +295,10 @@ def fit_c(X, y, f):
     return s, bs
 
 
-def fit(frac, out, ho=False):
+def fit(frac, out, ho=False, cs=C):
     t0 = time.time()
-    res, per = {}, {}
-    for c in C:
+    res = {}
+    for c in cs:
         D = pd.read_parquet(out / f"{'sc_ho' if ho else 'sc'}_{c}.parquet")
         id1, n_true, s1_fold = s1_pool(c)
         if ho:
@@ -340,6 +340,9 @@ def fit(frac, out, ho=False):
         res[c] = r
         print(c, json.dumps({k: v for k, v in r.items() if k != "gain_top"}), f"| {time.time() - t0:.0f}s", flush=True)
         del D, s
+    if cs != C:                                                          # one country: early read only
+        (out / f"stagec_{cs[0]}{'_ho' if ho else ''}.json").write_text(json.dumps(res, indent=1))
+        return
     for k in ("C_vs_base", "B_vs_base", "C_vs_B"):
         res[f"lbeq_{k}"] = dict(mean=sum(LB_W[c] * res[c][k]["mean"] for c in C),
                                 se=float(np.sqrt(sum((LB_W[c] * res[c][k]["se"]) ** 2 for c in C))))
@@ -383,14 +386,14 @@ def apply_test(c, test_p, out):
           f"{time.time() - t0:.0f}s peak {peak():.2f} GB", flush=True)
 
 
-def hybrid(out, ho=False):
+def hybrid(out, ho=False, cs=C):
     """Today's decision (P76 p54 >= .71 on #8c argmax pairs) edited by stage C, knob tuned on one fold-0 half and reported
     on the other (both directions). veto: drop accepted pairs with s < v. steal: drop accepted pairs whose SX stage C
     gives to another S1, unless s >= w. rescue: add unaccepted argmax pairs that stage C owns with s >= u."""
     grids = {"veto": np.r_[0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5], "steal": np.r_[0.5, 0.7, 0.8, 0.9, 0.95, 0.99, 1.01],
              "rescue": np.r_[0.8, 0.9, 0.95, 0.97, 0.98, 0.99, 0.995]}
     res = {}
-    for c in C:
+    for c in cs:
         id1, idx = FT.ids("train", c)
         F = pd.read_parquet(W / f"p76/F_{c}.parquet", columns=["g", "y", "p54", "sx_id"])
         S = pd.read_parquet(W / f"p76/S_{c}.parquet", columns=["id", "n_true", "half"])
@@ -422,6 +425,8 @@ def hybrid(out, ho=False):
             r[arm]["all_knobs_h0h1"] = {float(x): [round(float(fs[x][h == k].mean()), 7) for k in (0, 1)] for x in grids[arm]}
         res[c] = r
         print(c, json.dumps(r), flush=True)
+    if cs != C:
+        return
     for arm in ("veto", "steal", "rescue"):
         res[f"lbeq_{arm}"] = {k: sum(LB_W[c] * res[c][arm][k]["mean"] for c in C) for k in ("h0->h1", "h1->h0")}
     (HERE / ("hybrid_ho.json" if ho else "hybrid.json")).write_text(json.dumps(res, indent=1))
@@ -469,10 +474,10 @@ if __name__ == "__main__":
     if a.cmd == "selftest":
         selftest()
     elif a.cmd == "hybrid":
-        hybrid(a.out, a.ho)
+        hybrid(a.out, a.ho, (a.country,) if a.country else C)
     elif a.cmd == "test":
         apply_test(a.country, a.test_p, a.out)
     elif a.cmd == "frame":
         frame(a.country, frac, a.out, a.ho)
     else:
-        fit(frac, a.out, a.ho)
+        fit(frac, a.out, a.ho, (a.country,) if a.country else C)
