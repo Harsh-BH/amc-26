@@ -74,6 +74,41 @@ This round gates each idea on P55's LOCO frames. Precision is measured on the pa
   - The real gaps are number ranges, second numbers, and a leading postcode read as the house number. They hide sibling shifts, and `shift.flag` catches them.
 - Caps don't truncate France's big clusters: truth never exceeds 5 S2 / 6 S3, and France sits at the cap less often than truth (0.77% vs 1.09%).
 
+## Addendum 3 (27 Sep 18:30): the legal-form-only address-less class (lead's P77 q4)
+The class: address-less SX whose name core equals a unique S1 core, with a full name that differs only by the legal form. `xlf_loco.py` runs it through P66's LOCO harness; `xlf_build.py` builds France.
+
+| split | in-domain train precision (India / US) | LOCO unaccepted pool (India target / US target) | France accepted / free |
+|---|---|---|---|
+| (a) form dropped / added | .961 n 853 / .951 n 2,575 | 329 at .91 (+0.00016) / 95 at .46 (−0.00002) | 1,610 / 1,643 |
+| (b) same form, spelled differently | .986 n 1,303 / .978 n 920 | 336 at .96 (+0.00027) / 16 at .63 | 1,149 / 377 |
+| (c) conflicting | .982 n 822 / .575 n 73 | — | 44 / 96 (excluded) |
+
+- Free-share diagnostic:
+  - When a model leaves a large share of a precise class free, as the India target does (39% / 26%), the leftovers stay true (.91 / .96).
+  - When it accepts nearly all of it, as the US target does (4% / 2%), the leftovers are coin flips (.46 / .63).
+  - France leaves 50% / 25% free, like the India target.
+- **Split, for trimming** (`xlf_loco_split.py`, `xlf_qwen.py`; change set `data/work/p70/changes_sub77_xlf_split.parquet`):
+
+  | split | France adds | France p median | LOCO pool, India target | LOCO pool, US target |
+  |---|---|---|---|---|
+  | (b) spelled differently | 377 | .94 | .964, +0.00027 | 16 at .63 |
+  | (a2) SX drops the form | 1,063 | .91 | .884, +0.00010 | 62 at .47 |
+  | (a3) SX adds a form | 579 | .80 | .954, +0.00007 | 33 at .45 |
+
+  - Pooled Qwen scores every (a) France add below .5. That is blindness, not evidence: on labelled LOCO pairs, true (a) pairs reach r ≥ .5 only 3% (US→India) / 25% (India→US) of the time.
+  - Trim order if the file disappoints: a3, then a2; keep b.
+- **`output/sub77_xlf`**: +2,019 adds, validator PASS. Expected +0.0002 to +0.0004 LB if France is India-like, ≈ −0.0001 if US-like.
+
+## Addendum 4 (27 Sep ~19:05): sub77_hnst LB result and the N69 increment
+- **`sub77_hnst` scored LB 0.987844, −0.000448 vs sub77**, i.e. ≈ 0.3 precise. France followed India's free pool (.24), not the US's (.98).
+  - The lead's rule now: a France class ships only if BOTH countries' unaccepted pools pass (Wilson LB ≥ .75, n ≥ 200).
+  - The free-share diagnostic retrodicts it: France's free share (38%) sits nearer India's (11.5%) than the US's (2.7%).
+- **N69 increment over `sub77_xlf`** (`n69_gate.py`, `n69_loco.json`): about 395 France pairs. Not staged:
+  - eq-core non-legal-form difference: 233 free. India pool .972 (n 252), US pool .53 (n 34). Fails.
+  - typo core: 116 free. India pool .835 (n 103), US pool .54 (n 96). Fails.
+  - xfc leftovers: 46. Pools too small.
+- **`sub77_xlf` under the same strict pool test:** it fails the US-target pool ((a) .46, (b) .63) and passes only on all-pairs precision. The free-share diagnostic (France 50% / 25% ~ India target 39% / 26%) predicts it transfers.
+
 ## Evidence         (France-F0.5 dF on the LOCO target; A→B = fit on A's out-of-domain frame, bars picked on A, applied to B; h1 = report half ± SE)
 | ledger name | world | key metrics (India→US / US→India) | verdict |
 |---|---|---|---|
