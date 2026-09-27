@@ -1,4 +1,4 @@
-# P55-fr-combiner — RESULT (27 Sep 05:30; validator pending, see the Recommendation)
+# P55-fr-combiner — RESULT (final, 27 Sep 05:35)
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
 - **The combiner transfers to France's stack.** It is a LightGBM over country-invariant inputs, fit on one country's out-of-domain LOCO frame and applied to the other country's. It re-scores the recipe (+ P48 veto) and passes the gate in both directions:
   - arm A (veto band pairs with c < 0.6, add free pairs with c > 0.95): h1 **India→US +0.0052 ± 0.0002, US→India +0.0046 ± 0.0003**;
@@ -11,7 +11,8 @@
   - `output/sub55`: md5 f258ae32…, 7,732 France S1 changed, 156 made empty.
   - `output/sub55b`: md5 460f3d6c…, 3,160 S1 changed, 156 made empty.
   - `check48.py sub48 sub55[b]`: only France lines differ.
-  - Validator `--check-ids` on SageMaker: see the Evidence table's last rows.
+  - Validator `--check-ids` on SageMaker: **both PASS** (p55-val2-55-0927-052339, p55-val2-55b-0927-052555; md5 match; 100,830 / 100,924 empty rows).
+  - SUBMISSIONS.md rows #55 / #55b.
 - **Rebuild on another base** (≈ 15 s, 1.3 GB):
   - `.venv/bin/python probes/P55-fr-combiner/p55.py build <BASE> <OUT> v=0.6,scope=band,u=0.95` (drop `,u=0.95` for the veto only).
   - Needs `data/work/p55/cf_plain.npy`, the France combiner scores. Regenerate it with `p55.py scores plain` (≈ 1.5 min).
@@ -45,7 +46,8 @@
 | p55-loco-A-nobasehi0.6-add0.95 | LOCO, 3 seeds, (v, u) on h0 | **h1 +0.00517 ± 0.00023 / +0.00463 ± 0.00029** (+4,116 / +6,898 pairs, −2,591 / −1,739). France-reweighted: veto +0.00073 / +0.00183, adds +0.00147 / +0.00104, **total +0.0022 / +0.0029** | **keep → sub55** |
 | p55-loco-bag3-resid | LOCO, 3 seeds | P44-style residual (init = logit p): veto ≈ plain (all 0.6 +0.0051 / +0.0007), **adds −0.012 / −0.013** | drop |
 | label-free profile (prof.json) | France vs LOCO | vetoes per accepted pair: France 0.0038 (band), LOCO 0.0059 / 0.0061. Adds per accepted pair: 0.0072 / 0.0094 / 0.0241. France's r median: vetoes logit −0.13, adds +7.2 (LOCO adds +7.4 / −3.5) | PASS: France is India→US-like and milder |
-| sub55 / sub55b build | test | −3,198 France pairs (rescue 154, gc 593, hn 2,402, base band 49), +4,830 (sub55 only); India / US byte-identical (check48); every add is a candidate (asserted) | validator pending |
+| p55-sub55 | test | −3,198 France pairs (rescue 154, gc 593, hn 2,402, base band 49), +4,830 (sub55 only); India / US byte-identical (check48); every add is a candidate (asserted). Validator `--check-ids` PASS on both | **keep → upload** |
+| agree.json | France | single-direction fits vs the pooled fit: India-fit vetoes 3,616 (77% in pooled) / adds 4,260 (74%); US-fit 2,439 (90%) / 7,450 (62%). 58% of the pooled vetoes and 63% of its adds are in both single sets | the pooled model sits between the two |
 
 ## What failed      (approaches tried and dropped, with the number that killed them)
 - **Add bar picked on the source (u 0.8):** US→India −0.0080. The source's cross-fit precision (0.95) does not transfer (0.60), so u comes from LOCO h0 (0.95), like P42's France bars.
