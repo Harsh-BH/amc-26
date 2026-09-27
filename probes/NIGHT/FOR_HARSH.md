@@ -6,7 +6,8 @@
   → validator. On a gc70-like France it removes ≈ 2.4k pairs (196 S1 become empty). **LOCO on a gc70-style chain
   (base + gc 0.7 + rescue 0.9, no hn-extra), both halves: US→India +0.0296 / +0.0297 ± 0.0005 (10,066 removed, 0.9%
   true); India→US +0.00011 / +0.00019 ± 0.00003 (84 removed, 7% true)** — probes/NIGHT/loco_gc70.py. Precision-side,
-  matches "France is precision-limited". Expected ≈ +0.0002–0.0003 over sub_iu54_frgc70. Good candidate for slot 2/3.
+  matches "France is precision-limited". Expected ≈ +0.0002–0.0003 over sub_iu54_frgc70. Good candidate for **slot 3: (winner of sub_iu54_frgc70 / sub_iu54_best) + N54** — `build output/<winner> output/<winner>_n54 all`.
+  The Qwen chain's r < 0.2 veto may already catch some of these pairs; N54 skips pairs not in the base, so it stacks safely.
 N55 (+ noise-word variants) is a recall add of the same template as P46 — only if the P46 question comes out in P46's favour.
 
 
