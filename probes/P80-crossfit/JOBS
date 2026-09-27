@@ -11,3 +11,15 @@ p80cs-India0-g58xlarge-0927-2241 ml.g5.8xlarge   (India slice 0 of 4: hedge, the
 p80cs-India1-g516xlarge-0927-2241 ml.g5.16xlarge (India slice 1 of 4)
 p80cs-India2-g68xlarge-0927-2242 ml.g6.8xlarge   (India slice 2 of 4)
 p80cs-India3-g616xlarge-0927-2242 ml.g6.16xlarge (India slice 3 of 4)
+p80cs-India0-g6e4xlarge-0927-2258 ml.g6e.4xlarge
+p80cs-India1-g6e8xlarge-0927-2258 ml.g6e.8xlarge
+p80cs-India2-g6e12xlarge-0927-2258 ml.g6e.12xlarge
+p80cs-India3-g6e16xlarge-0927-2258 ml.g6e.16xlarge
+p80cs-India4-g5xlarge-0927-2258 ml.g5.xlarge
+p80cs-India1-g6e2xlarge-0927-2303 ml.g6e.2xlarge
+p80cs-India0-g6xlarge-0927-2310 ml.g6.xlarge
+p80cs-India1-g612xlarge-0927-2310 ml.g6.12xlarge
+p80cs-India2-g4dnxlarge-0927-2310 ml.g4dn.xlarge
+p80cs-India3-g4dn2xlarge-0927-2310 ml.g4dn.2xlarge
+p80cs-India4-g4dn4xlarge-0927-2311 ml.g4dn.4xlarge
+p80cs-India5-g4dn8xlarge-0927-2311 ml.g4dn.8xlarge

@@ -231,6 +231,153 @@ def smoke_score(n: int = 300):
     print(f"smoke_score ok, peak {peak():.2f} GB")
 
 
+def check_set(c: str, *jobs):
+    """A complete slice set of one country (jobs in slice order k = 0..n-1): concatenated score files == the channel's
+    keys row for row (train69 then test, fold -1), r_A / r_B / r finite in (0, 1). Streams from S3, nothing on disk."""
+    import boto3
+    s3 = boto3.Session(profile_name="harsh", region_name="ap-south-1").client("s3")
+    rd = lambda key, cols=None: pd.read_parquet(io.BytesIO(s3.get_object(Bucket=BUCKET, Key=key)["Body"].read()), columns=cols)
+    K = pd.concat([rd(f"{SDATA}/keys/{c}/train69.parquet"), rd(f"{SDATA}/keys/{c}/test.parquet").assign(fold=np.int8(-1))],
+                  ignore_index=True)
+    n, parts = len(jobs), []
+    for k, j in enumerate(jobs):
+        parts.append(rd(f"amc26/p80/ce/results/{j}/score/score_{c}_{k}of{n}.parquet", ["q1", "qx", "fold", "r_A", "r_B", "r"]))
+    o = pd.concat(parts, ignore_index=True)
+    ok = len(o) == len(K) and all((o[x].to_numpy() == K[x].to_numpy()).all() for x in ("q1", "qx", "fold"))
+    fin = all(np.isfinite(o[x]).all() and o[x].between(0, 1).all() for x in ("r_A", "r_B", "r"))
+    print(f"{c} {n}-way: {len(o):,} rows vs {len(K):,} keys, exact key match {ok}, r finite in [0,1] {fin}, "
+          f"corr logit A/B {np.corrcoef(*(np.log(np.clip(o[x], 1e-6, 1 - 1e-6) / (1 - np.clip(o[x], 1e-6, 1 - 1e-6))) for x in ('r_A', 'r_B')))[0, 1]:.4f}",
+          flush=True)
+    assert ok and fin
+
+
+def assemble(c: str, dest: str = "amc26/p80/ce/results/p80cs-combined/score"):
+    """Union of every finished score_<c>_<k>of<n> slice (any mix of n) over all p80cs-<c>* jobs. Slice k of n = key rows
+    [N*k//n, N*(k+1)//n) of train69 + test (score_main's slicing). If the union covers all N keys: build the combined
+    file (each row once), assert it equals the keys on q1, qx, fold, and upload <dest>/score_<c>.parquet from memory.
+    Returns the S3 uri, or None (printing the coverage) when a gap remains."""
+    import re, boto3
+    s3 = boto3.Session(profile_name="harsh", region_name="ap-south-1").client("s3")
+    rd = lambda key, cols=None: pd.read_parquet(io.BytesIO(s3.get_object(Bucket=BUCKET, Key=key)["Body"].read()), columns=cols)
+    N = sum(pq.read_metadata(io.BytesIO(s3.get_object(Bucket=BUCKET, Key=f"{SDATA}/keys/{c}/{nm}.parquet")["Body"].read())).num_rows
+            for nm in ("train69", "test"))
+    iv = []                                                           # (lo, hi, key)
+    for page in s3.get_paginator("list_objects_v2").paginate(Bucket=BUCKET, Prefix=f"amc26/p80/ce/results/p80cs-{c}"):
+        for o in page.get("Contents", []):
+            m = re.search(rf"/score/score_{c}_(\d+)of(\d+)\.parquet$", o["Key"])
+            if m:
+                k, n = int(m[1]), int(m[2])
+                iv.append((N * k // n, N * (k + 1) // n, o["Key"]))
+    iv.sort()
+    cols, got = ["q1", "qx", "fold", "r_A", "r_B", "r"], {}
+    while True:
+        pos, pick = 0, []                                             # greedy interval cover of [0, N)
+        while pos < N:
+            best = max((x for x in iv if x[0] <= pos), key=lambda x: x[1], default=None)
+            if best is None or best[1] <= pos:
+                print(f"{c}: {pos:,} of {N:,} keys covered from row 0 ({pos / N:.1%}); slices done: "
+                      f"{[re.search(r'p80cs-[^/]+', x[2])[0] + ':' + re.search(r'score_.*', x[2])[0] for x in iv]}", flush=True)
+                return None
+            pick.append((pos, best))
+            pos = best[1]
+        bad = []
+        for _, x in pick:                                             # a slice counts only if its r are sane
+            if x[2] not in got:
+                d = rd(x[2], cols)
+                ok = len(d) == x[1] - x[0] and all(np.isfinite(d[q]).all() and d[q].between(0, 1).all() for q in cols[3:])
+                got[x[2]] = d if ok else None
+            if got[x[2]] is None:
+                bad.append(x)
+        if not bad:
+            break
+        print(f"{c}: dropping bad slices {[x[2] for x in bad]}", flush=True)
+        iv = [x for x in iv if x not in bad]
+    out = pd.concat([got[key].iloc[a - lo: hi - lo] for a, (lo, hi, key) in pick], ignore_index=True)
+    K = pd.concat([rd(f"{SDATA}/keys/{c}/train69.parquet"), rd(f"{SDATA}/keys/{c}/test.parquet").assign(fold=np.int8(-1))],
+                  ignore_index=True)
+    assert len(out) == N == len(K) and all((out[x].to_numpy() == K[x].to_numpy()).all() for x in ("q1", "qx", "fold"))
+    assert all(np.isfinite(out[x]).all() and out[x].between(0, 1).all() for x in ("r_A", "r_B", "r"))
+    _put_key = f"{dest}/score_{c}.parquet"
+    buf = io.BytesIO()
+    out.to_parquet(buf, index=False, compression="zstd")
+    s3.put_object(Bucket=BUCKET, Key=_put_key, Body=buf.getvalue())
+    print(f"{c}: COVERED {N:,} keys from {[re.search(r'p80cs-[^/]+', k)[0] + ':' + re.search(r'score_.*', k)[0] for _, (_, _, k) in pick]} "
+          f"-> s3://{BUCKET}/{_put_key} ({buf.tell() / 1e6:.0f} MB)", flush=True)
+    return f"s3://{BUCKET}/{_put_key}"
+
+
+def _done_iv(s3, c, N):
+    import re
+    iv = []
+    for page in s3.get_paginator("list_objects_v2").paginate(Bucket=BUCKET, Prefix=f"amc26/p80/ce/results/p80cs-{c}"):
+        for o in page.get("Contents", []):
+            if m := re.search(rf"/score/score_{c}_(\d+)of(\d+)\.parquet$", o["Key"]):
+                iv.append((N * int(m[1]) // int(m[2]), N * (int(m[1]) + 1) // int(m[2])))
+    return iv
+
+
+def sched(queue: str = "3/8,10/16,11/16,12/16,13/16,14/16,15/16", types: str = "ml.g6e.xlarge,ml.g5.4xlarge,ml.g5.2xlarge,"
+          "ml.g4dn.12xlarge,ml.g4dn.16xlarge,ml.g6.4xlarge,ml.g6.2xlarge,ml.g5.xlarge,ml.g6.xlarge,ml.g4dn.xlarge"):
+    """Slot-driven India launcher (account cap: 15 training instances, Pending included): every 60 s, while a slot is free,
+    launch the next queued k/n slice not yet covered by finished slices on the first preferred GPU type with no job of
+    ours in progress; run assemble() for India and US until both are covered. Prints one line per event."""
+    import boto3
+    ses = boto3.Session(profile_name="harsh", region_name="ap-south-1")
+    sm, s3 = ses.client("sagemaker"), ses.client("s3")
+    N = sum(pq.read_metadata(io.BytesIO(s3.get_object(Bucket=BUCKET, Key=f"{SDATA}/keys/India/{nm}.parquet")["Body"].read())).num_rows
+            for nm in ("train69", "test"))
+    Q = [tuple(map(int, x.split("/"))) for x in queue.split(",")]
+    todo, last = {"India": True, "US": True}, {}
+    while any(todo.values()):
+        live = [j["TrainingJobName"] for j in sm.list_training_jobs(StatusEquals="InProgress", MaxResults=100)["TrainingJobSummaries"]]
+        busy = {sm.describe_training_job(TrainingJobName=j)["ResourceConfig"]["InstanceType"] for j in live}
+        iv = _done_iv(s3, "India", N)
+
+        def covered(lo, hi):                                          # [lo, hi) inside the union of finished slices
+            pos = lo
+            for a, b in sorted(iv):
+                if a <= pos < b:
+                    pos = b
+            return pos >= hi
+        while Q and len(live) < 15:
+            k, n = Q[0]
+            if covered(N * k // n, N * (k + 1) // n):
+                print(f"{time.strftime('%H:%M')} skip India {k}of{n}: already covered", flush=True)
+                Q.pop(0)
+                continue
+            free = [t for t in types.split(",") if t not in busy]
+            if not free:
+                break
+            r = subprocess.run([sys.executable, str(HERE / "launch_ce.py"), "score", "India", str(k), str(n), free[0]],
+                               capture_output=True, text=True)
+            msg = next((x for x in (r.stdout + r.stderr).splitlines() if "submitted" in x), (r.stdout + r.stderr)[-300:])
+            print(f"{time.strftime('%H:%M')} India {k}of{n} on {free[0]}: {msg.strip()}", flush=True)
+            busy.add(free[0])
+            live.append(free[0])
+            if "submitted" in msg:
+                Q.pop(0)
+            else:
+                break
+        for c in [c for c, t in todo.items() if t]:
+            buf = io.StringIO()
+            with __import__("contextlib").redirect_stdout(buf):
+                uri = assemble(c)
+            if buf.getvalue() != last.get(c):                         # only changes become monitor events
+                print(f"{time.strftime('%H:%M')} {buf.getvalue().strip()}", flush=True)
+                last[c] = buf.getvalue()
+            if uri:
+                todo[c] = False
+        time.sleep(60)
+
+
 if __name__ == "__main__":
+    if sys.argv[1] == "sched":
+        sched(*sys.argv[2:])
+        sys.exit()
+    if sys.argv[1] == "assemble":
+        sys.exit(0 if assemble(*sys.argv[2:]) else 3)
+    if sys.argv[1] == "check_set":
+        check_set(*sys.argv[2:])
+        sys.exit()
     {"band": band, "keys": keys, "static": static, "smoke": smoke, "score_channel": score_channel,
      "smoke_score": smoke_score}[sys.argv[1]](*sys.argv[2:])

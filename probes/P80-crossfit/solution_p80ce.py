@@ -81,7 +81,12 @@ def score_main(train_dir, model_dir, params):
     params['ckpts'] ({name: s3 uri}) through P13's bge_ckpt phase (tokens shared between checkpoints) ->
     score/score_<c>_<k>of<n>.parquet: q1, qx, fold (-1 = test), s1, sx, r_<name>..., r = sigmoid(mean logit)."""
     import os
+    import torch
     p13sol, src = _p13(), Path(train_dir)
+    if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] < 8:
+        # T4 (g4dn, sm75) has no bf16 tensor cores: P13's bf16 autocast would run at fp32 speed -> fp16 autocast there
+        p13sol.Job.ac = lambda self: self.torch.autocast("cuda", dtype=self.torch.float16)
+        print(f"[p80ce] {torch.cuda.get_device_name(0)}: fp16 autocast", flush=True)
     c, (k, n) = params["country"], params["part"]
     os.environ.setdefault("HF_HOME", str(Path(params.get("checkpoint_dir", "/tmp")) / "hf"))
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "true")
@@ -127,6 +132,8 @@ def score_main(train_dir, model_dir, params):
         x = np.clip(r.r.to_numpy(np.float64), 1e-6, 1 - 1e-6)
         L.append(np.log(x / (1 - x)))
     out["r"] = (1 / (1 + np.exp(-np.mean(L, 0)))).astype(np.float32)
+    rr = out[[x for x in out.columns if x == "r" or x.startswith("r_")]].to_numpy()
+    assert np.isfinite(rr).all() and ((rr >= 0) & (rr <= 1)).all(), "non-finite r: not uploaded"
     g = Path(model_dir) / "score" / f"score_{c}_{k}of{n}.parquet"
     g.parent.mkdir(parents=True, exist_ok=True)
     out.to_parquet(g, index=False)
