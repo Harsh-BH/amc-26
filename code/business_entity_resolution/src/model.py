@@ -53,6 +53,11 @@ def load():
 
 
 def tag(path: Path) -> str:
+    """sha1[:8] of a model file: it names the caches built with it. A file moved to cold storage leaves its tag in
+    <path>.tag, so its cached scores still resolve (anything that needs the model itself still fails)."""
+    t = Path(f"{path}.tag")
+    if not path.exists() and t.exists():
+        return t.read_text().strip()
     return hashlib.sha1(path.read_bytes()).hexdigest()[:8]
 
 
