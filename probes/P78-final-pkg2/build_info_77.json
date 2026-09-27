@@ -1,0 +1,27 @@
+{
+ "base": "output/sub66_final_small",
+ "upto": "41",
+ "log": {
+  "67q": {
+   "added": 2793
+  },
+  "70a": {
+   "added": 424
+  },
+  "t975ce": {
+   "added": 4904,
+   "rejected": 1
+  },
+  "n54": {
+   "removed": 2120
+  },
+  "71a": {
+   "added": 4523
+  },
+  "41": {
+   "added": 5824
+  }
+ },
+ "matching_results.tsv": "9e4fb898a32cd4371e1b8eb71259cba9",
+ "candidate_pairs.tsv": "c8850deedc9f2c7a831972e605407faa"
+}

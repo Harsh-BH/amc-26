@@ -219,7 +219,12 @@ US: +0.0005 on the US.
   independent judge found those two older rules mostly wrong (8% and 19% right), so they were dropped.
 - **Copies of the same record.** When two rows are exact copies and one is matched, the other now goes to the same
   business (P54): in the training answers that is right 100% of the time (60,319 groups).
-- **The final (`sub66_final`, public LB 0.987391, our best, +0.0007 over #54):** #54's India/US lines with #37's France
+- **[FINAL LB] The final (`sub76`, public LB 0.988292, our best, +0.0009 over `sub66_final`):** `sub66_final` plus five
+  France change sets: a France judge trained on made-up pairs built from France's own records (P67), word-role pairs
+  (P70), pairs just under France's bar that the language model strongly backs (P69), **removal** of decoy pairs where
+  only an organisation word changed ('X Sportive' → 'X Comite', N54), and noise-word swaps like 'developpement'
+  at the same house number (P71). `final_build.py` rebuilds it byte for byte from `sub66_final`.
+- **The previous final (`sub66_final`, public LB 0.987391, +0.0007 over #54):** #54's India/US lines with #37's France
   recipe (the one the leaderboard confirmed step by step), plus four France changes that passed their checks: the larger
   language model as France's judge, the learned combiner's veto, an acronym rule ('ABC' = 'Alpha Beta Cars' at the same
   address), a legal-form veto (a 'SARL' is not the 'SAS' of the same name: −344 pairs, P64), and address-less copies
@@ -254,7 +259,8 @@ rank smaller shortlists higher. The matches are exactly the ones of our best upl
 | #34v_r90 | + empty France businesses get their best candidate (≥ 0.90) | = #34 | 0.98596 |
 | #37_gc70 | + half-finished France groups completed (≥ 0.70) | = #34 | 0.986304 |
 | **#54** | the combined India/US checker + four new France stages (with P46 / P40) | India/US +0.0007 | **0.986685** (best so far) |
-| **final** (27 Sep, `sub66_final`) | #54's India/US checker + #37's France + the France judge, acronym rule, legal-form veto and address-less names | = #54 India/US | **0.987391** (best) |
+| `sub66_final` (27 Sep 14:22) | #54's India/US checker + #37's France + the France judge, acronym rule, legal-form veto and address-less names | = #54 India/US | 0.987391 |
+| **final** (27 Sep 16:56, `sub76`) | `sub66_final` + France judge trained on synthetic French pairs, word-role pairs, strongly-backed near-bar pairs, noise-word swaps − decoy org-word pairs | = #54 India/US | **0.988292** (best) |
 
 The jump from rules to a trained model (+21 points) was the biggest win: the model learned when a same-name business
 at a different street is *not* the same business.
@@ -304,8 +310,9 @@ leaderboard what our holdout predicted (≈ 0.989). France started at ≈ 0.93 a
 
 ## 11. What we are doing right now (27 Sep)
 
-1. **Final package (P43, 27 Sep):** one command (`run.py`, default recipe `sub66_final`) rebuilds the final upload
-   byte for byte; the zip holds it with the small shortlist (4.42 per business) and passed the official checker.
+1. **Final package (P78, 27 Sep 17:30):** `run.py --recipe sub66_final --drop-sibling-cands`, then `final_build.py`,
+   rebuilds the final upload (`sub76`, LB 0.988292) byte for byte, and the zip holds it. Before that (P43, 14:45):
+   one command (`run.py`, default recipe `sub66_final`) rebuilt the then-final upload byte for byte; the zip holds it with the small shortlist (4.42 per business) and passed the official checker.
    Earlier (27 Sep night): one command (`run.py`, recipe `sub37`) rebuilt our then-best upload byte for
    byte; the zip `Yeti_submission.zip` holds it with the small shortlist file and passed the official checker.
 2. **Leaderboard uploads (27 Sep):** the staged next candidates (#37_gc70_hn90 first), then whatever the last probes
