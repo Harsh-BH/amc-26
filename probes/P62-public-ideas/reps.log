@@ -1,0 +1,11 @@
+free SX 113,342 (0.110 of rows), clones 101,922, clone rows 112,178 (+0.099)
+India clonebern0.9s1 397,030 argmax pairs (43,449 clones, acc#8c among clones 243); mean n_comp_rows 0.084, s1_n_am 5.418 | 66s
+free SX 147,899 (0.095 of rows), clones 133,135, clone rows 141,288 (+0.086)
+US clonebern0.9s1 583,247 argmax pairs (58,285 clones, acc#8c among clones 347); mean n_comp_rows 0.112, s1_n_am 5.294 | 213s
+clonebern0.9s1 #34 vs #8c rep h0: LB-eq +0.000065 ± 0.000054
+clonebern0.9s1 #34 vs #8c rep h1: LB-eq +0.000085 ± 0.000062
+clonebern0.9s1 rall_only h0->h1          vs#34 LB-eq +0.000438 ± 0.000053 (+8.3 SE) | India +0.000631 ± 0.000096 (+62/-165, add prec 0.82, drop false 0.79) | US +0.000371 ± 0.000072 (+100/-155, add prec 0.69, drop false 0.82) | vs#8c +0.000523 ± 0.000074 (#34 vs #8c +0.000085) 15s
+clonebern0.9s1 rall_only h1->h0          vs#34 LB-eq +0.000320 ± 0.000052 (+6.1 SE) | India +0.000405 ± 0.000090 (+51/-145, add prec 0.82, drop false 0.78) | US +0.000340 ± 0.000081 (+99/-220, add prec 0.70, drop false 0.75) | vs#8c +0.000385 ± 0.000068 (#34 vs #8c +0.000065) 16s
+clonebern0.9s1 sub44 h0->h1              vs#34 LB-eq +0.000246 ± 0.000050 (+5.0 SE) | India +0.000198 ± 0.000078 (+164/-94, add prec 0.81, drop false 0.38) | US +0.000401 ± 0.000087 (+305/-172, add prec 0.74, drop false 0.63) | vs#8c +0.000331 ± 0.000060 (#34 vs #8c +0.000085) 28s
+clonebern0.9s1 sub44 h1->h0              vs#34 LB-eq +0.000205 ± 0.000051 (+4.0 SE) | India +0.000192 ± 0.000082 (+145/-96, add prec 0.74, drop false 0.45) | US +0.000300 ± 0.000088 (+282/-191, add prec 0.71, drop false 0.65) | vs#8c +0.000270 ± 0.000053 (#34 vs #8c +0.000065) 43s
+clonebern0.9s1 sub44_psumoff h0->h1      vs#34 LB-eq +0.000156 ± 0.000043 (+3.6 SE) | India +0.000066 ± 0.000060 (+104/-85, add prec 0.80, drop false 0.39) | US +0.000327 ± 0.000086 (+224/-139, add prec 0.74, drop false 0.63) | vs#8c +0.000241 ± 0.000060 (#34 vs #8c +0.000085) 52s
