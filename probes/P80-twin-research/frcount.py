@@ -1,9 +1,9 @@
 """Test France, label-free: unassigned address-less SX that KEEP a legal form, whose full name matches exactly one France S1 (E),
-# Usage (repo root): frcount.py -> data/work/p80/r1_pool.parquet; then build_lf.py data/work/p80/r1_pool.parquet p80_lfkept
+# Usage (repo root): frcount.py [BASE_DIR, default output/sub76_brand] -> data/work/p80/r1_pool.parquet; then build_lf.py data/work/p80/r1_pool.parquet p80_lfkept
 E's core shared by 2-3 France S1 (P66's xfc needed core-unique). How many, and is E already a candidate of x?"""
-import re, unicodedata, numpy as np, pandas as pd, pyarrow as pa, pyarrow.compute as pc, pyarrow.parquet as pq
+import re, sys, unicodedata, numpy as np, pandas as pd, pyarrow as pa, pyarrow.compute as pc, pyarrow.parquet as pq
 from pathlib import Path
-W = "data/work/"; SUB = "output/sub76_brand/"
+W = "data/work/"; SUB = (sys.argv[1].rstrip("/") + "/") if len(sys.argv) > 1 else "output/sub76_brand/"
 def key(s):
     s = unicodedata.normalize("NFKD", s); s = "".join(ch for ch in s if not unicodedata.combining(ch)).lower().replace("&", " and ")
     return " ".join(re.findall(r"\w+", s))
