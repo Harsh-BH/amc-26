@@ -25,7 +25,11 @@ MODELS = {"bge": ("BAAI/bge-reranker-v2-m3", 1e-5, 2),                          
           "mml": ("cross-encoder/mmarco-mMiniLMv2-L12-H384-v1", 3e-5, 4),  # Apache-2.0, 118M, multilingual
           "bgb": ("BAAI/bge-reranker-base", 2e-5, 4),                  # MIT, 278M
           "bgl": ("BAAI/bge-reranker-large", 1e-5, 2),                 # MIT, 560M
-          "ele6": ("cross-encoder/ms-marco-electra-base", 2e-5, 6)}    # 6 epochs
+          "ele6": ("cross-encoder/ms-marco-electra-base", 2e-5, 6),    # 6 epochs
+          "ele4s0": ("cross-encoder/ms-marco-electra-base", 2e-5, 4), "ele4s1": ("cross-encoder/ms-marco-electra-base", 2e-5, 4),
+          "ele4s2": ("cross-encoder/ms-marco-electra-base", 2e-5, 4)}
+SEED = {"ele4s1": 1, "ele4s2": 2}   # seed arm (ele4s0 = seed 0, + fc scoring)
+FC = {"ele4s0", "ele4s1", "ele4s2"}  # these runs also score fc_<frame> (confident rows, veto arm)
                 # Apache-2.0, 109M, English
 FRAME = {"India": "fb_US_India", "US": "fb_India_US", "France": "fb_France"}
 
@@ -48,7 +52,9 @@ for r in what.split(","):
     k, m = r.split(":")
     mod, lr, ep = MODELS[m]
     h = "h" if k in ("Indiah", "USh") else "n" if k in ("Indian", "USn", "Francen") else "r" if k in ("Indiar", "USr", "Francer") else ""   # h: strict v2h; n: v3 noise list
-    runs.append({"k": k, "m": m + h, "model": mod, "lr": lr, "epochs": ep, "score": [FRAME[k.removesuffix(h) if h else k]],
+    fb = FRAME[k.removesuffix(h) if h else k]
+    runs.append({"k": k, "m": m + h, "model": mod, "lr": lr, "epochs": ep, "seed": SEED.get(m, 0),
+                 "score": [fb] + ([fb.replace("fb_", "fc_")] if m in FC else []),
                  "save": k.startswith("France"),
                  "cap_s": 2400})
 hp = {"runs": runs, "s3": f"{B}/amc26-p73/results/{name}", "deadline_s": 6600}
