@@ -1,0 +1,15 @@
+test France: V name 34,504 addr 15,078; SX name 178,959 addr 101,364 tokens (8s, 0.97 GB)
+  name: {'V': 34504, 'sx_types': 178959, 'oov_types': 144470, 'oov_tok_share': 0.0394, 'corrected_types': 17453, 'corrected_tok_share': 0.0063}  (21s, 0.98 GB)
+  addr: {'V': 15078, 'sx_types': 101364, 'oov_types': 86356, 'oov_tok_share': 0.0285, 'corrected_types': 75627, 'corrected_tok_share': 0.0171}  (22s, 0.98 GB)
+  records: {'n_sx': 1434993, 'share_name': 0.0196, 'share_core': 0.0141, 'share_addr': 0.1194, 'share_any': 0.1369}
+done 28s peak 0.98 GB
+train India: V name 50,822 addr 321,108; SX name 624,269 addr 429,775 tokens (40s, 1.79 GB)
+  name: {'V': 50822, 'sx_types': 624269, 'oov_types': 573469, 'oov_tok_share': 0.0598, 'corrected_types': 89677, 'corrected_tok_share': 0.0135}  (78s, 1.79 GB)
+  addr: {'V': 321108, 'sx_types': 429775, 'oov_types': 112546, 'oov_tok_share': 0.0056, 'corrected_types': 63537, 'corrected_tok_share': 0.0027}  (90s, 1.79 GB)
+  records: {'n_sx': 4133346, 'share_name': 0.0457, 'share_core': 0.0329, 'share_addr': 0.0283, 'share_any': 0.0731}
+done 114s peak 1.79 GB
+train US: V name 81,156 addr 148,005; SX name 1,159,968 addr 348,907 tokens (51s, 1.79 GB)
+  name: {'V': 81156, 'sx_types': 1159968, 'oov_types': 1078883, 'oov_tok_share': 0.0728, 'corrected_types': 180422, 'corrected_tok_share': 0.0168}  (142s, 1.79 GB)
+  addr: {'V': 148005, 'sx_types': 348907, 'oov_types': 202582, 'oov_tok_share': 0.0405, 'corrected_types': 103060, 'corrected_tok_share': 0.0188}  (149s, 1.79 GB)
+  records: {'n_sx': 6186873, 'share_name': 0.0546, 'share_core': 0.0467, 'share_addr': 0.1036, 'share_any': 0.1532}
+done 206s peak 1.81 GB

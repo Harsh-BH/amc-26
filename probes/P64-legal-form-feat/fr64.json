@@ -1,0 +1,282 @@
+{
+ "US_India|chain|base": {
+  "F0": 0.950539,
+  "npred": 287600,
+  "by_cls": {
+   "0": [
+    34768,
+    0.9878
+   ],
+   "1": [
+    179139,
+    0.9856
+   ],
+   "2": [
+    33946,
+    0.9945
+   ],
+   "3": [
+    9143,
+    0.9673
+   ],
+   "4": [
+    951,
+    0.0042
+   ],
+   "5": [
+    29653,
+    0.938
+   ]
+  }
+ },
+ "US_India|chain|veto_post_conf": {
+  "dF": 0.002996,
+  "se": 0.00013,
+  "dF_h0": 0.002923,
+  "dF_h1": 0.00307,
+  "removed": 951,
+  "added": 0,
+  "removed_true": 0.0042,
+  "changed": 951
+ },
+ "US_India|chain|veto_pre_conf": {
+  "dF": 0.003003,
+  "se": 0.00013,
+  "dF_h0": 0.002886,
+  "dF_h1": 0.003121,
+  "removed": 956,
+  "added": 12,
+  "removed_true": 0.0042,
+  "changed": 968
+ },
+ "US_India|chain|veto_post_conf_ov": {
+  "dF": -0.026721,
+  "se": 0.000442,
+  "dF_h0": -0.025986,
+  "dF_h1": -0.027456,
+  "removed": 30604,
+  "added": 0,
+  "removed_true": 0.909,
+  "changed": 30604
+ },
+ "US_India|chain|veto_post_sxonly": {
+  "dF": -0.011671,
+  "se": 0.000259,
+  "dF_h0": -0.012107,
+  "dF_h1": -0.011234,
+  "removed": 9143,
+  "added": 0,
+  "removed_true": 0.9673,
+  "changed": 9143
+ },
+ "US_India|m2|base": {
+  "F0": 0.927678,
+  "npred": 276767,
+  "by_cls": {
+   "0": [
+    33908,
+    0.9785
+   ],
+   "1": [
+    172140,
+    0.9776
+   ],
+   "2": [
+    32920,
+    0.9916
+   ],
+   "3": [
+    8913,
+    0.9487
+   ],
+   "4": [
+    966,
+    0.0072
+   ],
+   "5": [
+    27920,
+    0.9243
+   ]
+  }
+ },
+ "US_India|m2|veto_post_conf": {
+  "dF": 0.002936,
+  "se": 0.000126,
+  "dF_h0": 0.002844,
+  "dF_h1": 0.003028,
+  "removed": 966,
+  "added": 0,
+  "removed_true": 0.0072,
+  "changed": 966
+ },
+ "US_India|m2|veto_pre_conf": {
+  "dF": 0.00295,
+  "se": 0.000127,
+  "dF_h0": 0.002848,
+  "dF_h1": 0.003051,
+  "removed": 969,
+  "added": 19,
+  "removed_true": 0.0072,
+  "changed": 988
+ },
+ "US_India|m2|veto_post_conf_ov": {
+  "dF": -0.026277,
+  "se": 0.000451,
+  "dF_h0": -0.025745,
+  "dF_h1": -0.026809,
+  "removed": 28886,
+  "added": 0,
+  "removed_true": 0.8937,
+  "changed": 28886
+ },
+ "US_India|m2|veto_post_sxonly": {
+  "dF": -0.011154,
+  "se": 0.000264,
+  "dF_h0": -0.01151,
+  "dF_h1": -0.010799,
+  "removed": 8913,
+  "added": 0,
+  "removed_true": 0.9487,
+  "changed": 8913
+ },
+ "India_US|chain|base": {
+  "F0": 0.959363,
+  "npred": 434899,
+  "by_cls": {
+   "0": [
+    151535,
+    0.9948
+   ],
+   "1": [
+    166643,
+    0.9959
+   ],
+   "2": [
+    75074,
+    0.9971
+   ],
+   "3": [
+    39978,
+    0.8293
+   ],
+   "4": [
+    697,
+    0.3601
+   ],
+   "5": [
+    972,
+    0.6667
+   ]
+  }
+ },
+ "India_US|chain|veto_post_conf": {
+  "dF": 0.000744,
+  "se": 7e-05,
+  "dF_h0": 0.000634,
+  "dF_h1": 0.000853,
+  "removed": 697,
+  "added": 0,
+  "removed_true": 0.3601,
+  "changed": 697
+ },
+ "India_US|chain|veto_pre_conf": {
+  "dF": 0.000748,
+  "se": 7e-05,
+  "dF_h0": 0.000635,
+  "dF_h1": 0.00086,
+  "removed": 697,
+  "added": 5,
+  "removed_true": 0.3601,
+  "changed": 702
+ },
+ "India_US|chain|veto_post_conf_ov": {
+  "dF": 0.000861,
+  "se": 9.2e-05,
+  "dF_h0": 0.000743,
+  "dF_h1": 0.000977,
+  "removed": 1669,
+  "added": 0,
+  "removed_true": 0.5386,
+  "changed": 1669
+ },
+ "India_US|chain|veto_post_sxonly": {
+  "dF": -0.015273,
+  "se": 0.000353,
+  "dF_h0": -0.01533,
+  "dF_h1": -0.015217,
+  "removed": 39978,
+  "added": 0,
+  "removed_true": 0.8293,
+  "changed": 39978
+ },
+ "India_US|m2|base": {
+  "F0": 0.937032,
+  "npred": 441116,
+  "by_cls": {
+   "0": [
+    150187,
+    0.992
+   ],
+   "1": [
+    165266,
+    0.9941
+   ],
+   "2": [
+    75177,
+    0.9938
+   ],
+   "3": [
+    43920,
+    0.747
+   ],
+   "4": [
+    5432,
+    0.1261
+   ],
+   "5": [
+    1134,
+    0.5626
+   ]
+  }
+ },
+ "India_US|m2|veto_post_conf": {
+  "dF": 0.009031,
+  "se": 0.000188,
+  "dF_h0": 0.008953,
+  "dF_h1": 0.009108,
+  "removed": 5432,
+  "added": 0,
+  "removed_true": 0.1261,
+  "changed": 5432
+ },
+ "India_US|m2|veto_pre_conf": {
+  "dF": 0.009089,
+  "se": 0.000189,
+  "dF_h0": 0.008947,
+  "dF_h1": 0.00923,
+  "removed": 5437,
+  "added": 60,
+  "removed_true": 0.1265,
+  "changed": 5497
+ },
+ "India_US|m2|veto_post_conf_ov": {
+  "dF": 0.009487,
+  "se": 0.0002,
+  "dF_h0": 0.009442,
+  "dF_h1": 0.009532,
+  "removed": 6566,
+  "added": 0,
+  "removed_true": 0.2015,
+  "changed": 6566
+ },
+ "India_US|m2|veto_post_sxonly": {
+  "dF": -0.007412,
+  "se": 0.000381,
+  "dF_h0": -0.007236,
+  "dF_h1": -0.007587,
+  "removed": 43920,
+  "added": 0,
+  "removed_true": 0.747,
+  "changed": 43920
+ }
+}
