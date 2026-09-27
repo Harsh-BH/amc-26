@@ -26,3 +26,10 @@ Top 3 now: 0.991483 / 0.991043 / 0.990881.
 - Didn't transfer: most France rules added after gc70 (net ≈ 0 on LB); ensembles, twin tricks, shape matching, serialization,
   finer thresholds (all ≈ 0 on holdout).
 - Public repos: no top-30 team repo is public. Useful lessons from others: France is precision-limited; density shift.
+
+## Final zip (ready)
+`output/final/Yeti_submission.zip` (93.8 MB, 30 files, organisers' layout) = `sub_iu54_frgc70` with the SMALL candidate set
+(4.42 candidates per S1, ranks higher beyond the LB). Official validator PASS on the folder and on the unzipped zip.
+`run.py` (default recipe `sub_iu54_frgc70`) rebuilds the matching file byte for byte. Docs filled; `[FINAL LB]` slot left for
+the final score. Backed up to S3 (amc26-offload/final/) and Drive (gdrive:amc26-offload/final/). Code pushed to main.
+If `sub_iu54_best` scores higher on the LB, P43 re-zips it (its stages are being ported now; ~30 min).
