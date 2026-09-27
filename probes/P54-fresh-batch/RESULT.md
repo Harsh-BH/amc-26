@@ -1,14 +1,22 @@
-# P54-fresh-batch — RESULT (final, 27 Sep ~05:40 IST)
+# P54-fresh-batch — RESULT (final, 27 Sep ~05:50 IST)
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
 - **Idea 1 (France in-band CE rescue) passes by a wide margin.** It adds free, argmax, non-sibling band pairs (0.02 < g < 0.98, not accepted) whose bge r ≥ 0.99, best r first, up to the caps. LOCO on top of P48's veto, France-F0.5:
   - chain: US→India **+0.00225 (h1 +0.00228 ± 0.00012)**, India→US **+0.00243 (h1 +0.00242 ± 0.00015)**; added pairs 94% / 89% true;
   - M2-only analogue: +0.0123 / +0.0063.
   - France's add rate per recipe pair (0.92%) sits between LOCO's two directions (0.93% / 1.23%).
 - **Idea 3 (duplicate consistency) passes.** Train truth: 100% of 60,319 case-folded content-identical groups share one owner. On test it adds 46 pairs (France 32, India 8, US 6). **Idea 2 (India/US empty-S1 fill) and 3b (fully unassigned dup groups) fail:** out of fold, every arm is ≤ +0.00001 or negative.
-- **Upload `output/sub54`** = sub52_max + 7,631 France rescue pairs + 46 dup pairs. Nothing is removed. **Expected LB ≈ +0.00035 over sub52_max** (0.1498 × India→US +0.00243).
+- **Upload `output/sub54`** = sub52_max + 7,631 France rescue pairs + 46 dup pairs. Nothing is removed. Validator `--check-ids` PASS. **Expected LB ≈ +0.00035 over sub52_max** (0.1498 × India→US +0.00243).
+- **It stacks with P55's France combiner:** on P55's LOCO decision it still adds +0.0011 / +0.0010 at u .995. If P55 is adopted, apply P55 first, then this rescue at **u .995**, then dup.
 
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
-**Upload:** `output/sub54` (matching md5 ed4cc1a4…, candidates md5 2d03c892…). Validator: see the Evidence row `validator-sub54`.
+**Upload:** `output/sub54` (matching md5 ed4cc1a4…, candidates md5 2d03c892…). Validator `--check-ids` PASS (SageMaker p54-val-0927-0526; the job's md5s match). Row #54 is in SUBMISSIONS.md.
+
+**If P55's France combiner is adopted too** (for P50's sub_all), the order is:
+1. `p55.py build BASE X v=0.6,scope=band,u=0.95`;
+2. `fr54.py X 0.995`;
+3. `build54.py X OUT data/work/p54/fr_rescue_X_u0.995.parquet`.
+
+fr54 never re-adds recipe pairs (so P55's vetoes stick), skips SX P55 already placed, and counts caps on X's lines. LOCO for the P54 step on top of P55: u .995 **+0.00105 (h1 ± 0.00010) / +0.00097 (h1 +0.00115 ± 0.00012)**; u .99 +0.00114 / +0.00090 (precision drops to .80 India→US). On top of P55, u .995 is the better bar.
 
 **Rebuild on any base** (in this order; the dup step must stay last):
 1. `probes/P54-fresh-batch/py.sh probes/P54-fresh-batch/fr54.py BASE 0.99`. Writes `data/work/p54/fr_rescue_BASE_u0.99.parquet` (s1, sx, g, r) in 10 s.
@@ -42,7 +50,8 @@ LOCO: P42/P48 frames (P6 source-only M2 g, P30 source-only bge r, OOD blend). dF
 | fill-empty-s1-s1-model-gate | holdout | LGBM regression of the fill gain (best / 2nd p'', #argmax, #cand, name freq, noaddr, hn class, …): θ .2 → −0.000012 ± 0.000008; θ .05 → −0.000096 ± 0.000045 | **drop** |
 | dupgrp-no-accepted-copy-assign | holdout | only 13 India + 78 US holdout groups have no accepted copy; their best row is 46% / 26% true. b = .6: **+0.000006 ± 0.000006** on both halves | **drop** (under the gate) |
 | build-sub54 | test | on sub52_max: France +7,663 (7,631 rescue + 32 dup), India +8, US +6 (dup only). **0 removed**, 7,315 S1 lines, 0 SX at > 1 S1, 0 matches outside candidates, 7 candidate adds. Lines over 5/6: 37 → 39 (dup copies) | keep |
-| validator-sub54 | test | pending (SageMaker p54-val-0927-0526) | — |
+| loco-rescue-on-p55-decision | LOCO chain, P55's saved target scores (band veto c < .6 + adds c > .95) | P55 alone vs ref: +0.00464 / +0.00527. **P54 on top of P55:** u .99 +0.00114 (h1 ± 0.00010) / +0.00090 (h1 +0.00096 ± 0.00014), 1,258 / 2,941 adds, precision .91 / .80; **u .995 +0.00105 / +0.00097 (h1 +0.00115 ± 0.00012)**, precision .93 / .85. Overlap at u .99: 1,399 of 2,657 / 2,436 of 5,377 P54 adds are also P55 adds | keep (u .995 when stacked on P55) |
+| validator-sub54 | test | **PASS --check-ids** (SageMaker p54-val-0927-0526, spot m5.xlarge). md5 ed4cc1a4… / 2d03c892… match the local files. 1,732,544 rows; 100,314 empty matching lines | keep |
 
 **Flip profile (India/US):** India/US change only by 14 dup copies. Each is a content-identical copy of a pair the base already accepts, and every one of the 60,319 train groups shares one owner. The India/US profile is therefore sub52_max's, unchanged.
 
@@ -56,6 +65,7 @@ All scripts run from the repo root via `probes/P54-fresh-batch/py.sh` (1.9 GB ca
 - `dup54.py scan SUB [norm]` / `train [norm]`: test counts and the train-truth check. `keys(split, norm)` is batched and uses int64 ids. 35 s / 2 min, 1.2 GB.
 - `fill54.py`: ideas 2 and 3b on the holdout → `fill.json`. 1 min, 1 GB.
 - `loco54.py` (grid → `loco54.json`); `loco54.py stack` (on the P48 veto → `loco54_stack.json`); `hn54.py` (hn split). About 1 min each, 0.9 GB. They reuse P48's `loco48` and P42's `solution_p42`.
+- `on55.py`: the P54 rescue on top of P55's LOCO decision (from `data/work/p55/cb_plain_*.npy`) → `on55.json`. 1 min.
 - `fr54.py BASE U…`: France adds lists plus label-free counts → `fr_rescue_BASE[_uU].{parquet,json}`. 10 s, 0.6 GB.
 - `build54.py BASE OUT [adds.parquet…] [--nodup]`: line-level builder, dup step last, writes `OUT/p54_info.json`. ~2 min, 1.2 GB.
 - `check54.py BASE OUT`: streamed asserts. 1 min, 0.7 GB.
@@ -65,7 +75,7 @@ All scripts run from the repo root via `probes/P54-fresh-batch/py.sh` (1.9 GB ca
 - **No new model or data.** bge-reranker-v2-m3 (Apache-2.0) is already shipped, and its France r is cached. The dup key is exact text; nothing filters on country (the rescue keys on the unseen-country recipe's frame).
 - **CE mismatch:** LOCO uses P30's source-only CE; France uses the pooled CE (India + US). If the pooled CE is overconfident on France, u .99 lets in more false pairs than in LOCO. The matching add rate (0.92% vs 0.93–1.23%) says it is not grossly off. u .995 is the conservative alternative: 5,365 adds; LOCO +0.00210 / +0.00244, precision .95 / .92.
 - **Empty-S1 adds** are 3× LOCO's rate in France (476 pairs) and are the least precise slice in LOCO (.81–.90). At worst this costs ≈ 476 × 0.2 false / 260k France S1 ≈ −0.0004 France-F, and it is already inside the LOCO number. Excluding them (onesided + nonempty only) is a one-line change if the master wants it.
-- **Interaction with other France probes:** P52 (calibration) and P55 (France combiner) may re-weight the same band CE signal. If one of them ships a stronger CE weight, re-measure this rescue on top of it instead of stacking blindly.
+- **Interaction with other France probes:** P55's combiner uses the same band CE signal. It is measured: about half of P54's adds are P55's too, and the rest still adds about +0.001 France-F on top (see Evidence). P52 (calibration) is not measured. If it ships a stronger CE weight, re-run `fr54.py` and the LOCO on top of it.
 - The expected LB uses India→US chain, as P48 did. LOCO has overstated France's gain before (see P37 / P42), so treat +0.00035 as an upper-middle estimate.
 
 ## Open questions   (for the master; each with your best guess)
