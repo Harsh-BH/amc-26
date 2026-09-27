@@ -17,3 +17,7 @@ Your job is to find BUGS or flawed reasoning, not to re-derive the results. Chec
    about French org-word names; the lens words list is data/work/p54/decoy_words.csv)?
 Deliverable: probes/N56-review/RESULT.md — a list of concrete issues (file:line, severity, fix) or "no bugs found" per
 item, plus the adversarial selftests. Keep python ≤ 2 GB. Deadline: 09:30 IST.
+5. (added 08:10) The src port: code/business_entity_resolution/src/france.py `decoy_mask` and the run.py hook + recipe
+   `sub_iu54_frgc70_n54` (git diff 8378c04^ 8378c04 -- code/). Check: default recipe behaviour unchanged when DECOY is
+   None; `am` / `acc` / ids alignment at the hook (both France branches: CHAIN and complete()); FR.C set; the mask only
+   touches unseen-country rows. probes/N54-fr-decoyword-removal/test_port.py shows port == p54.py on the P31 frame.
