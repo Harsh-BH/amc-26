@@ -1,0 +1,96 @@
+{
+ "lines_in": 818630,
+ "removed": 1666,
+ "s1_touched": 1658,
+ "s1_emptied": 144,
+ "final_pairs": 816964,
+ "dup_last_adds": 0,
+ "dup_last_readds_removed": 0,
+ "is2_share": 0.475,
+ "kind": {
+  "add1": 216,
+  "sub1": 1450
+ },
+ "hn": {
+  "equal": 1619,
+  "S1 only": 37,
+  "SX only": 3,
+  "differ": 4,
+  "both empty": 3
+ },
+ "by_stage": {
+  "chain (decision + post-rules)": 981,
+  "rescue90": 97,
+  "gc70": 588,
+  "acro (P62)": 0,
+  "dup (P54, first)": 0,
+  "xfc (P66)": 0
+ },
+ "qwen_r": {
+  "n": 1080,
+  "q10_50_90": [
+   0.062,
+   0.943,
+   1.0
+  ],
+  "ge.9": 0.543,
+  "lt.5": 0.3
+ },
+ "bge_r": {
+  "n": 1661,
+  "q10_50_90": [
+   0.003,
+   0.988,
+   1.0
+  ],
+  "ge.9": 0.641,
+  "lt.5": 0.287
+ },
+ "p": {
+  "n": 1666,
+  "q10_50_90": [
+   0.792,
+   0.989,
+   0.996
+  ],
+  "ge.9": 0.79,
+  "lt.5": 0.0
+ },
+ "not_in_frame": 0,
+ "top_words": {
+  "comite": 313,
+  "societe": 182,
+  "federation": 133,
+  "ecole": 121,
+  "amis": 116,
+  "club": 109,
+  "amicale": 80,
+  "section": 56,
+  "fetes": 51,
+  "sante": 51,
+  "college": 48,
+  "lycee": 39,
+  "anciens": 36,
+  "sportive": 34,
+  "parents": 22,
+  "primaire": 20,
+  "musique": 20,
+  "conseil": 16,
+  "maison": 15,
+  "soins": 15,
+  "union": 13,
+  "atelier": 13,
+  "foyer": 12,
+  "medico": 12,
+  "gestion": 11
+ },
+ "n_words": 61,
+ "port_check": {
+  "src_removes": 1666,
+  "p54_rule": 1666,
+  "both": 1666,
+  "only_src": 0,
+  "only_p54": 0,
+  "decoy_words_p46": 75
+ }
+}

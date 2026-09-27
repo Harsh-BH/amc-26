@@ -1243,6 +1243,27 @@ def _check():
     print("france self-check ok")
 
 
+def decoy_mask(s1: np.ndarray, sx: np.ndarray, am: np.ndarray, acc: np.ndarray, s_min: float = 0.25,
+               n_min: int = 20) -> np.ndarray:
+    """N54 (night/aditya): accepted unseen-country pairs whose SX core swaps in (name_rel 'sub1') or adds ('add1') ONE
+    generator DECOY word, at any house-number relation. Decoy words come from the label-free lens (lens_table on the
+    argmax pairs): >= n_min hn-present swap pairs and sibling-offset share s > s_min (France: comite, ecole, amicale,
+    club, parents ...; the noise words sit at s <= 0.09). Decoys copy the S1 name, swap one org word and often keep the
+    house number, so the India/US-trained matcher and the hn-equal add rules take them. LOCO (gc70-style chain, both
+    halves): US->India +0.0296 France-F0.5 (removed pairs 0.9% true), India->US +0.00011 / +0.00019 (7% true)."""
+    st = lens_table(s1[am], sx[am])
+    dec = set(st.index[(st.n >= n_min) & (st.s > s_min)])
+    ci = np.flatnonzero(acc)
+    r1 = _rf(WORK / f"rf_test_s1_{C}.parquet", pd.unique(s1[ci]), ["core"])
+    rx = _rf(WORK / f"rf_test_sx_{C}.parquet", pd.unique(sx[ci]), ["core", "is_web"])
+    c1, cx = r1.core.reindex(s1[ci]).fillna("").to_numpy(), rx.core.reindex(sx[ci]).fillna("").to_numpy()
+    wx = rx.is_web.reindex(sx[ci]).fillna(False).to_numpy()
+    hit = np.array([k in ("sub1", "add1") and w in dec for k, w in (name_rel(a, b, x) for a, b, x in zip(c1, cx, wx))], bool)
+    out = np.zeros(len(acc), bool)
+    out[ci[hit]] = True
+    return out
+
+
 if __name__ == "__main__":
     if sys.argv[1:2] == ["chn"]:                        # run.france31's subprocess: france.py chn MODEL OUT COUNTRY
         C = sys.argv[4]
