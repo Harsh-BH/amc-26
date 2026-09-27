@@ -1,0 +1,62 @@
+{
+ "US_India": {
+  "groupe-like (s .05-.10, e>=.8)": {
+   "n": 99,
+   "prec_all": 1.0,
+   "accepted_share": 0.798,
+   "free_share": 0.202,
+   "pool_n": 20,
+   "pool_prec": 1.0,
+   "pool_wilson": [
+    0.839,
+    1.0
+   ]
+  },
+  "dev-like (s<=.05, e>=.8)": {
+   "n": 0,
+   "prec_all": null,
+   "accepted_share": null,
+   "free_share": 0.0,
+   "pool_n": 0,
+   "pool_prec": null,
+   "pool_wilson": null
+  }
+ },
+ "India_US": {
+  "groupe-like (s .05-.10, e>=.8)": {
+   "n": 54,
+   "prec_all": 1.0,
+   "accepted_share": 0.981,
+   "free_share": 0.019,
+   "pool_n": 1,
+   "pool_prec": 1.0,
+   "pool_wilson": [
+    0.206,
+    1.0
+   ]
+  },
+  "dev-like (s<=.05, e>=.8)": {
+   "n": 93,
+   "prec_all": 1.0,
+   "accepted_share": 1.0,
+   "free_share": 0.0,
+   "pool_n": 0,
+   "pool_prec": null,
+   "pool_wilson": null
+  }
+ },
+ "France groupe vs sub77": {
+  "n": 5001,
+  "accepted": 40,
+  "free": 4961,
+  "accepted_share": 0.008,
+  "free_share": 0.992
+ },
+ "France developpement vs sub66_final": {
+  "n": 4686,
+  "accepted": 141,
+  "free": 4545,
+  "accepted_share": 0.03,
+  "free_share": 0.97
+ }
+}
