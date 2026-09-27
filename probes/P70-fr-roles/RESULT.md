@@ -16,6 +16,7 @@
 - **Overlap:**
   - 1,695 of the adds are also #67's adds (0 same-SX conflicts), so on top of #67 only about 296 are new.
   - 289 are also t975ce's.
+  - P72's number-mark add tier (sub72, 1,060 adds at c > .99) is almost a subset: 932 of its adds are P70's and 1,044 are P67's, and only 3 fall outside the union. Three different extra columns on P55's combiner converge on the same high-c pairs, so the lever is the precise add tier itself.
 - **Change set:** `data/work/p70/changes.parquet` (s1, sx, action, p, c_new, qwen_r). Filtering on c_new ≥ .99 reproduces a u .99 build, because adds are taken best-first.
 - **Rebuild** (≈ 3 min, ≤ 1.7 GB):
   ```
@@ -27,6 +28,32 @@
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
 - **Adopt the adds of `output/sub70a`** (or merge `changes.parquet` into the combined final, P64 last). Expected LB is about +0.0001 alone and about +0.00002 on top of #67's adds.
 - **Better merge:** fit one P55 combiner with P67's synthetic column, P73's electra column and P70's `words_nn` columns, instead of taking the union of three add lists. The LOCO role columns are cached in `data/work/p70/roles_<dir>.parquet`, row-aligned with `p55.loco_frame`.
+
+## Addendum (27 Sep ~17:15): Fable's capture plan, gated
+The prompt is `data/notes/fable_capture_prompt.md`. It gave Fable the cluster-count gap: sub66_final predicts 3.155 links per France S1, against 3.46 in train truth for both US and India. Size 6+ holds 7.6% of France S1 against 11.4% in truth.
+
+Fable's ideas, gated with `i2_loco.py` → `i2_loco.json`. Each cell is an argmax pair on P55's LOCO frames where S1 and SX share one hn + street key. Precision is measured on the pairs the reference leaves free, which is what a rule would add; "add dF" is the result of adding them (caps, one owner).
+
+| cell (S1 and SX share one hn + street key) | India target: free n at precision | US target: free n at precision | add dF (India / US target) | verdict |
+|---|---|---|---|---|
+| related names, key unique | 1,031 at .61 | 5,207 at .63 | −0.0004 / −0.0014 | drop: these are just the rejected extras again |
+| disjoint names, not a brand, key unique | 42 at .38 | 481 at .14 | −0.00004 / −0.00075 | drop. France holds 103k such free SX, almost all same-address decoys |
+| **disjoint, synthetic brand, key unique** | 57 at 1.00 | 321 at .885 | **+0.00008 / +0.00022** | keep. This is P41's rule |
+| synthetic brand, key shared | 44 at .59 | 424 at .41 | −0.00002 / −0.0003 | drop |
+| raw address byte-equal (Fable's "decoys copy verbatim") | all: 98.9% true | all: 99.8% true | — | the premise is false |
+
+- **Adopted:**
+  - P41's brand rule (bare generator brand, unique hn + street + city key, key S1 = argmax with members, p ≥ .30) was LB-untested on its own. sub54 carried it, and it was dropped when France reverted to gc70.
+  - It is re-applied on sub66_final by `p41_on.py`, which merges the adds onto the base's own lines; `p41.build` would drop the 2,638 acronym pairs.
+  - The result is **`output/sub41_on66`: +5,834 France pairs on 5,733 S1**, p median .92. 0 SX already listed, 0 P64 conflicts, 0 matches outside the candidates.
+  - It is orthogonal to everything staged: 10 of its pairs are in sub75a, 0 in sub71a, 0 SX conflicts, 0 N54 removals.
+  - Evidence: train truth for a bare brand at a unique key is US 34,777 at .998 and India 15,083 at .961. P41's LOCO was +0.00008–0.00014 (precision .98–1.00), and +0.00035–0.00079 France-matched.
+  - Expected LB +0.00016 to +0.00024.
+- **Already done or out of date in the plan:**
+  - Slot A is sub76.
+  - I1 is P71a. Fable's kill test (in-domain *unassigned* precision) measures the wrong population: 0.5–0.7% true by construction. The class analogue is .947 / .969.
+  - I6a is P54's dup step.
+  - The independent CE is P73e / b.
 
 ## Evidence         (France-F0.5 dF on the LOCO target; A→B = fit on A's out-of-domain frame, bars picked on A, applied to B; h1 = report half ± SE)
 | ledger name | world | key metrics (India→US / US→India) | verdict |

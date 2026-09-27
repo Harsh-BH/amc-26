@@ -1243,14 +1243,6 @@ def _check():
     print("france self-check ok")
 
 
-if __name__ == "__main__":
-    if sys.argv[1:2] == ["chn"]:                        # run.france31's subprocess: france.py chn MODEL OUT COUNTRY
-        C = sys.argv[4]
-        chn(Path(sys.argv[2]), Path(sys.argv[3]))
-    else:
-        _check()
-
-
 def decoy_mask(s1: np.ndarray, sx: np.ndarray, am: np.ndarray, acc: np.ndarray, s_min: float = 0.25,
                n_min: int = 20) -> np.ndarray:
     """N54 (night/aditya): accepted unseen-country pairs whose SX core swaps in (name_rel 'sub1') or adds ('add1') ONE
@@ -1270,3 +1262,11 @@ def decoy_mask(s1: np.ndarray, sx: np.ndarray, am: np.ndarray, acc: np.ndarray, 
     out = np.zeros(len(acc), bool)
     out[ci[hit]] = True
     return out
+
+
+if __name__ == "__main__":
+    if sys.argv[1:2] == ["chn"]:                        # run.france31's subprocess: france.py chn MODEL OUT COUNTRY
+        C = sys.argv[4]
+        chn(Path(sys.argv[2]), Path(sys.argv[3]))
+    else:
+        _check()

@@ -1,0 +1,90 @@
+{
+ "files": {
+  "sub67q": {
+   "france_adds": 2793,
+   "france_removes": 0,
+   "n54_removed_still_in_file": 1666,
+   "n54_removed_also_removed_by_file": 0
+  },
+  "sub66_t975ce": {
+   "france_adds": 5270,
+   "france_removes": 0,
+   "n54_removed_still_in_file": 1666,
+   "n54_removed_also_removed_by_file": 0
+  }
+ },
+ "P71 adds_a": {
+  "pairs": 4554,
+  "n54_would_drop": 0,
+  "in_n54_removed": 0,
+  "words_dropped": {
+   "nan": 4554
+  }
+ },
+ "P71 adds_b": {
+  "pairs": 8617,
+  "n54_would_drop": 0,
+  "in_n54_removed": 0,
+  "words_dropped": {
+   "nan": 8617
+  }
+ },
+ "P71 adds_bi": {
+  "pairs": 10623,
+  "n54_would_drop": 0,
+  "in_n54_removed": 0,
+  "words_dropped": {
+   "nan": 10623
+  }
+ },
+ "P70 add": {
+  "pairs": 1991,
+  "n54_would_drop": 51,
+  "in_n54_removed": 0,
+  "words_dropped": {
+   "nan": 1940,
+   "federation": 25,
+   "lycee": 12,
+   "societe": 7,
+   "section": 3,
+   "amicale": 1,
+   "ehpad": 1,
+   "primaire": 1,
+   "club": 1
+  }
+ },
+ "sub67q adds": {
+  "pairs": 2793,
+  "n54_would_drop": 200,
+  "in_n54_removed": 0,
+  "words_dropped": {
+   "nan": 2593,
+   "comite": 55,
+   "federation": 24,
+   "section": 22,
+   "club": 22,
+   "sante": 20,
+   "societe": 18,
+   "lycee": 13,
+   "amis": 6,
+   "amicale": 4
+  }
+ },
+ "sub66_t975ce adds": {
+  "pairs": 5270,
+  "n54_would_drop": 231,
+  "in_n54_removed": 0,
+  "words_dropped": {
+   "nan": 5039,
+   "comite": 79,
+   "societe": 35,
+   "amis": 22,
+   "sante": 19,
+   "section": 18,
+   "club": 11,
+   "federation": 11,
+   "amicale": 9,
+   "lycee": 7
+  }
+ }
+}

@@ -150,14 +150,14 @@ RECIPES["sub_iu54_fr38_55n"] = dict(RECIPES["sub_iu54_fr38"], r_lo="p48/r_lo_{c}
 # #iu54_best (P50, upload #2): + P62's acronym block / rule (its change set referenced on #clean's France lines, as staged,
 # then fit on this base), then P54's duplicate step on every country
 RECIPES["sub_iu54_best"] = dict(RECIPES["sub_iu54_fr38_55n"], acro=_CHAIN, dup=True)
-RECIPES["sub_iu54_frgc70_n54"] = dict(RECIPES["sub_iu54_frgc70"], decoy=0.25)   # + N54 decoy-word removal (night/aditya)
-RECIPES["sub_iu54_best_n54"] = dict(RECIPES["sub_iu54_best"], decoy=0.25)       # + N54 on #2
 # P64: the unseen country's legal-form conflict veto, the last stage (france.lf_veto); P66: address-less exact full names
 # with a unique S1 core, computed on the #37-style frame and fit on the final lines (france.xfc_adds), then P54's dup again
 RECIPES["sub64"] = dict(RECIPES["sub_iu54_best"], lf_veto=True)
 RECIPES["sub64_frgc70"] = dict(RECIPES["sub_iu54_frgc70"], lf_veto=True)
 RECIPES["sub66_final"] = dict(RECIPES["sub64"], xfc=0.30, dup_last=True)
 RECIPES["sub66"] = dict(RECIPES["sub_iu54_frgc70"], xfc=0.30)
+# N54 (night/aditya): the unseen country's decoy-word pairs (france.decoy_mask) leave the final lines, after P66 / before dup_last
+RECIPES["sub66_final_n54"] = dict(RECIPES["sub66_final"], decoy=0.25)
 # #54 (uploaded 27 Sep 05:32, LB 0.986685): the chain in the order it was staged (build38.full + fr54): recipe -> brand and
 # P40 address-less (both on the gc70-style lists, unioned) -> P46 tier -> P48 veto -> P47 class -> P54 rescue; no P55
 RECIPES["sub54"] = dict(RECIPES["sub_clean"], chain=dict(_CHAIN, xf=0.70, swap=0.05, p55=None,
@@ -174,13 +174,13 @@ FR_R = None                 # the unseen country's band CE scores when not the r
 LF_VETO = False             # P64's legal-form conflict veto on the unseen country's final lines
 XFC = None                  # P66's bar (p) for the address-less exact-name adds on the #37-style frame
 DUP_LAST = False            # P54's duplicate step once more after P64 / P66 (sub66_final)
+DECOY = None                # N54: drop unseen-country pairs that swap in / add one lens decoy word (s > DECOY)
 ACRO = None                 # P62's acronym block + rule: the #clean chain bars its change set is referenced on (sub_iu54_best)
 P55N = None                 # P50's P55 band veto without given P42 stages, on the bge chain's frame (france.p55_veto)
 SWAP = None                 # --swap: P46's noise-word swap tier, its lens s_max (france.swap_mask), the last stage
 NOADDR = None               # --noaddr: P40's address-less exact-name bar (france.noaddr_mask), after the brand stage
 CHAIN = None                # the unseen country's final chain (france.chain bars), recipe sub_clean*
 R_LO = None                 # P48's CE scores of the pairs outside the band (data/work-relative, {c} = the label): P55 input
-DECOY = None                # N54: drop unseen-country pairs that swap in / add one lens decoy word (s > DECOY)
 DUP = False                 # P54's duplicate step: True = every country, "seen" = the labelled ones (recipe sub_iu54_frgc70)
 BRAND = None                # --brand: P41's synthetic-brand recovery bar (france.brand_mask), after the others
 T_POST = None               # --t-post: fr31's post-rules at this t, the decision at its own (P42's #42_both: 0.9868 / 0.99)
@@ -204,8 +204,8 @@ def use(recipe: str):
     BRAND, NOADDR, SWAP = r.get("brand"), r.get("noaddr"), r.get("swap")
     CHAIN, R_LO, DUP = r.get("chain"), r.get("r_lo"), r.get("dup", False)
     FR_R, P55N, ACRO = r.get("fr_r"), r.get("p55n"), r.get("acro")
-    DECOY = r.get("decoy")
     LF_VETO, XFC, DUP_LAST = r.get("lf_veto", False), r.get("xfc"), r.get("dup_last", False)
+    DECOY = r.get("decoy")
 
 
 @functools.cache
@@ -987,6 +987,22 @@ def xfc_fit(d: dict, x: pd.DataFrame) -> np.ndarray:
     return np.concatenate([km, x.key.to_numpy(np.int64)])
 
 
+def decoy_drop(d: dict, ka: np.ndarray, s_min: float) -> np.ndarray:
+    """N54 on the final lines km: france.decoy_mask with its lens on the argmax pairs ka; the dropped pairs leave the
+    appended tail too (their candidates stay)."""
+    import france as FR
+    FR.C, km, n = d["c"], d["km"], len(ka)
+    k = np.concatenate([ka, km])
+    ids = lambda a, q: a.take(pa.array(q)).to_numpy(zero_copy_only=False)
+    lens = np.arange(len(k)) < n
+    bad = FR.decoy_mask(ids(d["id1"], k >> 32), ids(d["idx"], k & 0xFFFFFFFF), lens, ~lens, s_min)[n:]
+    tm, tc = d.get("tail", (np.zeros(0, np.int64), np.zeros(0, np.int64)))
+    d["tail"] = (tm[~np.isin(tm, km[bad])], tc)
+    print(f"{d['c']}: decoy-word removal (N54, s > {s_min}) {int(bad.sum()):,} pairs on {len(np.unique(km[bad] >> 32)):,} S1",
+          flush=True)
+    return km[~bad]
+
+
 def acro_change_set(d: dict, split: str) -> pd.DataFrame:
     """P62's acronym change set as staged: the reference is #clean's France decision (france.chain, ORDER_CLEAN, on the
     bge chain's frame) with its duplicate copies and candidates, and #8c's France frame (main-world M2 + bge blend)."""
@@ -1148,15 +1164,11 @@ def run(split: str, stage: str, out: Path, world=None, log=True, check=True) -> 
                     print(f"{d['c']}: P55 no-rescue veto removes {int((acc & vm).sum()):,} accepted pairs", flush=True)
                     acc &= ~vm
             tiers = xa = None
+            ka = d["K"][am] if DECOY is not None else None   # the argmax pairs: N54's lens
             if d["c"] in unseen() and ACRO is not None:   # P62: the change set on #clean's France lines (its reference)
                 tiers = acro_change_set(d, split)
             if d["c"] in unseen() and XFC is not None:    # P66's adds on the #37-style frame (these rows, before the decoys)
                 xa = xfc_frame(d, am, acc, ts[d["c"]])
-            if d["c"] in unseen() and len(acc) and DECOY is not None:   # N54: drop decoy-word pairs, after every add rule
-                import france as FR
-                FR.C, qx = d["c"], d["K"] & 0xFFFFFFFF
-                ids = lambda a, q: a.take(pa.array(q)).to_numpy(zero_copy_only=False)
-                acc = acc & ~FR.decoy_mask(ids(d["id1"], d["K"] >> 32), ids(d["idx"], qx), am, acc, DECOY)
             if DROP_SIB_CANDS:
                 acc = drop_sib_cands(d, acc)              # d["K"] loses the unaccepted decoys; acc realigned
             d["km"] = d["K"][acc]
@@ -1181,6 +1193,8 @@ def run(split: str, stage: str, out: Path, world=None, log=True, check=True) -> 
                 d["km"] = d["km"][~bad]
             if xa is not None:                            # P66's adds fit on these lines (SX free, caps, no P64 conflict)
                 d["km"] = xfc_fit(d, xa)
+            if d["c"] in unseen() and DECOY is not None:  # N54: drop decoy-word pairs from the final lines, every add rule in
+                d["km"] = decoy_drop(d, ka, DECOY)
             if DUP_LAST and world is None:                # P54's duplicate step once more, the very last stage
                 d["km"], d["K"] = dup_add(d, d["km"], d["K"], split)
             for k in ("p", "p_m2", "r", "hn", "pbl", "r_all", "p0", "r_lo", "v", "bge", "f8"):
