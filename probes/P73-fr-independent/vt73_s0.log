@@ -1,0 +1,5 @@
+US_India seeds 1, confident accepted scored 268,410
+India_US seeds 1, confident accepted scored 375,034
+India->US {"tau_from_source": -3.5, "source_dF": 0.004547, "target": {"dF": 0.000525, "se": 0.000129, "dF_h0": 0.000475, "dF_h1": 0.000574, "se_h1": 0.000179, "add": 0, "add_prec": null, "rm": 4584, "rm_false": 0.349, "veto": 4584, "veto_true": 0.651}}
+US->India {"tau_from_source": -4.5, "source_dF": 0.000939, "target": {"dF": 0.004043, "se": 0.000153, "dF_h0": 0.004071, "dF_h1": 0.004015, "se_h1": 0.000221, "add": 0, "add_prec": null, "rm": 2042, "rm_false": 0.786, "veto": 2042, "veto_true": 0.214}}
+PASS

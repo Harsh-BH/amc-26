@@ -51,7 +51,7 @@ runs = []
 for r in what.split(","):
     k, m = r.split(":")
     mod, lr, ep = MODELS[m]
-    h = "h" if k in ("Indiah", "USh") else "n" if k in ("Indian", "USn", "Francen") else "r" if k in ("Indiar", "USr", "Francer") else ""   # h: strict v2h; n: v3 noise list
+    h = "h" if k in ("Indiah", "USh") else "n" if k in ("Indian", "USn", "Francen") else "r" if k in ("Indiar", "USr", "Francer") else "v" if k in ("Indiav", "USv", "Francev") else ""   # h: strict v2h; n: v3 noise list
     fb = FRAME[k.removesuffix(h) if h else k]
     runs.append({"k": k, "m": m + h, "model": mod, "lr": lr, "epochs": ep, "seed": SEED.get(m, 0),
                  "score": [fb] + ([fb.replace("fb_", "fc_")] if m in FC else []),
