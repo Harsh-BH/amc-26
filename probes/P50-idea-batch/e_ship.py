@@ -67,3 +67,76 @@ if __name__ == "__main__":
     elif cmd == "combine":
         E.OUT, te44.TAG = P50, sys.argv[2]
         te44.combine(Path(sys.argv[3]), Path(sys.argv[4]))
+
+
+def splice(tag, src, out):
+    """out = src with India/US lines from the <tag> prob files (acc = am & p >= T); France lines and candidate_pairs.tsv /
+    code.zip byte-identical (hard links). The prob files must hold exactly P44r's pairs (same candidates)."""
+    s1 = pd.read_parquet(E.W / "test_source1.parquet", columns=["entity_id", "country"])
+    ids = set(s1.entity_id[s1.country.isin(E.C)])
+    del s1
+    new = {}
+    for c in E.C:
+        d = pd.read_parquet(P50 / f"prob_test_{c}_{tag}.parquet", columns=["s1", "sx", "p", "am"])
+        ref = pd.read_parquet(E.OUT / f"prob_test_{c}_p44r.parquet", columns=["s1", "sx"])
+        assert d.s1.equals(ref.s1) and d.sx.equals(ref.sx), f"{c}: prob file pairs != P44r's"
+        del ref
+        acc = d[d.am & (d.p >= E.T)]
+        assert acc.sx.is_unique
+        new |= acc.groupby("s1").sx.agg(lambda s: ",".join(sorted(s))).to_dict()
+        del d, acc
+    out.mkdir(parents=True, exist_ok=True)
+    n_rep = n_chg = 0
+    with open(src / "matching_results.tsv", encoding="utf-8", newline="") as f, \
+            open(out / "matching_results.tsv", "w", encoding="utf-8", newline="") as g:
+        g.write(f.readline())
+        for line in f:
+            s, v = line.rstrip("\n").split("\t", 1)
+            if s in ids:
+                w = new.get(s, "")
+                n_rep += 1
+                n_chg += ",".join(sorted(v.split(","))) != w if v else w != ""
+                g.write(f"{s}\t{w}\n")
+            else:
+                g.write(line)
+    for name in ("candidate_pairs.tsv", "code.zip"):
+        (out / name).unlink(missing_ok=True)
+        if (src / name).exists():
+            os.link(src / name, out / name)
+    assert n_rep == len(ids), (n_rep, len(ids))
+    print(f"{out.name}: {n_rep:,} India/US lines written, {n_chg:,} differ from {src.name}", flush=True)
+    return n_chg
+
+
+if __name__ == "__main__" and sys.argv[1] == "splice":
+    splice(sys.argv[2], Path(sys.argv[3]), Path(sys.argv[4]))
+
+
+def profile(tag):
+    """te44.rates on test for <tag> vs #34, divided by P44r's holdout-h1 rates (profile_p44r.csv); PASS if all <= 1.5.
+    Also the pair flips vs sub44r's own test decision."""
+    ho = pd.read_csv(E.OUT / "profile_p44r.csv")
+    ks = ["added_per_acc", "added_per_unacc", "dropped_per_acc", "s1_changed_per_s1", "flips_per_pair",
+          "flips_per_pair_none", "flips_per_pair_mass"]
+    ok, res = True, {}
+    for c in E.C:
+        T = pd.read_parquet(P50 / f"T_{c}.parquet", columns=["row", "p", "pa", "g", "sx_psum"])
+        pn = pd.read_parquet(P50 / f"prob_test_{c}_{tag}.parquet", columns=["p"]).p.to_numpy()[T.row.to_numpy()]
+        pr = pd.read_parquet(E.OUT / f"prob_test_{c}_p44r.parquet", columns=["p"]).p.to_numpy()[T.row.to_numpy()]
+        cls = np.where(T.sx_psum.to_numpy() - T.p.to_numpy() >= 0.02, "mass", "none")
+        rt = te44.rates(T.pa.to_numpy() >= E.T, pn >= E.T, T.g.to_numpy(), cls)
+        n_s1 = int((pd.read_parquet(E.W / "test_source1.parquet", columns=["country"]).country == c).sum())
+        rt["s1_changed_per_s1"] = rt.pop("s1_changed") / n_s1
+        h = ho[(ho.country == c) & (ho.world == "holdout_h1")].iloc[0]
+        ratio = {k: round(rt[k] / h[k], 2) for k in ks}
+        ok &= max(ratio.values()) <= 1.5
+        a, b = pn >= E.T, pr >= E.T
+        res[c] = {"ratio_vs_holdout_h1": ratio, "vs_p44r_adds": int((a & ~b).sum()), "vs_p44r_drops": int((b & ~a).sum()),
+                  "vs_p44r_flip_per_acc": round(float((a != b).sum() / b.sum()), 6)}
+        print(c, res[c], flush=True)
+    print("PROFILE", "PASS" if ok else "FAIL", flush=True)
+    return res
+
+
+if __name__ == "__main__" and sys.argv[1] == "profile":
+    profile(sys.argv[2])
