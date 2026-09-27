@@ -1,0 +1,16 @@
+
+India: ambiguous SX with owner in set: 8,045; twins' raw names all identical in 0.952
+  raw names differ: 388 SX. raw Levenshtein: unique closest twin in 108; it is the owner 0.889 ± 0.030 (uniform 0.384); nset==2 slice 0.917 ± 0.036 (n 60)
+  raw names differ: 388 SX. lower-cased Levenshtein: unique closest twin in 88; it is the owner 0.909 ± 0.031 (uniform 0.376); nset==2 slice 0.891 ± 0.046 (n 46)
+  exact raw equality with exactly one twin (raw names differ): 0 SX, owner nan ± nan (uniform nan)
+  test 5 in frame: ambiguous SX with an identical-raw address-less sibling SX owned by a twin in its set: 28; same owner 1.000 ± 0.000 (uniform 0.290)
+
+US: ambiguous SX with owner in set: 12,707; twins' raw names all identical in 0.829
+  raw names differ: 2,175 SX. raw Levenshtein: unique closest twin in 484; it is the owner 0.820 ± 0.017 (uniform 0.332); nset==2 slice 0.884 ± 0.023 (n 198)
+  raw names differ: 2,175 SX. lower-cased Levenshtein: unique closest twin in 484; it is the owner 0.822 ± 0.017 (uniform 0.332); nset==2 slice 0.884 ± 0.023 (n 198)
+  exact raw equality with exactly one twin (raw names differ): 0 SX, owner nan ± nan (uniform nan)
+  test 5 in frame: ambiguous SX with an identical-raw address-less sibling SX owned by a twin in its set: 98; same owner 1.000 ± 0.000 (uniform 0.282)
+
+India train truth (20% of S1): P(two members of one group identical raw name+addr) 0.0054; address-less member pairs of one group with identical raw name 0.0346 (56 of 1,617); across same-raw-name S1: 0.0000 (0 of 1,005)
+
+US train truth (20% of S1): P(two members of one group identical raw name+addr) 0.0026; address-less member pairs of one group with identical raw name 0.0341 (119 of 3,487); across same-raw-name S1: 0.0000 (0 of 3,635)

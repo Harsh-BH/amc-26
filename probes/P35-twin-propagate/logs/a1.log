@@ -1,0 +1,60 @@
+
+== India tau1 0.9 sim 0.9: address-less SX 95,078; twin support pairs 79,224, precision of supported pairs y 0.102 (am 0.257, non-am 0.027)
+               n  tw_any  tw_true  tw_am  multi
+out                                            
+FN_lowp     1548   0.820    0.776  0.776  0.380
+FN_stolen   1693   0.898    0.841  0.336  0.652
+FP         43537   0.217    0.000  0.199  0.008
+FP_stolen     30   0.700    0.633  0.367  0.400
+TN         41845   0.608    0.000  0.238  0.353
+TP          6425   0.851    0.849  0.849  0.022
+
+== India tau1 0.9 sim 1.0: address-less SX 95,078; twin support pairs 74,935, precision of supported pairs y 0.101 (am 0.257, non-am 0.027)
+               n  tw_any  tw_true  tw_am  multi
+out                                            
+FN_lowp     1548   0.782    0.733  0.733  0.355
+FN_stolen   1693   0.860    0.803  0.315  0.616
+FP         43537   0.198    0.000  0.183  0.007
+FP_stolen     30   0.567    0.533  0.300  0.333
+TN         41845   0.584    0.000  0.226  0.338
+TP          6425   0.795    0.792  0.792  0.018
+
+== India tau1 0.71 sim 0.85: address-less SX 95,078; twin support pairs 83,008, precision of supported pairs y 0.102 (am 0.255, non-am 0.027)
+               n  tw_any  tw_true  tw_am  multi
+out                                            
+FN_lowp     1548   0.852    0.814  0.814  0.399
+FN_stolen   1693   0.917    0.865  0.351  0.673
+FP         43537   0.232    0.000  0.213  0.010
+FP_stolen     30   0.733    0.667  0.433  0.433
+TN         41845   0.630    0.000  0.250  0.368
+TP          6425   0.889    0.886  0.886  0.025
+
+== US tau1 0.9 sim 0.9: address-less SX 169,734; twin support pairs 105,377, precision of supported pairs y 0.130 (am 0.226, non-am 0.035)
+               n  tw_any  tw_true  tw_am  multi
+out                                            
+FN_lowp     3490   0.800    0.755  0.755  0.333
+FN_stolen   2374   0.865    0.757  0.489  0.603
+FP         77754   0.210    0.000  0.186  0.014
+FP_stolen     94   0.713    0.628  0.404  0.415
+TN         74389   0.512    0.000  0.336  0.234
+TP         11633   0.799    0.794  0.794  0.036
+
+== US tau1 0.9 sim 1.0: address-less SX 169,734; twin support pairs 92,430, precision of supported pairs y 0.131 (am 0.226, non-am 0.036)
+               n  tw_any  tw_true  tw_am  multi
+out                                            
+FN_lowp     3490   0.722    0.674  0.674  0.285
+FN_stolen   2374   0.801    0.690  0.439  0.547
+FP         77754   0.177    0.000  0.157  0.011
+FP_stolen     94   0.596    0.532  0.309  0.319
+TN         74389   0.465    0.000  0.302  0.205
+TP         11633   0.702    0.697  0.697  0.029
+
+== US tau1 0.71 sim 0.85: address-less SX 169,734; twin support pairs 115,344, precision of supported pairs y 0.128 (am 0.223, non-am 0.034)
+               n  tw_any  tw_true  tw_am  multi
+out                                            
+FN_lowp     3490   0.848    0.805  0.805  0.364
+FN_stolen   2374   0.900    0.801  0.530  0.643
+FP         77754   0.233    0.000  0.205  0.017
+FP_stolen     94   0.809    0.723  0.457  0.511
+TN         74389   0.547    0.000  0.364  0.257
+TP         11633   0.861    0.856  0.856  0.042

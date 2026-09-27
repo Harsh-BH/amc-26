@@ -1,0 +1,66 @@
+
+India: ambiguous SX, owner in set, >=1 holdout twin: 8,045; #8c argmax is the owner 0.394 (uniform 1/nset 0.246)
+  k_oracle r: decided  4,136 of  8,045 | top-prior twin is owner 0.365 ± 0.007 (uniform 0.293, model says 0.368) | Δ mean log-lik vs uniform +0.0123
+  k_oracle h: decided  4,136 of  8,045 | top-prior twin is owner 0.365 ± 0.007 (uniform 0.293, model says 0.539) | Δ mean log-lik vs uniform -0.0866
+  k_addr   r: decided  4,096 of  8,045 | top-prior twin is owner 0.364 ± 0.008 (uniform 0.295, model says 0.370) | Δ mean log-lik vs uniform +0.0108
+  k_addr   h: decided  4,096 of  8,045 | top-prior twin is owner 0.364 ± 0.008 (uniform 0.295, model says 0.541) | Δ mean log-lik vs uniform -0.0886
+  k_dec    r: decided     60 of     76 | top-prior twin is owner 0.483 ± 0.065 (uniform 0.494, model says 0.554) | Δ mean log-lik vs uniform -0.0281
+  k_dec    h: decided     60 of     76 | top-prior twin is owner 0.483 ± 0.065 (uniform 0.494, model says 0.687) | Δ mean log-lik vs uniform -0.1386
+  nset=2, k_oracle: owner = the smaller-k twin 0.583 ± 0.014 over 1,253 (model 0.576)
+         n  true_small   pred     se
+ka kb                               
+0  1   163       0.650  0.608  0.037
+   2   160       0.656  0.629  0.038
+   3    73       0.616  0.644  0.057
+   4    38       0.789  0.714  0.066
+1  2   330       0.536  0.523  0.027
+   3   187       0.508  0.541  0.037
+   4    54       0.593  0.612  0.067
+2  3   152       0.520  0.518  0.041
+   4    47       0.638  0.589  0.070
+  nset=2, k_addr: owner = the smaller-k twin 0.583 ± 0.014 over 1,261 (model 0.575)
+         n  true_small   pred     se
+ka kb                               
+0  1   183       0.645  0.607  0.035
+   2   171       0.632  0.628  0.037
+   3    75       0.573  0.645  0.057
+   4    42       0.762  0.715  0.066
+1  2   345       0.565  0.523  0.027
+   3   182       0.538  0.541  0.037
+   4    47       0.617  0.612  0.071
+2  3   137       0.482  0.518  0.043
+   4    43       0.558  0.589  0.076
+
+US: ambiguous SX, owner in set, >=1 holdout twin: 12,707; #8c argmax is the owner 0.360 (uniform 1/nset 0.288)
+  k_oracle r: decided  7,252 of 12,707 | top-prior twin is owner 0.393 ± 0.006 (uniform 0.326, model says 0.404) | Δ mean log-lik vs uniform +0.0207
+  k_oracle h: decided  7,252 of 12,707 | top-prior twin is owner 0.393 ± 0.006 (uniform 0.326, model says 0.572) | Δ mean log-lik vs uniform -0.0589
+  k_addr   r: decided  7,095 of 12,707 | top-prior twin is owner 0.396 ± 0.006 (uniform 0.329, model says 0.408) | Δ mean log-lik vs uniform +0.0191
+  k_addr   h: decided  7,095 of 12,707 | top-prior twin is owner 0.396 ± 0.006 (uniform 0.329, model says 0.577) | Δ mean log-lik vs uniform -0.0623
+  k_dec    r: decided    123 of    170 | top-prior twin is owner 0.545 ± 0.045 (uniform 0.497, model says 0.584) | Δ mean log-lik vs uniform +0.0071
+  k_dec    h: decided    123 of    170 | top-prior twin is owner 0.545 ± 0.045 (uniform 0.497, model says 0.734) | Δ mean log-lik vs uniform -0.0756
+  nset=2, k_oracle: owner = the smaller-k twin 0.564 ± 0.010 over 2,628 (model 0.577)
+         n  true_small   pred     se
+ka kb                               
+0  1   398       0.588  0.610  0.025
+   2   321       0.620  0.630  0.027
+   3   162       0.537  0.645  0.039
+   4    57       0.684  0.710  0.062
+1  2   714       0.525  0.523  0.019
+   3   374       0.521  0.541  0.026
+   4   120       0.575  0.611  0.045
+2  3   294       0.544  0.518  0.029
+   4    79       0.544  0.590  0.056
+3  4    51       0.549  0.571  0.070
+  nset=2, k_addr: owner = the smaller-k twin 0.563 ± 0.010 over 2,609 (model 0.578)
+         n  true_small   pred     se
+ka kb                               
+0  1   471       0.569  0.609  0.023
+   2   323       0.610  0.630  0.027
+   3   175       0.583  0.645  0.037
+   4    50       0.640  0.708  0.068
+1  2   711       0.529  0.523  0.019
+   3   359       0.532  0.541  0.026
+   4   109       0.587  0.612  0.047
+2  3   253       0.530  0.518  0.031
+   4    67       0.552  0.588  0.061
+3  4    44       0.591  0.569  0.074

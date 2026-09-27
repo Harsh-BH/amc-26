@@ -1,0 +1,7 @@
+add1/eq argmax on #9ab 18,068 acc 0.209; fillers 7,578; support<20 2,707
+non-filler s<=0.1: flips 527 on 523 S1, p_med 0.946
+non-filler s<=0.2: flips 606 on 602 S1, p_med 0.943
+non-filler s<=0.3: flips 639 on 635 S1, p_med 0.940
+non-filler s<=0.4: flips 1,276 on 1,256 S1, p_med 0.669
+non-filler s<=0.6: flips 4,389 on 4,202 S1, p_med 0.210
+non-filler s<=1.01: flips 7,087 on 6,666 S1, p_med 0.137

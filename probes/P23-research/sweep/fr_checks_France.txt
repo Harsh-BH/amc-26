@@ -1,0 +1,15 @@
+== France: S1 259,452  SX sample 800,000
+A websites 33,473: exact core hit folded 0.322  deleted 0.382  deleted-only 0.062  either 0.384
+B alias markers per 10k SX: {'d.b.a': np.float64(6.4), 'f.k.a': np.float64(0.0), 'a.k.a': np.float64(0.0), 't.a': np.float64(0.0), 'dba': np.float64(20.5), 'f/k/a': np.float64(7.1), 'formerly known as': np.float64(4.0), 'doing business as': np.float64(7.0), 'trading as': np.float64(7.4), 'anciennement': np.float64(0.1), 'dite': np.float64(0.9), 'ex-': np.float64(0.1), 'sous le nom': np.float64(0.0), 'enseigne': np.float64(0.0), 'nee': np.float64(4.2), 'sys': np.float64(5.0)}
+   dotted alias not resolved by name_norm (share of SX): 0.00064
+C elision apostrophe: S1 0.0000 SX 0.0000; SX tokens = d/l + S1 word, token unseen in S1: 13 of 2,505,181 (0.00001)
+D (n)      :   161.5 per 10k SX, house_number empty among them 0.994
+D h.no     :     0.0 per 10k SX, house_number empty among them 0.000
+D d.no     :     0.0 per 10k SX, house_number empty among them 0.000
+D plt/pl   :     0.0 per 10k SX, house_number empty among them 0.000
+D zero-pad :   330.7 per 10k SX, house_number empty among them 0.000
+D #        :   325.4 per 10k SX, house_number empty among them 0.000
+D n deg    :   653.4 per 10k SX, house_number empty among them 0.000
+D bis/ter  :   381.2 per 10k SX, house_number empty among them 0.000
+E first-token SX-over: sarl 2.16%/0.00%, sas 1.54%/0.00%, eurl 0.60%/0.00%, sasu 0.42%/0.00%, sci 0.36%/0.00%, groupe 0.10%/0.00%, snc 0.12%/0.00%, sportive 0.08%/0.00%, france 0.10%/0.00%, cie 0.07%/0.00%, sa 0.48%/0.01%, services 0.07%/0.00%, des 0.06%/0.00%, amis 0.07%/0.00%, parents 0.05%/0.00%, primaire 0.05%/0.00%, maternelle 0.04%/0.00%, sante 0.04%/0.00%, fetes 0.04%/0.00%, compagnie 0.03%/0.00%, societe 0.04%/0.00%, culturelle 0.03%/0.00%, groupement 0.03%/0.00%, maisondesantcom 0.03%/0.00%, sainte 0.03%/0.00%
+   in HONORIFIC: []

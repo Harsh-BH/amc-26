@@ -1,0 +1,14 @@
+  recompute check (uncorrected vs X, 6,433 rows): mismatching cols {}
+  US_sx_000: 782,677 rows so far, SX changed 0.130; 13s peak 1.49 GB
+  US_sx_001: 1,573,975 rows so far, SX changed 0.129; 23s peak 1.62 GB
+  US_sx_002: 2,355,142 rows so far, SX changed 0.130; 34s peak 1.69 GB
+  US_sx_003: 3,137,446 rows so far, SX changed 0.130; 45s peak 1.78 GB
+  US_sx_004: 3,920,959 rows so far, SX changed 0.130; 57s peak 1.78 GB
+  US_sx_005: 4,543,126 rows so far, SX changed 0.135; 67s peak 1.78 GB
+  US_sx_006: 5,135,694 rows so far, SX changed 0.137; 78s peak 1.78 GB
+  US_sx_007: 5,731,215 rows so far, SX changed 0.137; 88s peak 1.78 GB
+  US_sx_008: 6,323,821 rows so far, SX changed 0.138; 243s peak 1.78 GB
+  US_sx_009: 6,915,153 rows so far, SX changed 0.136; 257s peak 1.78 GB
+  US_sx_010: 7,084,014 rows so far, SX changed 0.135; 266s peak 1.78 GB
+  g0 vs S_holdout p on fold 0: 0 missing, max |diff| 0.00e+00; 1,885,813 ref rows, 1,885,813 mine
+score India>US: 7,084,014 rows, changed pairs 0.081, |g1-g0|>0.01 on 0.0091; 290s peak 1.78 GB

@@ -9,8 +9,12 @@ is adopted, apply it before these functions — they are idempotent on Latin tex
 Word lists are MINED from train true pairs (US/India) unless tagged `# domain:` — those (France,
 states that never occur in train) come from domain knowledge and are unvalidated.
 """
+import json
+import os
 import re
-from functools import lru_cache
+from collections import Counter, defaultdict
+from functools import cache, lru_cache
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -234,29 +238,12 @@ IN_STATES = {  # mined codes (vehicle-registration style) for the 16 states in t
     "an": ["andaman and nicobar islands"], "ld": ["lakshadweep"], "la": ["ladakh"],
     "dn": ["dadra and nagar haveli", "daman and diu"],
 }
-FR_REGIONS = {  # domain: 13 metropolitan régions -> départements (S1 France uses the région, S2/S3 mix in the département)
-    "hauts de france": ["nord", "pas de calais", "somme", "oise", "aisne"],
-    "pays de la loire": ["loire atlantique", "maine et loire", "mayenne", "sarthe", "vendee"],
-    "nouvelle aquitaine": ["gironde", "landes", "pyrenees atlantiques", "lot et garonne", "dordogne",
-                           "charente", "charente maritime", "deux sevres", "vienne", "haute vienne",
-                           "creuse", "correze"],
-    "ile de france": ["paris", "seine et marne", "yvelines", "essonne", "hauts de seine", "seine saint denis",
-                      "val de marne", "val d oise"],
-    "auvergne rhone alpes": ["ain", "allier", "ardeche", "cantal", "drome", "isere", "loire", "haute loire",
-                             "puy de dome", "rhone", "savoie", "haute savoie"],
-    "provence alpes cote d azur": ["alpes de haute provence", "hautes alpes", "alpes maritimes",
-                                   "bouches du rhone", "var", "vaucluse", "paca"],
-    "occitanie": ["ariege", "aude", "aveyron", "gard", "haute garonne", "gers", "herault", "lot", "lozere",
-                  "hautes pyrenees", "pyrenees orientales", "tarn", "tarn et garonne"],
-    "grand est": ["ardennes", "aube", "marne", "haute marne", "meurthe et moselle", "meuse", "moselle",
-                  "bas rhin", "haut rhin", "vosges"],
-    "bretagne": ["cotes d armor", "finistere", "ille et vilaine", "morbihan"],
-    "normandie": ["calvados", "eure", "manche", "orne", "seine maritime"],
-    "bourgogne franche comte": ["cote d or", "doubs", "jura", "nievre", "haute saone", "saone et loire",
-                                "yonne", "territoire de belfort"],
-    "centre val de loire": ["cher", "eure et loir", "indre", "indre et loire", "loir et cher", "loiret"],
-    "corse": ["corse du sud", "haute corse"],
-}
+FR_REGIONS = ("hauts de france", "pays de la loire", "nouvelle aquitaine", "ile de france", "auvergne rhone alpes",
+              "provence alpes cote d azur", "occitanie", "grand est", "bretagne", "normandie", "bourgogne franche comte",
+              "centre val de loire", "corse")
+# domain: the 13 metropolitan régions -- hand-written state names, which the organisers allow. S1 France always names
+# its région; S2/S3 often put a département in that slot. Département -> région is learned from the test rows
+# (fr_departements), never written down: that would be the city-level geo table the rules ban.
 
 
 def _basic(x: str) -> str:
@@ -266,10 +253,7 @@ def _basic(x: str) -> str:
 
 def _state_table() -> dict:
     """country -> {normalised segment text -> canonical state}."""
-    fr = {}
-    for reg, deps in FR_REGIONS.items():
-        fr[reg] = reg
-        fr.update({d: reg for d in deps})
+    fr = {r: r for r in FR_REGIONS}           # + the learned départements, added on first use (address_fields)
     us = {**{k: k for k in US_STATES}, **{v: k for k, v in US_STATES.items()}}
     ind = {k: k for k in IN_STATES}
     for k, vs in IN_STATES.items():
@@ -318,6 +302,67 @@ def _segments(addr: pd.Series) -> pd.Series:
     return f.str.split(",").map(lambda ss: [t for t in map(_basic, ss) if t])
 
 
+_LEAD_NO = re.compile(r"^\d+[a-z]?\s+")
+
+
+def learn_fr_departements(s1: pd.DataFrame, sx: pd.DataFrame, support: int = 20, purity: float = 0.95) -> dict:
+    """segment -> région from France's unlabelled S1 and S2/S3 rows (business_name, business_address). A digit-free
+    S2/S3 segment is a département of région r when
+      it takes the région's slot: <= 5% of the S2/S3 rows that carry it also name a région (a city, or a typo of one,
+      sits next to a région in about a third of them);
+      S1 never names it: S1 addresses hold it (canonical, house number stripped) <= 5% as often -- not a street or
+      a landmark;
+      its anchors agree: >= `purity` of >= `support` anchors have their S1 in r. An anchor is an S2/S3 whose name_core
+      equals exactly one S1's and whose address shares a segment with that S1's.
+    The région names are the only hand-written input: no labels, no geo table."""
+    reg, seg1 = set(FR_REGIONS), _segments(s1.business_address).reset_index(drop=True)
+    parts = lambda: (_segments(sx.business_address.iloc[k:k + 250_000]) for k in range(0, len(sx), 250_000))
+    key = lambda x: _LEAD_NO.sub("", _seg(x))
+    named = Counter(key(x) for ss in seg1 for x in ss)
+    n, with_reg = Counter(), Counter()
+    for ss in (ss for part in parts() for ss in part):
+        r = any(x in reg for x in ss)
+        for x in set(ss):
+            if x not in reg and not _DIGIT.search(x):
+                n[x] += 1
+                with_reg[x] += r
+    cand = {x for x, k in n.items() if k >= support and with_reg[x] <= 0.05 * k and named[key(x)] <= 0.05 * k}
+    c1 = name_core(s1.business_name).reset_index(drop=True).drop_duplicates(keep=False)
+    at = dict(zip(c1, c1.index))                             # name_core -> its one S1 row
+    votes = defaultdict(Counter)
+    for part in parts():                                     # second pass: the anchors among rows with a candidate
+        part = part[part.map(lambda ss: not cand.isdisjoint(ss))]
+        for c, ss in zip(name_core(sx.business_name.loc[part.index]), part):
+            i = at.get(c)
+            if i is not None and not set(ss).isdisjoint(seg1[i]):
+                r = next((x for x in seg1[i] if x in reg), "")
+                for x in cand.intersection(ss):
+                    votes[x][r] += 1
+    out = {x: r for x, v in votes.items() for r, k in [v.most_common(1)[0]]
+           if r and v.total() >= support and k >= purity * v.total()}
+    return dict(sorted(out.items()))
+
+
+FR_CACHE = Path(os.environ.get("ER_WORK", "data/work")) / "fr_regions.json"
+
+
+@cache
+def fr_departements() -> dict:
+    """learn_fr_departements on the test split's France rows, cached at data/work/fr_regions.json (~1 min, 1.0 GB, once)."""
+    if not FR_CACHE.exists():
+        import pyarrow.compute as pc
+        import pyarrow.parquet as pq
+        rows = lambda i: pd.concat([b.filter(pc.equal(b["country"], "France")).to_pandas() for b in pq.ParquetFile(
+            FR_CACHE.parent / f"test_source{i}.parquet").iter_batches(250_000, columns=["business_name",
+                                                                                        "business_address", "country"])],
+                                   ignore_index=True)
+        m = learn_fr_departements(rows(1), pd.concat([rows(2), rows(3)], ignore_index=True))
+        tmp = FR_CACHE.with_suffix(f".{os.getpid()}.tmp")    # ponytail: rules.feats workers that all miss the cache
+        tmp.write_text(json.dumps(m, indent=1))              # each learn it once; build it in the parent to avoid that
+        tmp.replace(FR_CACHE)
+    return json.loads(FR_CACHE.read_text())
+
+
 def _ckey(country: pd.Series | None, n: int) -> list:
     return list(fold(country)) if country is not None else [""] * n
 
@@ -332,8 +377,10 @@ def address_fields(addr: pd.Series, country: pd.Series | None = None, freq: dict
     places:    digit-free, non-state, non-street, non-landmark segments (city/district/locality candidates).
     city_key:  with `freq` (segment -> count, from `place_freq`) the most frequent place (cities recur more than
                localities, shuffle-proof); without it, the last place segment."""
-    norm, st_out, places = [], [], []
-    for ss, c in zip(_segments(addr), _ckey(country, len(addr))):
+    norm, st_out, places, cs = [], [], [], _ckey(country, len(addr))
+    if "france" in cs:
+        STATES["france"].update(fr_departements())
+    for ss, c in zip(_segments(addr), cs):
         table = STATES.get(c, {})
         cand = [i for i, x in enumerate(ss) if x in table]      # state looked up BEFORE filler/abbreviation
         if len(cand) > 1:                                      # 'Washington, DC' / 'Delhi, ..., Delhi'
@@ -470,6 +517,18 @@ def _check():
     assert [" ".join(c for c in LEGAL_CODES if v & _BIT[c]) for v in m] == \
         ["ltd pvt"] * 3 + ["llp", "llc", "ltd pvt", "ltd", ""], m
     assert cn[0] == cn[1] == "shivam investments pvt ltd" and cn[2] == "shivam pvt ltd", cn
+    # départements learned: 'nord' / 'loire atlantique' stand where S1 names the région; cities sit next to a région
+    # too, and 'Rue Lydéric' (no house number, no région) is something S1 names -- neither is learned
+    names = [f"Maison {a}{b}x" for a in "bcdfghjk" for b in "aeiou"]
+    city, dep, reg = zip(*[("Lille", "Nord", "Hauts-de-France") if i < 20 else ("Nantes", "Loire-Atlantique",
+                                                                            "Pays de la Loire") for i in range(40)])
+    s1 = pd.DataFrame({"business_name": names, "business_address": [f"{i} Rue Lydéric, {c}, {r}"
+                                                                    for i, c, r in zip(range(40), city, reg)]})
+    sx = pd.DataFrame({"business_name": names * 2 + names[:25],
+                       "business_address": [f"{c}, {d}" for c, d in zip(city, dep)] + [f"{c}, {r}" for c, r in
+                                            zip(city, reg)] + [f"Rue Lydéric, {c}" for c in city[:25]]})
+    assert learn_fr_departements(s1, sx) == {"loire atlantique": "pays de la loire", "nord": "hauts de france"}
+    assert learn_fr_departements(s1, sx, support=21) == {}
     print("normalize self-check ok")
 
 

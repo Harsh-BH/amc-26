@@ -1,0 +1,34 @@
+
+== India: address-less corpus SX 122,794; propagated pairs (fq<=5, not a candidate) 68,915, prec 0.012
+                         size   mean
+state               fq              
+accepted_elsewhere  1    1021  0.010
+                    2     841  0.002
+                    3    1134  0.003
+in_frame_unaccepted 1    4104  0.017
+                    2    9632  0.013
+                    3   47210  0.012
+not_in_frame        1     586  0.015
+                    2     898  0.006
+                    3    3489  0.007
+  best slice (unassigned, unique core, one claimant): 1,282 pairs, prec 0.031
+  of 4,248 missed true pairs, recovered by the slice: 40
+  add slice: half 0 -0.002718 ± 0.000117
+  add slice: half 1 -0.002563 ± 0.000113
+
+== US: address-less corpus SX 222,089; propagated pairs (fq<=5, not a candidate) 36,408, prec 0.016
+                         size   mean
+state               fq              
+accepted_elsewhere  1     873  0.019
+                    2     637  0.013
+                    3     535  0.002
+in_frame_unaccepted 1    4309  0.028
+                    2    5261  0.018
+                    3   22187  0.014
+not_in_frame        1     553  0.047
+                    2     646  0.005
+                    3    1407  0.004
+  best slice (unassigned, unique core, one claimant): 2,455 pairs, prec 0.040
+  of 5,376 missed true pairs, recovered by the slice: 99
+  add slice: half 0 -0.003103 ± 0.000098
+  add slice: half 1 -0.003210 ± 0.000100

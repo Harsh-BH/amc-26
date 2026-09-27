@@ -5,7 +5,8 @@ S2-/S3- ids of the input, of the S1's own country, without duplicates, spaces or
 real M2 + cross-encoder (GPU, under the lock) and gives Xland P6's unseen-country threshold. ~4 min.
 
     python code/business_entity_resolution/src/test_pipeline.py [--recipe R] [--ce PATH --ce-base e5|bge]
-                                                                [--unseen France --france sib|bge|m2]
+                                                                [--unseen France --france sib|bge|m2|idf144_bge]
+                                                                [--cap 5,6] [--drop-sibling-cands]
 --ce swaps the recipe's cross-encoder (e.g. #8c's bge CE needs its HF base weights and a GPU; the e5 CE runs anywhere),
 so every other stage of the recipe (pruner, blend, P17's stacker, France's scorer) is still exercised. --unseen names
 the injected unseen label (France: its fixed t and --france scorer apply to it).
@@ -69,12 +70,16 @@ if __name__ == "__main__":          # forkserver workers (rules.feats) re-import
     ap.add_argument("--ce", type=Path)
     ap.add_argument("--ce-base", choices=["e5", "bge"])
     ap.add_argument("--unseen", default="Xland")
-    ap.add_argument("--france", choices=["m2", "bge", "sib"])
+    ap.add_argument("--france", choices=["m2", "bge", "sib", "idf144_bge"])
+    ap.add_argument("--cap", help="S2,S3 matches per S1 (run.py --cap)")
+    ap.add_argument("--drop-sibling-cands", action="store_true")
     a = ap.parse_args()
     run.use(a.recipe)
     if a.ce:
         run.RR.CE, run.RR.FAMILY = a.ce.resolve(), a.ce_base or run.RR.FAMILY
     run.FRANCE = a.france or run.FRANCE
+    run.CAP = tuple(int(x) for x in a.cap.split(",")) if a.cap else None
+    run.DROP_SIB_CANDS |= a.drop_sibling_cands
     print(f"recipe {a.recipe}: CE {run.RR.CE.name} ({run.RR.FAMILY}), stack {list(run.STACK)}, France {run.FRANCE}, "
           f"unseen label {a.unseen}", flush=True)
     s1, sx, truth = world(unseen=a.unseen)

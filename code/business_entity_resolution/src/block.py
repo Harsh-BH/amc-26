@@ -433,17 +433,17 @@ def idf_country(vec: dict, sx_text: pd.DataFrame, share: float, seed: int = 0) -
 
 
 def idf_domain(vec: dict) -> dict:
-    """P14's train-only fallback (#9d): the address IDF of the French domain words already listed in normalize.py
-    (street types, articles, régions + départements, house-number words) lowered to the median train IDF of the US
-    street types. City names stay at max IDF: no list of them exists without external data. In place."""
+    """P14's fallback (#9d): the address IDF of the French domain words (normalize.py's street types, articles and
+    région names, the départements normalize.fr_departements learns from test France, house-number words) lowered to
+    the median train IDF of the US street types. City names stay at max IDF: no list of them exists without external
+    data. In place."""
     hv, tf = vec["addr"].steps[0][1], vec["addr"].steps[1][1]
     fr = {k: w for k, w in N.STREET.items() if k in {"rue", "bd", "impasse", "allee", "chemin", "route", "faubourg",
                                                      "quai", "cours", "sainte", "avenue", "av", "boulevard", "place",
                                                      "saint"}}
     words = set(fr) | set(fr.values()) | {"de", "des", "du", "la", "le", "les", "l", "d", "et", "en", "sur", "sous",
                                           "aux", "au", "ndeg", "no", "bis", "ter", "france"}
-    for reg, deps in N.FR_REGIONS.items():
-        words |= {w for x in [reg, *deps] for w in x.split()}
+    words |= {w for x in [*N.FR_REGIONS, *N.fr_departements()] for w in x.split()}
     ix = lambda ws: hv.transform([" ".join(ws)]).indices
     val = float(np.median(tf.idf_[ix(["st", "rd", "dr", "ave", "ln", "ct", "blvd"])]))
     idf = tf.idf_.copy()

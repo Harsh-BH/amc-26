@@ -120,13 +120,17 @@ raw data
   │                                                      same city, how many look-alikes exist, …)
   ├─ 6. Re-check the uncertain pairs (India & US)       (a multilingual language model, bge-reranker, reads both records)
   ├─ 7. US only: the house-number check                 (a small model that knows the "sibling" number pattern)
-  ├─ 8. Decide                                          (each messy row goes to its best match, only if the score is
-  │                                                      high enough; France gets its own, stricter bar)
-  └─ 9. Write the two files and check them with the organisers' validator
+  ├─ 8. India & US: the a10 check                       (a small model that looks at each pair's competition)
+  ├─ 9. France: its own chain                           (rebuilt house numbers, a house-number-aware matcher, address
+  │                                                      rules, a stricter bar)
+  ├─10. Decide                                          (each messy row goes to its best match, only if the score is
+  │                                                      high enough; then France's empty businesses and one-sided
+  │                                                      groups get a second look)
+  └─11. Write the two files (4.4 candidates per business) and check them with the organisers' validator
 ```
 
-Everything runs with **one command**: `run.py --split test --stage model`. With the saved model scores it takes about
-4 minutes.
+Everything runs with **one command**: `run.py --split test --stage model` (`--recipe sub37_small` for the final zip).
+With the saved model scores it takes about 6–12 minutes on the laptop.
 
 **Rules we respect:** every model is open-source under MIT/Apache and far below 8 billion parameters (the biggest is
 0.57 billion). We use no internet lookups, no address APIs and no outside data, only the provided training data. We
@@ -186,8 +190,47 @@ US: +0.0005 on the US.
 - It reads unlabelled test text (no answers), which may or may not count as "only the training data". So we also built
   a train-data-only version.
 
-**Now:** all France options sit on the same India/US base, so each leaderboard score tells us what that one France
-change is worth.
+**7. Combining the France fixes (26 Sep afternoon).** The rare-word fix and bge for France together scored **0.984072**
+(#9ab). Then a France "chain" (#31) rebuilt France's house numbers, removed French filler words from names ("& Fils",
+"& Cie"), used a matcher that knows about house numbers, and added three address rules: **0.9856**.
+
+**8. Small last steps (26 Sep evening).**
+- **A second checker for India/US (a10).** It looks at each pair's competition: how close the runner-up is, and whether
+  other businesses with the same name are also candidates. On our holdout: +0.0002. Together with a France "veto"
+  (the language model overrules the matcher when the matcher is sure but the language model strongly disagrees) it
+  scored 0.985647, about flat.
+- **Empty France businesses get a second look.** France left 6.5% of its businesses with no match, more than the ~5.7%
+  that truly have none. A business left empty now takes its best candidate if the score is at least 0.90:
+  **0.98596**.
+- **Half-finished groups get completed.** Most businesses appear in both Source 2 and Source 3. When France found a
+  business only in Source 2 (or only in Source 3), we add the best free candidates from the missing source (score ≥
+  0.70): **0.986304**.
+
+**9. 27 September: a smarter India/US checker, and cleaning France.**
+- **One combined checker for India/US (P44 → P45 → P50).** The a10 idea grew into a small team of models: it also reads
+  how much of a messy row's score its other candidate businesses take, house-number noise signals, two extra
+  house-number models, 16 other models' opinions, and our language model's verdict on *every* best pair (not only the
+  uncertain ones: it vetoes confident pairs it rejects and rescues pairs the main model underrates). On our holdout it
+  is worth **+0.0007**, the biggest India/US step since the language model; it is refit on all of the holdout.
+- **France: four new stages and one audit.** A joint re-tune of all France bars (P42), the language model vetoing weak
+  additions (P48) and rescuing uncertain pairs it is sure about (P54), a house-number-change class (P47), and a small
+  learned combiner transferred from India/US (P55). Upload #54 (with two older rules, P46 and P40) scored **0.986685**,
+  our best, but only a quarter of what we expected. A second, larger language model (Qwen3-Reranker-4B, P38) used as an
+  independent judge found those two older rules mostly wrong (8% and 19% right), so they were dropped.
+- **Copies of the same record.** When two rows are exact copies and one is matched, the other now goes to the same
+  business (P54): in the training answers that is right 100% of the time (60,319 groups).
+- **The final (`sub66_final`, public LB 0.987391, our best, +0.0007 over #54):** #54's India/US lines with #37's France
+  recipe (the one the leaderboard confirmed step by step), plus four France changes that passed their checks: the larger
+  language model as France's judge, the learned combiner's veto, an acronym rule ('ABC' = 'Alpha Beta Cars' at the same
+  address), a legal-form veto (a 'SARL' is not the 'SAS' of the same name: −344 pairs, P64), and address-less copies
+  whose full name is unique in France (+1,884 pairs, P66).
+
+**The rule about France.** France is the only test country that the training data never shows. The organisers allow a
+stricter rule "for countries unseen in training", so the code finds France exactly that way (countries in the test
+file but not in the training file) and never writes the word France in a decision.
+
+**The final shortlist file** keeps 4.42 candidates per business (down from 16 after blocking), because the organisers
+rank smaller shortlists higher. The matches are exactly the ones of our best upload.
 
 ---
 
@@ -204,15 +247,20 @@ change is worth.
 | **D4** | #5 with France stricter still (0.95) | — | **0.981142** (best so far) |
 | #6c | + the pruner (4.8 candidates instead of 16) + France 0.95 | 0.9885 | 0.980954 |
 | #7 | + the language model trained 2 rounds | 0.9888 | not uploaded (superseded by #8c) |
-| **#8c** | bge language model (AWS) + US house-number check | **0.9899** | TBD (26 Sep) |
-| #9a / #9b / #9s | #8c + one France fix each: rare-word (IDF) fix / bge for France / sibling rule | = #8c (no France answers) | TBD (26 Sep) |
-| final | #8c + whichever France fixes win | 0.9899 | TBD |
+| #8c | bge language model (AWS) + US house-number check | 0.9899 | not uploaded (the base of every later upload) |
+| #9ab | #8c + France rare-word fix + bge for France | = #8c (no France answers) | 0.984072 |
+| #31 | #8c + the France chain | = #8c | 0.9856 |
+| #34_veto | + the a10 checker (India/US) + the France veto | 0.98984 (half 1) | 0.985647 |
+| #34v_r90 | + empty France businesses get their best candidate (≥ 0.90) | = #34 | 0.98596 |
+| #37_gc70 | + half-finished France groups completed (≥ 0.70) | = #34 | 0.986304 |
+| **#54** | the combined India/US checker + four new France stages (with P46 / P40) | India/US +0.0007 | **0.986685** (best so far) |
+| **final** (27 Sep, `sub66_final`) | #54's India/US checker + #37's France + the France judge, acronym rule, legal-form veto and address-less names | = #54 India/US | **0.987391** (best) |
 
 The jump from rules to a trained model (+21 points) was the biggest win: the model learned when a same-name business
 at a different street is *not* the same business.
 
-**Why the leaderboard is lower than our holdout:** France, now confirmed by upload D1. India + US score on the
-leaderboard what our holdout predicted (≈ 0.989). France started at ≈ 0.93, and every France fix above targets that gap.
+**Why the leaderboard is lower than our holdout:** France, confirmed by upload D1. India + US score on the
+leaderboard what our holdout predicted (≈ 0.989). France started at ≈ 0.93 and is now ≈ 0.966.
 
 ---
 
@@ -234,6 +282,11 @@ leaderboard what our holdout predicted (≈ 0.989). France started at ≈ 0.93, 
 | The house-number model on India | −0.0001 | The stronger language model already catches those cases |
 | A fixed "top 5 per business" shortlist | −0.021 | True matches hide deep in long lists of look-alikes; the learned pruner is far better |
 | Qwen3 reranker | never ran (our cloud job crashed on a typo) | bge had already won |
+| Second look for empty businesses in India/US | −0.0000 to −0.0004 | There, an empty answer is usually right |
+| Completing France groups at a lower score (0.6 / 0.5) | worse on one of the two test directions | Too many wrong additions |
+| France "shape matching": add pairs until France's groups look like India/US's (P47) | −0.0098 / −0.0010 France-F0.5 | the missing true pairs are not the top candidates |
+| Calibrating France's scores before applying India/US's bars (P52) | −0.016 / −0.014 | France is over-confident in the uncertain band, not shifted |
+| P46 noise-word tier, P40 address-less names (in #54) | est. 8% / 19% right (Qwen judge) | dropped after #54's small gain |
 
 ## 10. Problems we hit along the way (and fixed)
 
@@ -249,20 +302,21 @@ leaderboard what our holdout predicted (≈ 0.989). France started at ≈ 0.93, 
 
 ---
 
-## 11. What we are doing right now (26 Sep)
+## 11. What we are doing right now (27 Sep)
 
-1. **Leaderboard uploads, one France change each:** #8c (the new base), then #9a (IDF fix), #9b (bge for France), #9s
-   (sibling rule). The fifth slot combines the winners.
-2. **Final package:** this document, the methodology document and `Yeti_submission.zip`, all brought up to the current
-   pipeline (P18). The zip was built and checked (97 MB, validator PASS).
+1. **Final package (P43, 27 Sep):** one command (`run.py`, default recipe `sub66_final`) rebuilds the final upload
+   byte for byte; the zip holds it with the small shortlist (4.42 per business) and passed the official checker.
+   Earlier (27 Sep night): one command (`run.py`, recipe `sub37`) rebuilt our then-best upload byte for
+   byte; the zip `Yeti_submission.zip` holds it with the small shortlist file and passed the official checker.
+2. **Leaderboard uploads (27 Sep):** the staged next candidates (#37_gc70_hn90 first), then whatever the last probes
+   find. Each is one flag on the same recipe, so swapping a winner into the zip is one re-run.
 
 ## 12. The plan for the rest of the challenge
 
 | When | What |
 |---|---|
-| 26 Sep | 5 uploads (above); pick the final France option from the scores |
 | 27 Sep, by 14:00 | Freeze. Re-run everything from a clean copy to prove it reproduces |
-| 27 Sep, by 22:00 | Final upload + the final zip (`Yeti_submission.zip`: outputs + code + methodology document), with 2 hours of buffer before the deadline |
+| 27 Sep, by 21:00 | Last upload + the final zip (`Yeti_submission.zip`: outputs + code + methodology document), with buffer before the deadline |
 
 ---
 

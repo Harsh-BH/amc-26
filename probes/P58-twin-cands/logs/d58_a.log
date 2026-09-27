@@ -1,0 +1,7 @@
+India: frame SX 27,248, touching holdout 12,150; base acc rows 56 (prec 0.679); oracle re-decision +0.002359 (h0 +0.002212, h1 +0.002506); owner-in-group SX 21,580, owner is a new pair 0.153
+US: frame SX 48,174, touching holdout 18,593; base acc rows 135 (prec 0.652); oracle re-decision +0.002912 (h0 +0.002886, h1 +0.002938); owner-in-group SX 38,309, owner is a new pair 0.130
+[raw] fit h0 -> report h1: India -0.000010 ± 0.000040 (tau (0.75, 0.3), +13/-23) | US +0.000061 ± 0.000042 (tau (0.75, 0.3), +55/-47) | LB-eq +0.000019 ± 0.000024 (0.8 SE)
+[raw] fit h1 -> report h0: India -0.000043 ± 0.000049 (tau (0.6, 0.3), +63/-39) | US +0.000056 ± 0.000030 (tau (0.7, 0.3), +65/-45) | LB-eq +0.000001 ± 0.000025 (0.0 SE)
+[rawp] fit h0 -> report h1: India -0.000013 ± 0.000063 (tau (0.85, 0.65), +17/-21) | US +0.000006 ± 0.000032 (tau (0.8, 0.7), +65/-45) | LB-eq -0.000004 ± 0.000032 (-0.1 SE)
+[rawp] fit h1 -> report h0: India +0.000049 ± 0.000025 (tau (0.85, 0.8), +22/-16) | US +0.000030 ± 0.000020 (tau (0.85, 0.8), +43/-34) | LB-eq +0.000034 ± 0.000014 (2.4 SE)
+60s

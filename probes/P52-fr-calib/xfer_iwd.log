@@ -1,0 +1,4 @@
+chain US_India -> India_US iw_density {"dF": -0.002165, "se": 0.000201, "dF_h0": -0.002193, "dF_h1": -0.002138, "add": 2457, "add_prec": 0.578, "rm": 3099, "rm_false": 0.122, "F": 0.96097, "vs_density": 0.001701} density -0.003866
+chain India_US -> US_India iw_density {"dF": 0.001642, "se": 0.000159, "dF_h0": 0.001634, "dF_h1": 0.00165, "add": 3505, "add_prec": 0.731, "rm": 1370, "rm_false": 0.719, "F": 0.95607, "vs_density": 0.005733} density -0.004091
+m2 US_India -> India_US iw_density {"dF": -0.001239, "se": 0.00031, "dF_h0": -0.001341, "dF_h1": -0.001137, "add": 11209, "add_prec": 0.584, "rm": 3884, "rm_false": 0.621, "F": 0.94158, "vs_density": 0.001872} density -0.003111
+m2 India_US -> US_India iw_density {"dF": 0.000568, "se": 0.000293, "dF_h0": 0.000272, "dF_h1": 0.000863, "add": 2509, "add_prec": 0.953, "rm": 20170, "rm_false": 0.211, "F": 0.93598, "vs_density": 0.001491} density -0.000923

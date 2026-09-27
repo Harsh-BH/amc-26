@@ -1,0 +1,2 @@
+{"maxlen": 160, "cap_s": {"bge_locoUS": 9000, "bge_locoIndia": 9000}, "deadline_s": 13500,
+ "speed": {"bge_train": 150, "bge_score": 600}}

@@ -1,0 +1,24 @@
+{
+ "add": {
+  "pairs": 1991,
+  "s1": 1919,
+  "qwen_scored": 1802,
+  "qwen_r_ge_.5": 0.878,
+  "qwen_r_ge_.9": 0.797,
+  "qwen_r_median": 0.997,
+  "c_new_median": 0.99,
+  "p_median": 0.801
+ },
+ "overlap_sub67": {
+  "their_adds": 3302,
+  "same_pair": 1695,
+  "same_sx_other_s1": 0,
+  "same_s1": 1707
+ },
+ "overlap_sub66_t975ce": {
+  "their_adds": 5270,
+  "same_pair": 289,
+  "same_sx_other_s1": 1,
+  "same_s1": 359
+ }
+}

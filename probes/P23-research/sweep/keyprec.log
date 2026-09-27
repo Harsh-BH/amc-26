@@ -1,0 +1,16 @@
+US: holdout key+city pairs 188,650; true share 0.9985; argmax share 1.0000
+   p [0,0.3): n 228 true 0.0000; argmax&true 0.0000
+   p [0.3,0.71): n 7 true 0.4286; argmax&true 0.4286
+   p [0.71,0.9): n 2 true 0.5000; argmax&true 0.5000
+   p [0.9,0.95): n 8 true 0.7500; argmax&true 0.7500
+   p [0.95,0.985): n 530 true 0.9698; argmax&true 0.9698
+   p [0.985,1.01): n 187,875 true 0.9998; argmax&true 0.9998
+   key S1 not argmax: 0, of which true nan
+India: holdout key+city pairs 81,384; true share 0.9815; argmax share 0.9970
+   p [0,0.3): n 1,462 true 0.0041; argmax&true 0.0034
+   p [0.3,0.71): n 12 true 0.5000; argmax&true 0.5000
+   p [0.71,0.9): n 10 true 0.8000; argmax&true 0.8000
+   p [0.9,0.95): n 16 true 0.8750; argmax&true 0.8750
+   p [0.95,0.985): n 436 true 0.9839; argmax&true 0.9839
+   p [0.985,1.01): n 79,448 true 0.9996; argmax&true 0.9996
+   key S1 not argmax: 248, of which true 0.0040

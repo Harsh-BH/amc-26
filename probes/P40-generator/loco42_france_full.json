@@ -1,0 +1,26 @@
+{
+ "sub41_adds": 5742,
+ "sub40_adds": 6521,
+ "sub40_adds_in_sub41": 3206,
+ "xu_noaddr_on_sub41@0.9": {
+  "added": 2441,
+  "s1": 2360,
+  "in_sub41_adds": 0,
+  "in_sub40_adds": 1586,
+  "s1_shared_with_sub41_adds": 56
+ },
+ "xu_noaddr_on_sub41@0.7": {
+  "added": 4692,
+  "s1": 4514,
+  "in_sub41_adds": 0,
+  "in_sub40_adds": 1586,
+  "s1_shared_with_sub41_adds": 110
+ },
+ "xu_noaddr_on_sub41@0.5": {
+  "added": 5596,
+  "s1": 5375,
+  "in_sub41_adds": 0,
+  "in_sub40_adds": 1586,
+  "s1_shared_with_sub41_adds": 128
+ }
+}

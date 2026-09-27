@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 454, in <module>
+    main()
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 384, in main
+    val, advice = quota_advice(sess, a.instance, a.spot, a.region, a.profile)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 89, in quota_advice
+    val, code = quota(sess, instance, spot)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 81, in quota
+    for page in sq.get_paginator('list_service_quotas').paginate(ServiceCode='sagemaker'):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 272, in __iter__
+    response = self._make_request(current_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 360, in _make_request
+    return self._method(**current_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.TooManyRequestsException: An error occurred (TooManyRequestsException) when calling the ListServiceQuotas operation: The request failed because you exceeded the rate quota for this operation.

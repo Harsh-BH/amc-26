@@ -1,0 +1,2 @@
+{"maxlen": 160, "cap_s": {"bge_pool": 10800}, "epochs": {"bge_pool": 2}, "deadline_s": 13500,
+ "speed": {"bge_train": 150, "bge_score": 600}, "data_s3": "s3://sagemaker-114872709824-ap-south-1/amc26-p51/data/pool/"}

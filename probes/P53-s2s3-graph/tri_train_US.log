@@ -1,0 +1,2 @@
+US train rows 1,648,876, block pairs 4,244,206, unique SX pairs 1,990,221, SX 1,144,889
+US train 34s {'t_max': {'count': 1354325.0, 'mean': 0.733}, 't_max_n': {'count': 1354325.0, 'mean': 0.801}, 't_max_a': {'count': 1354325.0, 'mean': 0.662}, 't_ncs': {'count': 1648876.0, 'mean': 1.266}, 't_best': {'count': 1354325.0, 'mean': 0.765}, 't_hq': {'count': 843608.0, 'mean': 0.785}, 'c_max': {'count': 407402.0, 'mean': 0.402}, 'c_pmax': {'count': 407402.0, 'mean': 0.146}, 'c_ncs': {'count': 1648876.0, 'mean': 0.003}}

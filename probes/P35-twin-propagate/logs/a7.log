@@ -1,0 +1,16 @@
+
+== India rule-A by sim1 (SX core vs S1 core): {'size': {Interval(-0.01, 0.5, closed='right'): 20, Interval(0.5, 0.7, closed='right'): 42, Interval(0.7, 0.85, closed='right'): 48, Interval(0.85, 0.95, closed='right'): 220, Interval(0.95, 1.0, closed='right'): 3759}, 'mean': {Interval(-0.01, 0.5, closed='right'): 0.4, Interval(0.5, 0.7, closed='right'): 0.357, Interval(0.7, 0.85, closed='right'): 0.542, Interval(0.85, 0.95, closed='right'): 0.309, Interval(0.95, 1.0, closed='right'): 0.304}}
+  lowp_FN (argmax true, p<t): 1548 SX, oracle fix +0.00158
+  stolen, thief e5: 1496 SX, oracle fix +0.00152
+  stolen, thief clean: 227 SX, oracle fix +0.00024
+  FP (pred wrong, no true cand): 1229 SX, oracle fix +0.00027
+  FP (pred wrong, true cand): 30 SX, oracle fix +0.00004
+  blocking misses (true pair not a candidate): 4,248 pairs
+
+== US rule-A by sim1 (SX core vs S1 core): {'size': {Interval(-0.01, 0.5, closed='right'): 9, Interval(0.5, 0.7, closed='right'): 74, Interval(0.7, 0.85, closed='right'): 392, Interval(0.85, 0.95, closed='right'): 963, Interval(0.95, 1.0, closed='right'): 9349}, 'mean': {Interval(-0.01, 0.5, closed='right'): 0.222, Interval(0.5, 0.7, closed='right'): 0.405, Interval(0.7, 0.85, closed='right'): 0.298, Interval(0.85, 0.95, closed='right'): 0.293, Interval(0.95, 1.0, closed='right'): 0.254}}
+  lowp_FN (argmax true, p<t): 3490 SX, oracle fix +0.00239
+  stolen, thief e5: 2034 SX, oracle fix +0.00154
+  stolen, thief clean: 434 SX, oracle fix +0.00037
+  FP (pred wrong, no true cand): 2748 SX, oracle fix +0.00068
+  FP (pred wrong, true cand): 94 SX, oracle fix +0.00010
+  blocking misses (true pair not a candidate): 5,376 pairs

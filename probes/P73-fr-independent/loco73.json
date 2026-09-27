@@ -1,0 +1,102 @@
+{
+ "India->US": {
+  "band_auc_tgt": {
+   "r_p67": 0.9221,
+   "lr_transfer": 0.9393
+  },
+  "base": {
+   "auc_band": 0.9768,
+   "ship_vs_ref": {
+    "dF": 0.005268,
+    "se": 0.000163,
+    "dF_h0": 0.005368,
+    "dF_h1": 0.00517,
+    "se_h1": 0.000226,
+    "add": 4116,
+    "add_prec": 0.961,
+    "rm": 2591,
+    "rm_false": 0.738
+   },
+   "gain_share": {}
+  },
+  "p67": {
+   "auc_band": 0.9798,
+   "ship_vs_ref": {
+    "dF": 0.006876,
+    "se": 0.000167,
+    "dF_h0": 0.006849,
+    "dF_h1": 0.006903,
+    "se_h1": 0.000234,
+    "add": 5325,
+    "add_prec": 0.944,
+    "rm": 3158,
+    "rm_false": 0.755
+   },
+   "gain_share": {
+    "r_p67": 0.0305
+   }
+  },
+  "p67-base": {
+   "dF": 0.001608,
+   "se": 0.00012,
+   "dF_h0": 0.001481,
+   "dF_h1": 0.001733
+  }
+ },
+ "US->India": {
+  "band_auc_tgt": {
+   "r_p67": 0.9177,
+   "lr_transfer": 0.956
+  },
+  "base": {
+   "auc_band": 0.9182,
+   "ship_vs_ref": {
+    "dF": 0.00464,
+    "se": 0.000204,
+    "dF_h0": 0.004648,
+    "dF_h1": 0.004632,
+    "se_h1": 0.000293,
+    "add": 6898,
+    "add_prec": 0.836,
+    "rm": 1739,
+    "rm_false": 0.652
+   },
+   "gain_share": {}
+  },
+  "p67": {
+   "auc_band": 0.9487,
+   "ship_vs_ref": {
+    "dF": 0.006696,
+    "se": 0.000208,
+    "dF_h0": 0.006555,
+    "dF_h1": 0.006838,
+    "se_h1": 0.000298,
+    "add": 6616,
+    "add_prec": 0.89,
+    "rm": 2159,
+    "rm_false": 0.71
+   },
+   "gain_share": {
+    "r_p67": 0.0385
+   }
+  },
+  "p67-base": {
+   "dF": 0.002057,
+   "se": 0.000131,
+   "dF_h0": 0.001907,
+   "dF_h1": 0.002206
+  }
+ },
+ "gate": {
+  "rule": "<fs>-base at the shipped cell: India->US (US target) >= +0.0003 and US->India >= 0",
+  "p67": {
+   "dF": {
+    "India->US": 0.001608,
+    "US->India": 0.002057
+   },
+   "pass": true
+  }
+ },
+ "runtime_s": 61,
+ "peak_gb": 0.49
+}

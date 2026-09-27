@@ -1,0 +1,35 @@
+US->India FR 0.9 (t 0.945) hn_eq          : {'n': 2112, 'prec': np.float64(0.5114), 'd': np.float64(-0.001367), 'd_h1': np.float64(-0.001317), 'se_h1': np.float64(0.000115)}
+US->India FR 0.9 (t 0.945) ov             : {'n': 8421, 'prec': np.float64(0.4623), 'd': np.float64(-0.006356), 'd_h1': np.float64(-0.006278), 'se_h1': np.float64(0.000244)}
+US->India FR 0.9 (t 0.945) hn_eq&ov       : {'n': 1825, 'prec': np.float64(0.4674), 'd': np.float64(-0.001427), 'd_h1': np.float64(-0.001383), 'se_h1': np.float64(0.000111)}
+US->India FR 0.9 (t 0.945) ov&hn_not_diff : {'n': 6660, 'prec': np.float64(0.339), 'd': np.float64(-0.0077), 'd_h1': np.float64(-0.007668), 'se_h1': np.float64(0.00023)}
+US->India FR 0.9 (t 0.945) core_eq        : {'n': 3184, 'prec': np.float64(0.896), 'd': np.float64(0.001931), 'd_h1': np.float64(0.001999), 'se_h1': np.float64(0.000108)}
+US->India FR 0.7 (t 0.918) hn_eq          : {'n': 3346, 'prec': np.float64(0.4851), 'd': np.float64(-0.002399), 'd_h1': np.float64(-0.002369), 'se_h1': np.float64(0.000147)}
+US->India FR 0.7 (t 0.918) ov             : {'n': 13590, 'prec': np.float64(0.435), 'd': np.float64(-0.011332), 'd_h1': np.float64(-0.011238), 'se_h1': np.float64(0.000311)}
+US->India FR 0.7 (t 0.918) hn_eq&ov       : {'n': 2910, 'prec': np.float64(0.4423), 'd': np.float64(-0.00246), 'd_h1': np.float64(-0.002405), 'se_h1': np.float64(0.000142)}
+US->India FR 0.7 (t 0.918) ov&hn_not_diff : {'n': 10762, 'prec': np.float64(0.3133), 'd': np.float64(-0.013158), 'd_h1': np.float64(-0.013159), 'se_h1': np.float64(0.000292)}
+US->India FR 0.7 (t 0.918) core_eq        : {'n': 4806, 'prec': np.float64(0.8943), 'd': np.float64(0.002878), 'd_h1': np.float64(0.003002), 'se_h1': np.float64(0.000131)}
+US->India FR 0.5 (t 0.888) hn_eq          : {'n': 4440, 'prec': np.float64(0.4595), 'd': np.float64(-0.003582), 'd_h1': np.float64(-0.003554), 'se_h1': np.float64(0.000176)}
+US->India FR 0.5 (t 0.888) ov             : {'n': 18329, 'prec': np.float64(0.4229), 'd': np.float64(-0.016086), 'd_h1': np.float64(-0.015948), 'se_h1': np.float64(0.000366)}
+US->India FR 0.5 (t 0.888) hn_eq&ov       : {'n': 3873, 'prec': np.float64(0.4144), 'd': np.float64(-0.003655), 'd_h1': np.float64(-0.003592), 'se_h1': np.float64(0.00017)}
+US->India FR 0.5 (t 0.888) ov&hn_not_diff : {'n': 14306, 'prec': np.float64(0.2939), 'd': np.float64(-0.018474), 'd_h1': np.float64(-0.018473), 'se_h1': np.float64(0.000341)}
+US->India FR 0.5 (t 0.888) core_eq        : {'n': 6296, 'prec': np.float64(0.8926), 'd': np.float64(0.003792), 'd_h1': np.float64(0.003962), 'se_h1': np.float64(0.000154)}
+  pool name-overlap: true 0.893, false 0.967
+India->US FR 0.9 (t 0.605) hn_eq          : {'n': 4802, 'prec': np.float64(0.929), 'd': np.float64(0.002064), 'd_h1': np.float64(0.002069), 'se_h1': np.float64(7.3e-05)}
+India->US FR 0.9 (t 0.605) ov             : {'n': 9485, 'prec': np.float64(0.761), 'd': np.float64(0.000784), 'd_h1': np.float64(0.000774), 'se_h1': np.float64(0.000133)}
+India->US FR 0.9 (t 0.605) hn_eq&ov       : {'n': 4371, 'prec': np.float64(0.9398), 'd': np.float64(0.001967), 'd_h1': np.float64(0.001952), 'se_h1': np.float64(6.8e-05)}
+India->US FR 0.9 (t 0.605) ov&hn_not_diff : {'n': 6767, 'prec': np.float64(0.8666), 'd': np.float64(0.002039), 'd_h1': np.float64(0.002072), 'se_h1': np.float64(9.7e-05)}
+India->US FR 0.9 (t 0.605) core_eq        : {'n': 4583, 'prec': np.float64(0.6749), 'd': np.float64(-0.00046), 'd_h1': np.float64(-0.000579), 'se_h1': np.float64(0.000102)}
+India->US FR 0.7 (t 0.422) hn_eq          : {'n': 7233, 'prec': np.float64(0.9014), 'd': np.float64(0.002706), 'd_h1': np.float64(0.002775), 'se_h1': np.float64(9.4e-05)}
+India->US FR 0.7 (t 0.422) ov             : {'n': 15147, 'prec': np.float64(0.7131), 'd': np.float64(-0.000119), 'd_h1': np.float64(6.1e-05), 'se_h1': np.float64(0.000173)}
+India->US FR 0.7 (t 0.422) hn_eq&ov       : {'n': 6490, 'prec': np.float64(0.9186), 'd': np.float64(0.00265), 'd_h1': np.float64(0.002696), 'se_h1': np.float64(8.7e-05)}
+India->US FR 0.7 (t 0.422) ov&hn_not_diff : {'n': 10813, 'prec': np.float64(0.8112), 'd': np.float64(0.002078), 'd_h1': np.float64(0.002255), 'se_h1': np.float64(0.00013)}
+India->US FR 0.7 (t 0.422) core_eq        : {'n': 7374, 'prec': np.float64(0.6235), 'd': np.float64(-0.001427), 'd_h1': np.float64(-0.001372), 'se_h1': np.float64(0.000132)}
+India->US FR 0.5 (t 0.284) hn_eq          : {'n': 9196, 'prec': np.float64(0.8777), 'd': np.float64(0.003075), 'd_h1': np.float64(0.003149), 'se_h1': np.float64(0.000114)}
+India->US FR 0.5 (t 0.284) ov             : {'n': 20046, 'prec': np.float64(0.6801), 'd': np.float64(-0.001302), 'd_h1': np.float64(-0.001102), 'se_h1': np.float64(0.000209)}
+India->US FR 0.5 (t 0.284) hn_eq&ov       : {'n': 8163, 'prec': np.float64(0.8986), 'd': np.float64(0.003085), 'd_h1': np.float64(0.003163), 'se_h1': np.float64(0.000104)}
+India->US FR 0.5 (t 0.284) ov&hn_not_diff : {'n': 14126, 'prec': np.float64(0.7742), 'd': np.float64(0.001802), 'd_h1': np.float64(0.001986), 'se_h1': np.float64(0.000159)}
+India->US FR 0.5 (t 0.284) core_eq        : {'n': 9739, 'prec': np.float64(0.5888), 'd': np.float64(-0.00247), 'd_h1': np.float64(-0.002378), 'se_h1': np.float64(0.000158)}
+  pool name-overlap: true 0.927, false 0.932
+France extras at 0.9: {'all': 27264, 'hn_eq': 18179, 'ov': 18995, 'hn_eq&ov': 10428, 'ov&hn_not_diff': 16735, 'core_eq': 10784}
+France extras at 0.7: {'all': 43689, 'hn_eq': 27315, 'ov': 31703, 'hn_eq&ov': 16124, 'ov&hn_not_diff': 26587, 'core_eq': 17691}
+France extras at 0.5: {'all': 57581, 'hn_eq': 35437, 'ov': 43076, 'hn_eq&ov': 21961, 'ov&hn_not_diff': 34977, 'core_eq': 22991}

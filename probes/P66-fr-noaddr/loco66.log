@@ -1,0 +1,311 @@
+[0s] US->India load
+[6s] loaded
+[6s] base done
+[10s] addrless done
+[14s] feats done, 12078 pairs
+US->India xf         FR 0.0 (tgt 0.000): dF +0.000151 (h1 +0.000206 ± 0.000056) added 395 prec 0.8557
+US->India xf         FR 0.1 (tgt 0.606): dF +0.000194 (h1 +0.000215 ± 0.000044) added 340 prec 0.9059
+US->India xf         FR 0.3 (tgt 0.829): dF +0.000176 (h1 +0.000185 ± 0.000025) added 242 prec 0.9545
+US->India xf         FR 0.5 (tgt 0.888): dF +0.000137 (h1 +0.000156 ± 0.000022) added 195 prec 0.9538
+US->India xf         FR 0.7 (tgt 0.918): dF +0.000114 (h1 +0.000123 ± 0.000020) added 145 prec 0.9586
+US->India xf         FR 0.9 (tgt 0.945): dF +0.000077 (h1 +0.000086 ± 0.000015) added 98 prec 0.9694
+US->India xf_twin    FR 0.0 (tgt 0.000): dF -0.001988 (h1 -0.001862 ± 0.000141) added 1119 prec 0.2207
+US->India xf_twin    FR 0.1 (tgt 0.606): dF -0.000081 (h1 -0.000029 ± 0.000037) added 106 prec 0.4245
+US->India xf_twin    FR 0.3 (tgt 0.829): dF -0.000010 (h1 +0.000009 ± 0.000007) added 10 prec 0.4
+US->India near95     FR 0.0 (tgt 0.000): dF +0.000101 (h1 +0.000116 ± 0.000030) added 128 prec 0.9062
+US->India near95     FR 0.1 (tgt 0.606): dF +0.000111 (h1 +0.000123 ± 0.000028) added 104 prec 0.9904
+US->India near95     FR 0.3 (tgt 0.829): dF +0.000069 (h1 +0.000071 ± 0.000013) added 73 prec 1.0
+US->India near95     FR 0.5 (tgt 0.888): dF +0.000051 (h1 +0.000050 ± 0.000011) added 54 prec 1.0
+US->India near95     FR 0.7 (tgt 0.918): dF +0.000036 (h1 +0.000031 ± 0.000007) added 38 prec 1.0
+US->India near95     FR 0.9 (tgt 0.945): dF +0.000024 (h1 +0.000018 ± 0.000006) added 22 prec 1.0
+US->India near90     FR 0.0 (tgt 0.000): dF +0.000546 (h1 +0.000564 ± 0.000071) added 681 prec 0.8987
+US->India near90     FR 0.1 (tgt 0.606): dF +0.000527 (h1 +0.000543 ± 0.000055) added 519 prec 0.9653
+US->India near90     FR 0.3 (tgt 0.829): dF +0.000396 (h1 +0.000395 ± 0.000045) added 386 prec 0.9819
+US->India near90     FR 0.5 (tgt 0.888): dF +0.000322 (h1 +0.000310 ± 0.000041) added 307 prec 0.987
+US->India near90     FR 0.7 (tgt 0.918): dF +0.000239 (h1 +0.000210 ± 0.000030) added 238 prec 0.9916
+US->India near90     FR 0.9 (tgt 0.945): dF +0.000137 (h1 +0.000113 ± 0.000016) added 159 prec 0.9874
+US->India near80     FR 0.0 (tgt 0.000): dF +0.000769 (h1 +0.000641 ± 0.000122) added 1718 prec 0.8044
+US->India near80     FR 0.1 (tgt 0.606): dF +0.001058 (h1 +0.000985 ± 0.000087) added 1141 prec 0.9351
+US->India near80     FR 0.3 (tgt 0.829): dF +0.000800 (h1 +0.000806 ± 0.000072) added 788 prec 0.9708
+US->India near80     FR 0.5 (tgt 0.888): dF +0.000641 (h1 +0.000638 ± 0.000063) added 612 prec 0.9853
+US->India near80     FR 0.7 (tgt 0.918): dF +0.000491 (h1 +0.000485 ± 0.000053) added 482 prec 0.9896
+US->India near80     FR 0.9 (tgt 0.945): dF +0.000262 (h1 +0.000244 ± 0.000025) added 309 prec 0.9838
+US->India xf|near90  FR 0.0 (tgt 0.000): dF +0.000690 (h1 +0.000762 ± 0.000091) added 1076 prec 0.8829
+US->India xf|near90  FR 0.1 (tgt 0.606): dF +0.000717 (h1 +0.000755 ± 0.000071) added 859 prec 0.9418
+US->India xf|near90  FR 0.3 (tgt 0.829): dF +0.000572 (h1 +0.000579 ± 0.000052) added 628 prec 0.9713
+US->India xf|near90  FR 0.5 (tgt 0.888): dF +0.000459 (h1 +0.000466 ± 0.000047) added 502 prec 0.9741
+US->India xf|near90  FR 0.7 (tgt 0.918): dF +0.000352 (h1 +0.000333 ± 0.000036) added 383 prec 0.9791
+US->India xf|near90  FR 0.9 (tgt 0.945): dF +0.000213 (h1 +0.000199 ± 0.000022) added 257 prec 0.9805
+US->India tsr100_u   FR 0.0 (tgt 0.000): dF +0.000058 (h1 +0.000001 ± 0.000113) added 1154 prec 0.7166
+US->India tsr100_u   FR 0.1 (tgt 0.606): dF +0.000490 (h1 +0.000492 ± 0.000080) added 728 prec 0.8887
+US->India tsr100_u   FR 0.3 (tgt 0.829): dF +0.000389 (h1 +0.000444 ± 0.000068) added 469 prec 0.9382
+US->India tsr100_u   FR 0.5 (tgt 0.888): dF +0.000322 (h1 +0.000355 ± 0.000061) added 362 prec 0.9669
+US->India tsr100_u   FR 0.7 (tgt 0.918): dF +0.000263 (h1 +0.000285 ± 0.000046) added 288 prec 0.9826
+US->India tsr100_u   FR 0.9 (tgt 0.945): dF +0.000141 (h1 +0.000138 ± 0.000021) added 182 prec 0.9835
+US->India any        FR 0.0 (tgt 0.000): dF -0.007559 (h1 -0.007678 ± 0.000358) added 7471 prec 0.4186
+US->India any        FR 0.1 (tgt 0.606): dF +0.001332 (h1 +0.001297 ± 0.000139) added 2239 prec 0.8633
+US->India any        FR 0.3 (tgt 0.829): dF +0.001161 (h1 +0.001184 ± 0.000097) added 1378 prec 0.9456
+US->India any        FR 0.5 (tgt 0.888): dF +0.000929 (h1 +0.000925 ± 0.000082) added 1040 prec 0.9683
+US->India any        FR 0.7 (tgt 0.918): dF +0.000722 (h1 +0.000708 ± 0.000061) added 793 prec 0.9773
+US->India any        FR 0.9 (tgt 0.945): dF +0.000412 (h1 +0.000401 ± 0.000032) added 509 prec 0.9804
+US->India xfc        FR 0.0 (tgt 0.000): dF +0.000046 (h1 +0.000058 ± 0.000017) added 46 prec 0.9783
+US->India xfc        FR 0.1 (tgt 0.606): dF +0.000046 (h1 +0.000058 ± 0.000017) added 46 prec 0.9783
+US->India xfc        FR 0.3 (tgt 0.829): dF +0.000038 (h1 +0.000043 ± 0.000011) added 42 prec 0.9762
+US->India xfc        FR 0.5 (tgt 0.888): dF +0.000033 (h1 +0.000037 ± 0.000010) added 38 prec 0.9737
+US->India xfc        FR 0.7 (tgt 0.918): dF +0.000027 (h1 +0.000029 ± 0.000009) added 32 prec 0.9688
+US->India xfc        FR 0.9 (tgt 0.945): dF +0.000020 (h1 +0.000023 ± 0.000008) added 26 prec 0.9615
+US->India xfc2       FR 0.0 (tgt 0.000): dF +0.000118 (h1 +0.000122 ± 0.000024) added 162 prec 0.9383
+US->India xfc2       FR 0.1 (tgt 0.606): dF +0.000117 (h1 +0.000122 ± 0.000024) added 159 prec 0.9434
+US->India xfc2       FR 0.3 (tgt 0.829): dF +0.000107 (h1 +0.000106 ± 0.000018) added 131 prec 0.9695
+US->India xfc2       FR 0.5 (tgt 0.888): dF +0.000093 (h1 +0.000101 ± 0.000016) added 113 prec 0.9823
+US->India xfc2       FR 0.7 (tgt 0.918): dF +0.000070 (h1 +0.000078 ± 0.000015) added 88 prec 0.9773
+US->India xfc2       FR 0.9 (tgt 0.945): dF +0.000053 (h1 +0.000062 ± 0.000013) added 68 prec 0.9853
+US->India near95c    FR 0.0 (tgt 0.000): dF +0.000030 (h1 +0.000041 ± 0.000010) added 45 prec 0.9111
+US->India near95c    FR 0.1 (tgt 0.606): dF +0.000031 (h1 +0.000040 ± 0.000010) added 36 prec 1.0
+US->India near95c    FR 0.3 (tgt 0.829): dF +0.000024 (h1 +0.000029 ± 0.000008) added 29 prec 1.0
+US->India near95c    FR 0.5 (tgt 0.888): dF +0.000017 (h1 +0.000018 ± 0.000006) added 20 prec 1.0
+US->India near95c    FR 0.7 (tgt 0.918): dF +0.000010 (h1 +0.000012 ± 0.000004) added 12 prec 1.0
+US->India near95c    FR 0.9 (tgt 0.945): dF +0.000006 (h1 +0.000005 ± 0.000003) added 7 prec 1.0
+US->India xfc|near95c FR 0.0 (tgt 0.000): dF +0.000076 (h1 +0.000099 ± 0.000020) added 91 prec 0.9451
+US->India xfc|near95c FR 0.1 (tgt 0.606): dF +0.000077 (h1 +0.000097 ± 0.000020) added 82 prec 0.9878
+US->India xfc|near95c FR 0.3 (tgt 0.829): dF +0.000062 (h1 +0.000073 ± 0.000014) added 71 prec 0.9859
+US->India xfc|near95c FR 0.5 (tgt 0.888): dF +0.000050 (h1 +0.000056 ± 0.000012) added 58 prec 0.9828
+US->India xfc|near95c FR 0.7 (tgt 0.918): dF +0.000037 (h1 +0.000041 ± 0.000010) added 44 prec 0.9773
+US->India xfc|near95c FR 0.9 (tgt 0.945): dF +0.000026 (h1 +0.000027 ± 0.000009) added 33 prec 0.9697
+{
+ "t_base": 0.97,
+ "base_f05": 0.90128,
+ "noaddr_sx": 97063,
+ "noaddr_am_true_rate": 0.6367,
+ "noaddr_recall_base": 0.4231,
+ "noaddr_true_sx_argmax_is_true": 0.7143,
+ "cell_xf": {
+  "n": 2315,
+  "prec_all": 0.9711,
+  "n_pool": 397,
+  "prec_pool": 0.8514
+ },
+ "cell_xf_twin": {
+  "n": 1121,
+  "prec_all": 0.2203,
+  "n_pool": 1121,
+  "prec_pool": 0.2203
+ },
+ "cell_near95": {
+  "n": 448,
+  "prec_all": 0.971,
+  "n_pool": 128,
+  "prec_pool": 0.9062
+ },
+ "cell_near90": {
+  "n": 1907,
+  "prec_all": 0.9591,
+  "n_pool": 685,
+  "prec_pool": 0.8964
+ },
+ "cell_near80": {
+  "n": 3877,
+  "prec_all": 0.9102,
+  "n_pool": 1726,
+  "prec_pool": 0.803
+ },
+ "cell_xf|near90": {
+  "n": 4222,
+  "prec_all": 0.9657,
+  "n_pool": 1082,
+  "prec_pool": 0.8799
+ },
+ "cell_tsr100_u": {
+  "n": 2762,
+  "prec_all": 0.8773,
+  "n_pool": 1158,
+  "prec_pool": 0.7159
+ },
+ "cell_any": {
+  "n": 12078,
+  "prec_all": 0.6367,
+  "n_pool": 7497,
+  "prec_pool": 0.4182
+ },
+ "cell_xfc": {
+  "n": 1805,
+  "prec_all": 0.9961,
+  "n_pool": 47,
+  "prec_pool": 0.9574
+ },
+ "cell_xfc2": {
+  "n": 2026,
+  "prec_all": 0.9911,
+  "n_pool": 163,
+  "prec_pool": 0.9325
+ },
+ "cell_near95c": {
+  "n": 343,
+  "prec_all": 0.9854,
+  "n_pool": 45,
+  "prec_pool": 0.9111
+ },
+ "cell_xfc|near95c": {
+  "n": 2148,
+  "prec_all": 0.9944,
+  "n_pool": 92,
+  "prec_pool": 0.9348
+ }
+}
+[17s] India->US load
+[28s] loaded
+[28s] base done
+[31s] addrless done
+[38s] feats done, 21986 pairs
+India->US xf         FR 0.0 (tgt 0.000): dF -0.000018 (h1 -0.000034 ± 0.000062) added 585 prec 0.6769
+India->US xf         FR 0.1 (tgt 0.030): dF -0.000018 (h1 -0.000034 ± 0.000062) added 585 prec 0.6769
+India->US xf         FR 0.3 (tgt 0.144): dF +0.000013 (h1 -0.000010 ± 0.000056) added 561 prec 0.6916
+India->US xf         FR 0.5 (tgt 0.284): dF +0.000028 (h1 +0.000000 ± 0.000052) added 522 prec 0.7126
+India->US xf         FR 0.7 (tgt 0.422): dF +0.000034 (h1 +0.000027 ± 0.000048) added 456 prec 0.7346
+India->US xf         FR 0.9 (tgt 0.605): dF +0.000024 (h1 +0.000021 ± 0.000022) added 292 prec 0.7637
+India->US xf_twin    FR 0.0 (tgt 0.000): dF -0.002660 (h1 -0.002537 ± 0.000125) added 2583 prec 0.2253
+India->US xf_twin    FR 0.1 (tgt 0.030): dF -0.002516 (h1 -0.002375 ± 0.000120) added 2486 prec 0.2321
+India->US xf_twin    FR 0.3 (tgt 0.144): dF -0.001399 (h1 -0.001315 ± 0.000087) added 1654 prec 0.3132
+India->US xf_twin    FR 0.5 (tgt 0.284): dF -0.000828 (h1 -0.000765 ± 0.000067) added 1129 prec 0.3685
+India->US xf_twin    FR 0.7 (tgt 0.422): dF -0.000452 (h1 -0.000402 ± 0.000049) added 714 prec 0.409
+India->US xf_twin    FR 0.9 (tgt 0.605): dF -0.000110 (h1 -0.000127 ± 0.000026) added 244 prec 0.4918
+India->US near95     FR 0.0 (tgt 0.000): dF +0.000027 (h1 +0.000014 ± 0.000019) added 81 prec 0.7531
+India->US near95     FR 0.1 (tgt 0.030): dF +0.000027 (h1 +0.000014 ± 0.000019) added 81 prec 0.7531
+India->US near95     FR 0.3 (tgt 0.144): dF +0.000034 (h1 +0.000020 ± 0.000019) added 72 prec 0.8056
+India->US near95     FR 0.5 (tgt 0.284): dF +0.000034 (h1 +0.000023 ± 0.000018) added 63 prec 0.8254
+India->US near95     FR 0.7 (tgt 0.422): dF +0.000017 (h1 +0.000018 ± 0.000018) added 50 prec 0.82
+India->US near95     FR 0.9 (tgt 0.605): dF +0.000006 (h1 +0.000001 ± 0.000009) added 34 prec 0.7941
+India->US near90     FR 0.0 (tgt 0.000): dF -0.000093 (h1 -0.000106 ± 0.000054) added 445 prec 0.591
+India->US near90     FR 0.1 (tgt 0.030): dF -0.000086 (h1 -0.000093 ± 0.000054) added 439 prec 0.5991
+India->US near90     FR 0.3 (tgt 0.144): dF -0.000068 (h1 -0.000069 ± 0.000049) added 412 prec 0.6165
+India->US near90     FR 0.5 (tgt 0.284): dF -0.000038 (h1 -0.000032 ± 0.000041) added 363 prec 0.6419
+India->US near90     FR 0.7 (tgt 0.422): dF -0.000029 (h1 -0.000005 ± 0.000038) added 280 prec 0.6571
+India->US near90     FR 0.9 (tgt 0.605): dF -0.000006 (h1 -0.000009 ± 0.000023) added 177 prec 0.7175
+India->US near80     FR 0.0 (tgt 0.000): dF -0.000520 (h1 -0.000537 ± 0.000079) added 1245 prec 0.49
+India->US near80     FR 0.1 (tgt 0.030): dF -0.000419 (h1 -0.000423 ± 0.000075) added 1161 prec 0.5202
+India->US near80     FR 0.3 (tgt 0.144): dF -0.000290 (h1 -0.000280 ± 0.000067) added 1007 prec 0.5601
+India->US near80     FR 0.5 (tgt 0.284): dF -0.000191 (h1 -0.000161 ± 0.000058) added 829 prec 0.5899
+India->US near80     FR 0.7 (tgt 0.422): dF -0.000121 (h1 -0.000065 ± 0.000048) added 631 prec 0.6117
+India->US near80     FR 0.9 (tgt 0.605): dF -0.000041 (h1 -0.000042 ± 0.000030) added 378 prec 0.6614
+India->US xf|near90  FR 0.0 (tgt 0.000): dF -0.000113 (h1 -0.000138 ± 0.000082) added 1030 prec 0.6398
+India->US xf|near90  FR 0.1 (tgt 0.030): dF -0.000106 (h1 -0.000126 ± 0.000082) added 1024 prec 0.6436
+India->US xf|near90  FR 0.3 (tgt 0.144): dF -0.000055 (h1 -0.000078 ± 0.000074) added 973 prec 0.6598
+India->US xf|near90  FR 0.5 (tgt 0.284): dF -0.000011 (h1 -0.000032 ± 0.000066) added 885 prec 0.6836
+India->US xf|near90  FR 0.7 (tgt 0.422): dF +0.000004 (h1 +0.000021 ± 0.000061) added 736 prec 0.7052
+India->US xf|near90  FR 0.9 (tgt 0.605): dF +0.000018 (h1 +0.000013 ± 0.000031) added 469 prec 0.7463
+India->US tsr100_u   FR 0.0 (tgt 0.000): dF -0.000610 (h1 -0.000594 ± 0.000074) added 1044 prec 0.4291
+India->US tsr100_u   FR 0.1 (tgt 0.030): dF -0.000505 (h1 -0.000483 ± 0.000069) added 968 prec 0.4597
+India->US tsr100_u   FR 0.3 (tgt 0.144): dF -0.000420 (h1 -0.000391 ± 0.000062) added 875 prec 0.4823
+India->US tsr100_u   FR 0.5 (tgt 0.284): dF -0.000330 (h1 -0.000279 ± 0.000055) added 743 prec 0.502
+India->US tsr100_u   FR 0.7 (tgt 0.422): dF -0.000259 (h1 -0.000218 ± 0.000048) added 597 prec 0.5042
+India->US tsr100_u   FR 0.9 (tgt 0.605): dF -0.000126 (h1 -0.000132 ± 0.000030) added 364 prec 0.5357
+India->US any        FR 0.0 (tgt 0.000): dF -0.008925 (h1 -0.008536 ± 0.000249) added 9935 prec 0.2741
+India->US any        FR 0.1 (tgt 0.030): dF -0.006765 (h1 -0.006415 ± 0.000221) added 8309 prec 0.3212
+India->US any        FR 0.3 (tgt 0.144): dF -0.003847 (h1 -0.003653 ± 0.000174) added 5951 prec 0.4028
+India->US any        FR 0.5 (tgt 0.284): dF -0.002390 (h1 -0.002167 ± 0.000142) added 4425 prec 0.4533
+India->US any        FR 0.7 (tgt 0.422): dF -0.001343 (h1 -0.001161 ± 0.000114) added 3058 prec 0.4967
+India->US any        FR 0.9 (tgt 0.605): dF -0.000415 (h1 -0.000400 ± 0.000061) added 1493 prec 0.5767
+India->US xfc        FR 0.0 (tgt 0.000): dF +0.000004 (h1 +0.000006 ± 0.000003) added 9 prec 0.8889
+India->US xfc        FR 0.1 (tgt 0.030): dF +0.000004 (h1 +0.000006 ± 0.000003) added 9 prec 0.8889
+India->US xfc        FR 0.3 (tgt 0.144): dF +0.000004 (h1 +0.000006 ± 0.000003) added 9 prec 0.8889
+India->US xfc        FR 0.5 (tgt 0.284): dF +0.000004 (h1 +0.000006 ± 0.000003) added 9 prec 0.8889
+India->US xfc        FR 0.7 (tgt 0.422): dF +0.000004 (h1 +0.000006 ± 0.000003) added 8 prec 0.875
+India->US xfc        FR 0.9 (tgt 0.605): dF +0.000002 (h1 +0.000003 ± 0.000002) added 3 prec 1.0
+India->US xfc2       FR 0.0 (tgt 0.000): dF +0.000031 (h1 +0.000030 ± 0.000032) added 191 prec 0.7487
+India->US xfc2       FR 0.1 (tgt 0.030): dF +0.000031 (h1 +0.000030 ± 0.000032) added 191 prec 0.7487
+India->US xfc2       FR 0.3 (tgt 0.144): dF +0.000031 (h1 +0.000030 ± 0.000032) added 191 prec 0.7487
+India->US xfc2       FR 0.5 (tgt 0.284): dF +0.000031 (h1 +0.000032 ± 0.000032) added 188 prec 0.75
+India->US xfc2       FR 0.7 (tgt 0.422): dF +0.000027 (h1 +0.000027 ± 0.000030) added 181 prec 0.7459
+India->US xfc2       FR 0.9 (tgt 0.605): dF +0.000019 (h1 +0.000016 ± 0.000016) added 126 prec 0.7778
+India->US near95c    FR 0.0 (tgt 0.000): dF +0.000017 (h1 +0.000018 ± 0.000016) added 24 prec 0.75
+India->US near95c    FR 0.1 (tgt 0.030): dF +0.000017 (h1 +0.000018 ± 0.000016) added 24 prec 0.75
+India->US near95c    FR 0.3 (tgt 0.144): dF +0.000020 (h1 +0.000024 ± 0.000016) added 22 prec 0.8182
+India->US near95c    FR 0.5 (tgt 0.284): dF +0.000020 (h1 +0.000025 ± 0.000016) added 20 prec 0.85
+India->US near95c    FR 0.7 (tgt 0.422): dF +0.000013 (h1 +0.000024 ± 0.000015) added 17 prec 0.8824
+India->US near95c    FR 0.9 (tgt 0.605): dF +0.000004 (h1 +0.000006 ± 0.000003) added 10 prec 0.9
+India->US xfc|near95c FR 0.0 (tgt 0.000): dF +0.000021 (h1 +0.000023 ± 0.000017) added 33 prec 0.7879
+India->US xfc|near95c FR 0.1 (tgt 0.030): dF +0.000021 (h1 +0.000023 ± 0.000017) added 33 prec 0.7879
+India->US xfc|near95c FR 0.3 (tgt 0.144): dF +0.000024 (h1 +0.000030 ± 0.000016) added 31 prec 0.8387
+India->US xfc|near95c FR 0.5 (tgt 0.284): dF +0.000025 (h1 +0.000031 ± 0.000016) added 29 prec 0.8621
+India->US xfc|near95c FR 0.7 (tgt 0.422): dF +0.000017 (h1 +0.000029 ± 0.000016) added 25 prec 0.88
+India->US xfc|near95c FR 0.9 (tgt 0.605): dF +0.000007 (h1 +0.000009 ± 0.000004) added 13 prec 0.9231
+{
+ "t_base": 0.81,
+ "base_f05": 0.93142,
+ "noaddr_sx": 176550,
+ "noaddr_am_true_rate": 0.6324,
+ "noaddr_recall_base": 0.5901,
+ "noaddr_true_sx_argmax_is_true": 0.7339,
+ "cell_xf": {
+  "n": 5372,
+  "prec_all": 0.9362,
+  "n_pool": 588,
+  "prec_pool": 0.6735
+ },
+ "cell_xf_twin": {
+  "n": 2722,
+  "prec_all": 0.2388,
+  "n_pool": 2598,
+  "prec_pool": 0.224
+ },
+ "cell_near95": {
+  "n": 816,
+  "prec_all": 0.9669,
+  "n_pool": 81,
+  "prec_pool": 0.7531
+ },
+ "cell_near90": {
+  "n": 3532,
+  "prec_all": 0.9247,
+  "n_pool": 446,
+  "prec_pool": 0.5919
+ },
+ "cell_near80": {
+  "n": 6538,
+  "prec_all": 0.8617,
+  "n_pool": 1252,
+  "prec_pool": 0.488
+ },
+ "cell_xf|near90": {
+  "n": 8904,
+  "prec_all": 0.9316,
+  "n_pool": 1034,
+  "prec_pool": 0.6383
+ },
+ "cell_tsr100_u": {
+  "n": 5481,
+  "prec_all": 0.8305,
+  "n_pool": 1078,
+  "prec_pool": 0.4165
+ },
+ "cell_any": {
+  "n": 21986,
+  "prec_all": 0.6324,
+  "n_pool": 10064,
+  "prec_pool": 0.2708
+ },
+ "cell_xfc": {
+  "n": 4096,
+  "prec_all": 0.9868,
+  "n_pool": 9,
+  "prec_pool": 0.8889
+ },
+ "cell_xfc2": {
+  "n": 4639,
+  "prec_all": 0.9681,
+  "n_pool": 192,
+  "prec_pool": 0.7448
+ },
+ "cell_near95c": {
+  "n": 670,
+  "prec_all": 0.9866,
+  "n_pool": 24,
+  "prec_pool": 0.75
+ },
+ "cell_xfc|near95c": {
+  "n": 4766,
+  "prec_all": 0.9868,
+  "n_pool": 33,
+  "prec_pool": 0.7879
+ }
+}

@@ -1,0 +1,16 @@
+argmax     noaddr-only False t_r 0.4: India h0 -0.000499 h1 -0.000359 ± 0.000150 (8122 pairs, prec 0.003) | US h0 -0.000300 h1 -0.000110 ± 0.000115 (8816 pairs, prec 0.005) | LB-eq h0 -0.000348 h1 -0.000210
+argmax     noaddr-only False t_r 0.5: India h0 -0.000295 h1 -0.000261 ± 0.000116 (4951 pairs, prec 0.003) | US h0 -0.000085 h1 -0.000037 ± 0.000090 (4651 pairs, prec 0.006) | LB-eq h0 -0.000171 h1 -0.000136
+argmax     noaddr-only False t_r 0.6: India h0 -0.000159 h1 -0.000098 ± 0.000089 (2010 pairs, prec 0.003) | US h0 -0.000052 h1 -0.000063 ± 0.000076 (3984 pairs, prec 0.004) | LB-eq h0 -0.000094 h1 -0.000070
+argmax     noaddr-only False t_r 0.65: India h0 -0.000091 h1 -0.000023 ± 0.000039 (1017 pairs, prec 0.001) | US h0 -0.000052 h1 -0.000045 ± 0.000040 (2185 pairs, prec 0.002) | LB-eq h0 -0.000063 h1 -0.000028
+argmax     noaddr-only True  t_r 0.4: India h0 -0.000363 h1 -0.000291 ± 0.000133 (7740 pairs, prec 0.002) | US h0 -0.000189 h1 -0.000103 ± 0.000089 (8070 pairs, prec 0.003) | LB-eq h0 -0.000242 h1 -0.000176
+argmax     noaddr-only True  t_r 0.5: India h0 -0.000181 h1 -0.000170 ± 0.000096 (4674 pairs, prec 0.002) | US h0 -0.000080 h1 -0.000063 ± 0.000063 (4139 pairs, prec 0.002) | LB-eq h0 -0.000116 h1 -0.000104
+argmax     noaddr-only True  t_r 0.6: India h0 -0.000091 h1 -0.000053 ± 0.000070 (1859 pairs, prec 0.002) | US h0 -0.000050 h1 -0.000063 ± 0.000063 (3742 pairs, prec 0.002) | LB-eq h0 -0.000062 h1 -0.000049
+argmax     noaddr-only True  t_r 0.65: India h0 -0.000045 h1 +0.000000 ± 0.000000 (931 pairs, prec 0.000) | US h0 -0.000050 h1 -0.000030 ± 0.000030 (2068 pairs, prec 0.001) | LB-eq h0 -0.000040 h1 -0.000012
+unaccepted noaddr-only False t_r 0.4: India h0 -0.000506 h1 -0.000450 ± 0.000163 (9465 pairs, prec 0.003) | US h0 -0.000376 h1 -0.000183 ± 0.000118 (9686 pairs, prec 0.005) | LB-eq h0 -0.000381 h1 -0.000281
+unaccepted noaddr-only False t_r 0.5: India h0 -0.000317 h1 -0.000284 ± 0.000118 (5422 pairs, prec 0.002) | US h0 -0.000085 h1 -0.000052 ± 0.000091 (4684 pairs, prec 0.006) | LB-eq h0 -0.000181 h1 -0.000153
+unaccepted noaddr-only False t_r 0.6: India h0 -0.000159 h1 -0.000098 ± 0.000089 (2069 pairs, prec 0.003) | US h0 -0.000052 h1 -0.000078 ± 0.000078 (3992 pairs, prec 0.004) | LB-eq h0 -0.000094 h1 -0.000076
+unaccepted noaddr-only False t_r 0.65: India h0 -0.000091 h1 -0.000023 ± 0.000039 (1027 pairs, prec 0.001) | US h0 -0.000052 h1 -0.000045 ± 0.000040 (2186 pairs, prec 0.002) | LB-eq h0 -0.000063 h1 -0.000028
+unaccepted noaddr-only True  t_r 0.4: India h0 -0.000389 h1 -0.000337 ± 0.000144 (9057 pairs, prec 0.002) | US h0 -0.000265 h1 -0.000146 ± 0.000090 (8924 pairs, prec 0.003) | LB-eq h0 -0.000284 h1 -0.000213
+unaccepted noaddr-only True  t_r 0.5: India h0 -0.000204 h1 -0.000193 ± 0.000099 (5138 pairs, prec 0.002) | US h0 -0.000080 h1 -0.000078 ± 0.000065 (4168 pairs, prec 0.002) | LB-eq h0 -0.000126 h1 -0.000120
+unaccepted noaddr-only True  t_r 0.6: India h0 -0.000091 h1 -0.000053 ± 0.000070 (1917 pairs, prec 0.002) | US h0 -0.000050 h1 -0.000078 ± 0.000065 (3750 pairs, prec 0.002) | LB-eq h0 -0.000062 h1 -0.000055
+unaccepted noaddr-only True  t_r 0.65: India h0 -0.000045 h1 +0.000000 ± 0.000000 (941 pairs, prec 0.000) | US h0 -0.000050 h1 -0.000030 ± 0.000030 (2069 pairs, prec 0.001) | LB-eq h0 -0.000040 h1 -0.000012

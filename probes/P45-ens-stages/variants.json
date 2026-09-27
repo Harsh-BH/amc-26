@@ -1,0 +1,345 @@
+{
+  "_base": {
+    "objective": "binary",
+    "learning_rate": 0.05,
+    "num_leaves": 127,
+    "min_data_in_leaf": 100,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 1,
+    "lambda_l2": 1.0,
+    "max_bin": 255,
+    "verbose": -1
+  },
+  "dart": {
+    "inst": "ml.m6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 1500,
+    "max_run": 7200,
+    "params": {
+      "boosting": "dart",
+      "drop_rate": 0.1,
+      "max_drop": 50,
+      "skip_drop": 0.5,
+      "learning_rate": 0.1,
+      "seed": 19
+    }
+  },
+  "rf": {
+    "inst": "ml.m6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 600,
+    "es": 50,
+    "max_run": 7200,
+    "params": {
+      "boosting": "rf",
+      "num_leaves": 1023,
+      "min_data_in_leaf": 50,
+      "bagging_fraction": 0.632,
+      "bagging_freq": 1,
+      "feature_fraction": 0.5,
+      "seed": 21
+    }
+  },
+  "et": {
+    "inst": "ml.r6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 600,
+    "es": 50,
+    "max_run": 7200,
+    "params": {
+      "boosting": "rf",
+      "extra_trees": true,
+      "num_leaves": 1023,
+      "min_data_in_leaf": 50,
+      "bagging_fraction": 0.632,
+      "bagging_freq": 1,
+      "feature_fraction": 0.5,
+      "seed": 22
+    }
+  },
+  "rh_rf": {
+    "inst": "ml.m5.xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 20,
+    "frac": 0.01,
+    "es": 10,
+    "max_run": 3600,
+    "params": {
+      "boosting": "rf",
+      "num_leaves": 1023,
+      "min_data_in_leaf": 50,
+      "bagging_fraction": 0.632,
+      "bagging_freq": 1,
+      "feature_fraction": 0.5,
+      "seed": 21
+    }
+  },
+  "rh_et": {
+    "inst": "ml.m5.xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 20,
+    "frac": 0.01,
+    "es": 10,
+    "max_run": 3600,
+    "params": {
+      "boosting": "rf",
+      "extra_trees": true,
+      "num_leaves": 1023,
+      "min_data_in_leaf": 50,
+      "bagging_fraction": 0.632,
+      "bagging_freq": 1,
+      "feature_fraction": 0.5,
+      "seed": 22
+    }
+  },
+  "rank_sx": {
+    "inst": "ml.m6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 4000,
+    "es": 100,
+    "max_run": 7200,
+    "group": "sx",
+    "params": {
+      "objective": "lambdarank",
+      "metric": "ndcg",
+      "eval_at": [
+        1
+      ],
+      "seed": 31
+    }
+  },
+  "rank_s1": {
+    "inst": "ml.r6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 4000,
+    "es": 100,
+    "max_run": 7200,
+    "group": "s1",
+    "params": {
+      "objective": "lambdarank",
+      "metric": "ndcg",
+      "eval_at": [
+        5
+      ],
+      "seed": 32
+    }
+  },
+  "rh_rank": {
+    "inst": "ml.m5.xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 20,
+    "frac": 0.01,
+    "es": 10,
+    "max_run": 3600,
+    "group": "s1",
+    "params": {
+      "objective": "lambdarank",
+      "metric": "ndcg",
+      "eval_at": [
+        5
+      ],
+      "seed": 32
+    }
+  },
+  "noctx": {
+    "inst": "ml.m5.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 8000,
+    "max_run": 7200,
+    "drop": [
+      "s1_n",
+      "s1_gap",
+      "s1_margin",
+      "block_score",
+      "block_rank_s1",
+      "block_rank_sx",
+      "via_r",
+      "via_f",
+      "blocked",
+      "sx_n",
+      "sx_gap",
+      "sx_margin",
+      "chain_1",
+      "chain_x"
+    ],
+    "params": {
+      "seed": 41
+    }
+  },
+  "fsub": {
+    "inst": "ml.m5.4xlarge",
+    "folds": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "rounds": 8000,
+    "max_run": 7200,
+    "params": {
+      "feature_fraction": 0.3,
+      "seed": 42
+    }
+  },
+  "rf2": {
+    "inst": "ml.m6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 300,
+    "es": 1000,
+    "max_run": 7200,
+    "params": {
+      "boosting": "rf",
+      "num_leaves": 4095,
+      "min_data_in_leaf": 20,
+      "max_depth": -1,
+      "bagging_fraction": 0.632,
+      "bagging_freq": 1,
+      "feature_fraction": 0.5,
+      "seed": 23
+    }
+  },
+  "et2": {
+    "inst": "ml.m6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 300,
+    "es": 1000,
+    "max_run": 7200,
+    "params": {
+      "boosting": "rf",
+      "extra_trees": true,
+      "num_leaves": 4095,
+      "min_data_in_leaf": 20,
+      "bagging_fraction": 0.632,
+      "bagging_freq": 1,
+      "feature_fraction": 0.5,
+      "seed": 24
+    }
+  },
+  "rank_sx2": {
+    "inst": "ml.r6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 2000,
+    "es": 300,
+    "max_run": 7200,
+    "group": "sx",
+    "params": {
+      "objective": "lambdarank",
+      "metric": "ndcg",
+      "eval_at": [
+        1,
+        3
+      ],
+      "seed": 33
+    }
+  },
+  "mlp": {
+    "inst": "ml.c6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 0,
+    "max_run": 7200,
+    "params": {
+      "arch": "mlp",
+      "epochs": 8,
+      "seed": 51
+    }
+  },
+  "mlp2": {
+    "inst": "ml.c6i.4xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 0,
+    "max_run": 7200,
+    "params": {
+      "arch": "mlp2",
+      "epochs": 8,
+      "seed": 52
+    }
+  },
+  "rh_mlp2": {
+    "inst": "ml.m5.xlarge",
+    "folds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "rounds": 0,
+    "frac": 0.01,
+    "max_run": 3600,
+    "params": {
+      "arch": "mlp2",
+      "epochs": 1,
+      "seed": 52
+    }
+  }
+}
