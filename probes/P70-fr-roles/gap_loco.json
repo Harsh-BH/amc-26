@@ -1,0 +1,114 @@
+{
+ "US_India": {
+  "missing-source | related | unique key": {
+   "free_n": 191,
+   "free_prec": 0.696,
+   "dF": -1.7e-05,
+   "dF_h1": -4.2e-05,
+   "se_h1": 4.4e-05,
+   "add": 191,
+   "add_prec": 0.696
+  },
+  "missing-source | related | any key": {
+   "free_n": 10283,
+   "free_prec": 0.291,
+   "dF": -0.018447,
+   "dF_h1": -0.018713,
+   "se_h1": 0.000419,
+   "add": 10283,
+   "add_prec": 0.291
+  },
+  "empty S1 | related | unique key": {
+   "free_n": 67,
+   "free_prec": 0.418,
+   "dF": -7e-05,
+   "dF_h1": -0.000104,
+   "se_h1": 0.000113,
+   "add": 67,
+   "add_prec": 0.418
+  },
+  "copy of accepted SX (core + key)": {
+   "free_n": 17349,
+   "free_prec": 0.554,
+   "dF": -0.008865,
+   "dF_h1": -0.008992,
+   "se_h1": 0.000334,
+   "add": 17289,
+   "add_prec": 0.556
+  },
+  "copy of accepted SX (core only)": {
+   "free_n": 6901,
+   "free_prec": 0.357,
+   "dF": -0.007594,
+   "dF_h1": -0.0077,
+   "se_h1": 0.000254,
+   "add": 6879,
+   "add_prec": 0.358
+  },
+  "extra | related | unique key (not missing-source)": {
+   "free_n": 773,
+   "free_prec": 0.6,
+   "dF": -0.000302,
+   "dF_h1": -0.000248,
+   "se_h1": 6.3e-05,
+   "add": 771,
+   "add_prec": 0.602
+  }
+ },
+ "India_US": {
+  "missing-source | related | unique key": {
+   "free_n": 841,
+   "free_prec": 0.811,
+   "dF": 0.000269,
+   "dF_h1": 0.000375,
+   "se_h1": 5.9e-05,
+   "add": 841,
+   "add_prec": 0.811
+  },
+  "missing-source | related | any key": {
+   "free_n": 7155,
+   "free_prec": 0.327,
+   "dF": -0.007985,
+   "dF_h1": -0.007903,
+   "se_h1": 0.000239,
+   "add": 7155,
+   "add_prec": 0.327
+  },
+  "empty S1 | related | unique key": {
+   "free_n": 329,
+   "free_prec": 0.395,
+   "dF": -0.000609,
+   "dF_h1": -0.000588,
+   "se_h1": 0.000188,
+   "add": 329,
+   "add_prec": 0.395
+  },
+  "copy of accepted SX (core + key)": {
+   "free_n": 4956,
+   "free_prec": 0.75,
+   "dF": 0.000345,
+   "dF_h1": 0.000353,
+   "se_h1": 9.1e-05,
+   "add": 4938,
+   "add_prec": 0.752
+  },
+  "copy of accepted SX (core only)": {
+   "free_n": 16996,
+   "free_prec": 0.286,
+   "dF": -0.014801,
+   "dF_h1": -0.014543,
+   "se_h1": 0.000256,
+   "add": 16912,
+   "add_prec": 0.287
+  },
+  "extra | related | unique key (not missing-source)": {
+   "free_n": 4037,
+   "free_prec": 0.61,
+   "dF": -0.00101,
+   "dF_h1": -0.001001,
+   "se_h1": 9.7e-05,
+   "add": 4025,
+   "add_prec": 0.611
+  }
+ }
+}

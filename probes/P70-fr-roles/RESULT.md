@@ -29,6 +29,51 @@
 - **Adopt the adds of `output/sub70a`** (or merge `changes.parquet` into the combined final, P64 last). Expected LB is about +0.0001 alone and about +0.00002 on top of #67's adds.
 - **Better merge:** fit one P55 combiner with P67's synthetic column, P73's electra column and P70's `words_nn` columns, instead of taking the union of three add lists. The LOCO role columns are cached in `data/work/p70/roles_<dir>.parquet`, row-aligned with `p55.loco_frame`.
 
+## Addendum (27 Sep ~17:15): Fable's capture plan, gated
+The prompt is `data/notes/fable_capture_prompt.md`. It gave Fable the cluster-count gap: sub66_final predicts 3.155 links per France S1, against 3.46 in train truth for both US and India. Size 6+ holds 7.6% of France S1 against 11.4% in truth.
+
+Fable's ideas, gated with `i2_loco.py` → `i2_loco.json`. Each cell is an argmax pair on P55's LOCO frames where S1 and SX share one hn + street key. Precision is measured on the pairs the reference leaves free, which is what a rule would add; "add dF" is the result of adding them (caps, one owner).
+
+| cell (S1 and SX share one hn + street key) | India target: free n at precision | US target: free n at precision | add dF (India / US target) | verdict |
+|---|---|---|---|---|
+| related names, key unique | 1,031 at .61 | 5,207 at .63 | −0.0004 / −0.0014 | drop: these are just the rejected extras again |
+| disjoint names, not a brand, key unique | 42 at .38 | 481 at .14 | −0.00004 / −0.00075 | drop. France holds 103k such free SX, almost all same-address decoys |
+| **disjoint, synthetic brand, key unique** | 57 at 1.00 | 321 at .885 | **+0.00008 / +0.00022** | keep. This is P41's rule |
+| synthetic brand, key shared | 44 at .59 | 424 at .41 | −0.00002 / −0.0003 | drop |
+| raw address byte-equal (Fable's "decoys copy verbatim") | all: 98.9% true | all: 99.8% true | — | the premise is false |
+
+- **Adopted:**
+  - P41's brand rule (bare generator brand, unique hn + street + city key, key S1 = argmax with members, p ≥ .30) was LB-untested on its own. sub54 carried it, and it was dropped when France reverted to gc70.
+  - It is re-applied on sub66_final by `p41_on.py`, which merges the adds onto the base's own lines; `p41.build` would drop the 2,638 acronym pairs.
+  - The result is **`output/sub41_on66`: +5,834 France pairs on 5,733 S1**, p median .92. 0 SX already listed, 0 P64 conflicts, 0 matches outside the candidates.
+  - It is orthogonal to everything staged: 10 of its pairs are in sub75a, 0 in sub71a, 0 SX conflicts, 0 N54 removals.
+  - Evidence: train truth for a bare brand at a unique key is US 34,777 at .998 and India 15,083 at .961. P41's LOCO was +0.00008–0.00014 (precision .98–1.00), and +0.00035–0.00079 France-matched.
+  - Expected LB +0.00016 to +0.00024.
+- **Already done or out of date in the plan:**
+  - Slot A is sub76.
+  - I1 is P71a. Fable's kill test (in-domain *unassigned* precision) measures the wrong population: 0.5–0.7% true by construction. The class analogue is .947 / .969.
+  - I6a is P54's dup step.
+  - The independent CE is P73e / b.
+
+## Addendum 2 (27 Sep ~18:50): the rest of the France gap, gated
+This round gates each idea on P55's LOCO frames. Precision is measured on the pairs the reference leaves free, with Wilson 95% bounds and add dF. The master's bar is Wilson LB ≥ .75 with n ≥ 200 in both countries. Scripts: `gap_loco.py`, `hn_loco.py`, `exact_loco.py` / `exact_fr.py`, `street_fr.py`, `shift.py`, `clean_loco.py`, `clean_street_loco.py`; JSONs alongside.
+
+| cell | India target (free n at precision) | US target | France (sub77) | verdict |
+|---|---|---|---|---|
+| fill a missing source, related name, S1's unique key | 191 at .70, −0.00004 | 841 at .81, +0.00038 | — | fails: India n < 200, Wilson ≈ .63 |
+| copy of an accepted SX (same core + key) | 17,349 at .55, −0.0089 | 4,956 at .75, +0.00035 | — | drop |
+| empty-S1 fill / related extras at a unique key | .42 / .60 | .40 / .61 | — | drop |
+| identical name + city, \|Δhn\| = 1 / 2 | .46 / .41 | .06 / .05 | 37.9k "other" free | drop: ±1/±2 is a decoy offset in the US |
+| exact duplicate (core + hn\|street key + city) | 558 at .943 | 1,310 at .996 | 41 free (29 P64-vetoed) | France already accepts them |
+| **hidden sibling shift** (parsed hn equal; one other address number shifted by SIB3 or 1–2) | all 2% true; veto of accepted +0.0045 | 5% true; veto +0.00013 | 23 accepted | a decoy marker. France rejects it already; India/US in-domain accept it only when true (237 at .992, 55 at 1.00), so there is no veto anywhere |
+| same core + city + hn, no shift, lf ok: **same street** | 531 at .985 | 314 at 1.00 | 28 free | passes, but there is nothing to add |
+| same, **different street** | 21 at .24 (all pairs 183 at .85) | 297 at .983 (all pairs 11,195 at .999) | 6,219 free vs 10,210 accepted (38% free; LOCO 2.7% / 11.5%) | fails India n. P64 vetoes 39% of France's pool, and the adds have p median .31 → `output/sub77_hnst` is staged as a measurement only, **not recommended** |
+
+- Parser notes:
+  - `house_number` keeps the leading digit run, so "5 bis" = "5", and "Appt N" is never read as a house number.
+  - The real gaps are number ranges, second numbers, and a leading postcode read as the house number. They hide sibling shifts, and `shift.flag` catches them.
+- Caps don't truncate France's big clusters: truth never exceeds 5 S2 / 6 S3, and France sits at the cap less often than truth (0.77% vs 1.09%).
+
 ## Evidence         (France-F0.5 dF on the LOCO target; A→B = fit on A's out-of-domain frame, bars picked on A, applied to B; h1 = report half ± SE)
 | ledger name | world | key metrics (India→US / US→India) | verdict |
 |---|---|---|---|

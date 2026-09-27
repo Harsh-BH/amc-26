@@ -6,6 +6,7 @@
     output/matching_results.tsv, output/candidate_pairs.tsv
     code/business_entity_resolution/{src/*.py, README.md, requirements.txt}
     Documentation_template.md (or .pdf), filled in and not renamed, taken from the repo root or docs/ when it exists
+    src/final_changes.parquet: final_build.py's change sets, when present (data/work/p78/)
 """
 import argparse
 import re
@@ -13,6 +14,8 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+
+from final_build import CHANGES
 
 SRC = Path(__file__).resolve().parent
 CODE = SRC.parent
@@ -35,6 +38,8 @@ def files(out: Path, code: Path, documentation: Path | None):
     yield from ((out / n, f"output/{n}") for n in HEADERS)
     yield from ((p, f"code/business_entity_resolution/src/{p.name}") for p in sorted((code / "src").glob("*.py")))
     yield from ((code / n, f"code/business_entity_resolution/{n}") for n in ("README.md", "requirements.txt"))
+    if CHANGES:   # final_build.py's add-on change sets (#76 / #77)
+        yield CHANGES, "code/business_entity_resolution/src/final_changes.parquet"
     if documentation:
         yield documentation, documentation.name
 

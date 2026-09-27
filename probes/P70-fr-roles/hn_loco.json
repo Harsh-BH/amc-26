@@ -1,0 +1,164 @@
+{
+ "US_India": {
+  "same core+city, |dhn| = 1": {
+   "n": 1573,
+   "prec": 0.782,
+   "accepted": 0.617,
+   "free_n": 602,
+   "free_prec": 0.462,
+   "dF": -0.000656,
+   "dF_h1": -0.00077,
+   "se_h1": 0.000126,
+   "add": 600,
+   "add_prec": 0.463
+  },
+  "same core+city, |dhn| = 2": {
+   "n": 1336,
+   "prec": 0.749,
+   "accepted": 0.598,
+   "free_n": 537,
+   "free_prec": 0.413,
+   "dF": -0.00066,
+   "dF_h1": -0.000706,
+   "se_h1": 0.000109,
+   "add": 537,
+   "add_prec": 0.413
+  },
+  "same core+city, |dhn| 6-30 non-sib": {
+   "n": 2648,
+   "prec": 0.861,
+   "accepted": 0.695,
+   "free_n": 807,
+   "free_prec": 0.568,
+   "dF": -0.0005,
+   "dF_h1": -0.000525,
+   "se_h1": 0.00013,
+   "add": 807,
+   "add_prec": 0.568
+  },
+  "same core+city, |dhn| > 30": {
+   "n": 18875,
+   "prec": 0.885,
+   "accepted": 0.727,
+   "free_n": 5156,
+   "free_prec": 0.598,
+   "dF": -0.002284,
+   "dF_h1": -0.002229,
+   "se_h1": 0.000287,
+   "add": 5148,
+   "add_prec": 0.598
+  },
+  "same core+city, sib offset": {
+   "n": 3834,
+   "prec": 0.395,
+   "accepted": 0.332,
+   "free_n": 247,
+   "free_prec": 0.551,
+   "dF": -0.000176,
+   "dF_h1": -9.2e-05,
+   "se_h1": 6.2e-05,
+   "add": 247,
+   "add_prec": 0.551
+  },
+  "same core+city, hn equal": {
+   "n": 92476,
+   "prec": 0.984,
+   "accepted": 0.973,
+   "free_n": 2484,
+   "free_prec": 0.664
+  },
+  "related name+city, |dhn| 1-2": {
+   "n": 4997,
+   "prec": 0.089,
+   "accepted": 0.065,
+   "free_n": 4671,
+   "free_prec": 0.029,
+   "dF": -0.01287,
+   "dF_h1": -0.012734,
+   "se_h1": 0.000354,
+   "add": 4654,
+   "add_prec": 0.029
+  }
+ },
+ "India_US": {
+  "same core+city, |dhn| = 1": {
+   "n": 4107,
+   "prec": 0.261,
+   "accepted": 0.391,
+   "free_n": 2503,
+   "free_prec": 0.056,
+   "dF": -0.00436,
+   "dF_h1": -0.004212,
+   "se_h1": 0.000166,
+   "add": 2496,
+   "add_prec": 0.056
+  },
+  "same core+city, |dhn| = 2": {
+   "n": 4036,
+   "prec": 0.286,
+   "accepted": 0.402,
+   "free_n": 2414,
+   "free_prec": 0.054,
+   "dF": -0.004413,
+   "dF_h1": -0.004411,
+   "se_h1": 0.000177,
+   "add": 2398,
+   "add_prec": 0.054
+  },
+  "same core+city, |dhn| 6-30 non-sib": {
+   "n": 1166,
+   "prec": 0.87,
+   "accepted": 0.769,
+   "free_n": 269,
+   "free_prec": 0.558,
+   "dF": -9.7e-05,
+   "dF_h1": -0.000149,
+   "se_h1": 3.6e-05,
+   "add": 269,
+   "add_prec": 0.558
+  },
+  "same core+city, |dhn| > 30": {
+   "n": 19042,
+   "prec": 0.886,
+   "accepted": 0.836,
+   "free_n": 3116,
+   "free_prec": 0.484,
+   "dF": -0.002024,
+   "dF_h1": -0.001952,
+   "se_h1": 0.000163,
+   "add": 3111,
+   "add_prec": 0.484
+  },
+  "same core+city, sib offset": {
+   "n": 24541,
+   "prec": 0.022,
+   "accepted": 0.176,
+   "free_n": 47,
+   "free_prec": 0.915,
+   "dF": 2.8e-05,
+   "dF_h1": 3.1e-05,
+   "se_h1": 1.9e-05,
+   "add": 47,
+   "add_prec": 0.915
+  },
+  "same core+city, hn equal": {
+   "n": 190472,
+   "prec": 0.998,
+   "accepted": 0.989,
+   "free_n": 2080,
+   "free_prec": 0.904
+  },
+  "related name+city, |dhn| 1-2": {
+   "n": 15479,
+   "prec": 0.067,
+   "accepted": 0.057,
+   "free_n": 14599,
+   "free_prec": 0.02,
+   "dF": -0.026827,
+   "dF_h1": -0.026981,
+   "se_h1": 0.000415,
+   "add": 14524,
+   "add_prec": 0.02
+  }
+ }
+}

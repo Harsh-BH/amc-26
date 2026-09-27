@@ -45,7 +45,9 @@ order (training included), except the bge cross-encoder: its checkpoint `data/wo
 downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when it is missing. With the caches present
 it only scores, decides and writes.
 
-**The final zip's files are `--recipe sub66_final --drop-sibling-cands`** (the default recipe; **public LB 0.987391**,
+**The final zip's files are `final_build.py` on `--recipe sub66_final --drop-sibling-cands`** (**[FINAL LB] 0.988292**,
+`sub77`, +0.000901 over sub66_final): six unseen-country change sets applied to that base (P67q, P70a, P69 t975ce,
+−N54, P71a, P41; `final_build.py --upto 41`, the bullet below). **The base, `sub66_final`** (the default recipe; public LB 0.987391,
 +0.000706 over #54): **India / US = #54's combiner** (below) with P54's duplicate step, **the unseen country (France) =
 `sub_iu54_best`'s chain** (#37_gc70's chain with the Qwen band blend, P55's band veto, P62's acronym block and P54's
 duplicate step, below) + **P64's legal-form conflict veto** + **P66's address-less exact names** (P64 / P66 below).
@@ -84,6 +86,17 @@ zip (7,660,700 pairs, 4.42 per S1). `--recipe sub_iu54_frgc70` is the earlier fi
   normalised name equals its S1's, a name and an S1 core no other S1 of the country carries, p ≥ 0.30, free SX, caps
   5 S2 / 6 S3; fit on the final lines, P64 conflicts skipped) + P54's duplicate step once more; `sub66` =
   `sub_iu54_frgc70` + the same adds.
+- **`final_build.py` (27 Sep evening, the final #76; P78):** it takes `sub66_final --drop-sibling-cands` output and
+  applies the unseen country's add-on change sets in order: P67q (a bge CE tuned on synthetic pairs from the country's own
+  S1 records, used as a column of P55's combiner; adds gated by Qwen r ≥ .5), P70a (word-role combiner adds, c > .98),
+  P69 t975ce (t .975's extra pairs with bge r ≥ .99), then N54's removals (`france.decoy_mask`, s > .25: org-word
+  swaps such as 'X Sportive' → 'X Comite'), then P71a (noise-word swaps into 'developpement' / 'associes' at the same
+  house number). `--upto 41` adds P41's brand rule too (#77). An add keeps one owner per SX and caps 5 S2 / 6 S3, and
+  skips a pair sub66_final or an earlier step already holds (so N54's removals are not re-added). A removal drops the
+  pair. The candidate list gets any missing match appended after each add step. It rebuilds #76 / #77 byte for byte
+  (md5 a7b2cfe0… / 9e4fb898…) in 21 s. Its change sets are 22,562 rows in `final_changes.parquet`, which ships in the
+  zip beside `src/`, or comes from `data/work/p78/`. They were extracted from the probes' staged folders
+  (`probes/P78-final-pkg2/extract.py`), because each came from a probe's own GPU model or frame, not from run.py.
 - `--recipe sub_clean_iu34` keeps #34's India / US (the a10 stacker); `--recipe sub54` is the uploaded #54 (LB
   0.986685): the same chain with P40's address-less names (0.70) and P46's noise-word tier, in #54's order, no P55.
 - Reproduction: `sub66_final`, `sub_iu54_frgc70`, `sub_iu54_best`, `sub_iu54_fr38_55n` and `sub_clean` rebuild their folders' matching
