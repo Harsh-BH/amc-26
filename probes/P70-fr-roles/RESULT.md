@@ -99,6 +99,16 @@ The class: address-less SX whose name core equals a unique S1 core, with a full 
   - Trim order if the file disappoints: a3, then a2; keep b.
 - **`output/sub77_xlf`**: +2,019 adds, validator PASS. Expected +0.0002 to +0.0004 LB if France is India-like, ≈ −0.0001 if US-like.
 
+## Addendum 4 (27 Sep ~19:05): sub77_hnst LB result and the N69 increment
+- **`sub77_hnst` scored LB 0.987844, −0.000448 vs sub77**, i.e. ≈ 0.3 precise. France followed India's free pool (.24), not the US's (.98).
+  - The lead's rule now: a France class ships only if BOTH countries' unaccepted pools pass (Wilson LB ≥ .75, n ≥ 200).
+  - The free-share diagnostic retrodicts it: France's free share (38%) sits nearer India's (11.5%) than the US's (2.7%).
+- **N69 increment over `sub77_xlf`** (`n69_gate.py`, `n69_loco.json`): about 395 France pairs. Not staged:
+  - eq-core non-legal-form difference: 233 free. India pool .972 (n 252), US pool .53 (n 34). Fails.
+  - typo core: 116 free. India pool .835 (n 103), US pool .54 (n 96). Fails.
+  - xfc leftovers: 46. Pools too small.
+- **`sub77_xlf` under the same strict pool test:** it fails the US-target pool ((a) .46, (b) .63) and passes only on all-pairs precision. The free-share diagnostic (France 50% / 25% ~ India target 39% / 26%) predicts it transfers.
+
 ## Evidence         (France-F0.5 dF on the LOCO target; A→B = fit on A's out-of-domain frame, bars picked on A, applied to B; h1 = report half ± SE)
 | ledger name | world | key metrics (India→US / US→India) | verdict |
 |---|---|---|---|
