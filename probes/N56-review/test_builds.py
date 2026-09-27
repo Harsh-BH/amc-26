@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-sys.path[:0] = ["../N54-fr-decoyword-removal", "../N55-fr-noiseword-fill"]
+sys.path[:0] = [str(Path(__file__).resolve().parents[1] / d) for d in ("N54-fr-decoyword-removal", "N55-fr-noiseword-fill")]
 import p54
 import n55
 import pandas as pd
