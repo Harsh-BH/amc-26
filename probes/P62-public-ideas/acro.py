@@ -20,14 +20,17 @@ import normalize as N  # noqa: E402
 OUT = W / "p62"
 
 
-def pairs(split: str, c: str) -> pd.DataFrame:
+def pairs(split: str, c: str, key: str = "acro") -> pd.DataFrame:
+    """key 'acro' = the acronym rule; key 'core' = the same address checks on an exact name_core match."""
     s1 = pq.read_table(W / f"rf_{split}_s1_{c}.parquet", columns=["id", "core", "hn", "city"]).to_pandas()
-    s1["acro"] = N.acronym(s1.core)
+    s1["acro"] = N.acronym(s1.core) if key == "acro" else s1.core
     s1 = s1[(s1.acro != "") & (s1.hn != "") & (s1.city != "")].drop(columns="core")
     f, out = pq.ParquetFile(W / f"rf_{split}_sx_{c}.parquet"), []
-    for i in range(f.num_row_groups):                      # streamed: only single-token short cores survive
+    vs = pa.array(s1.acro.unique())
+    for i in range(f.num_row_groups):                      # streamed: only SX whose core can hit a key survive
         t = f.read_row_group(i, columns=["id", "core", "hn", "city"])
-        m = pc.and_(pc.less_equal(pc.utf8_length(t["core"]), 8), pc.invert(pc.match_substring(t["core"], " ")))
+        m = pc.and_(pc.less_equal(pc.utf8_length(t["core"]), 8), pc.invert(pc.match_substring(t["core"], " "))) \
+            if key == "acro" else pc.is_in(t["core"], value_set=vs)
         out.append(t.filter(m).to_pandas())
     sx = pd.concat(out)
     sx = sx[(sx.hn != "") & (sx.city != "")]
@@ -35,7 +38,7 @@ def pairs(split: str, c: str) -> pd.DataFrame:
     j.columns = ["s1", "sx"]
     j["n_s1"] = j.groupby("sx").s1.transform("size").astype(np.int16)
     j["jac"], j["st"] = addr_jac(split, c, j)
-    j.to_parquet(OUT / f"acro_{split}_{c}.parquet", index=False)
+    j.to_parquet(OUT / f"{'acro' if key == 'acro' else 'core'}_{split}_{c}.parquet", index=False)
     print(split, c, f"acro-like sx {len(sx):,}, rule pairs {len(j):,}, ambiguous sx {(j.n_s1 > 1).sum():,}", flush=True)
     return j
 
@@ -71,6 +74,7 @@ def addr_jac(split: str, c: str, j: pd.DataFrame) -> tuple:
     return out, st
 
 
+RULE = os.environ.get("ACRO_RULE", "acro")              # acro | core (exact name_core key)
 JT = float(os.environ.get("ACRO_JAC", "0.6"))
 ST = float(os.environ.get("ACRO_ST", "1.0"))          # share of the S1's street tokens present in the SX address
 
@@ -91,12 +95,12 @@ def holdout():
     import a10
     import features as F
     gt = pq.read_table(W / "gt_pairs.parquet", columns=["s1", "sx"])
-    ax = pa.array(pd.concat([pd.read_parquet(OUT / f"acro_train_{c}.parquet", columns=["sx"]).sx for c in E.C]).unique())
+    ax = pa.array(pd.concat([pd.read_parquet(OUT / f"{RULE}_train_{c}.parquet", columns=["sx"]).sx for c in E.C]).unique())
     gt = gt.filter(pc.is_in(gt["sx"], value_set=ax)).to_pandas()
     fo = pd.read_parquet(W / "s1_folds.parquet", columns=["entity_id", "fold"]).set_index("entity_id").fold
     res, S = {}, V.load_s()
     for c in E.C:
-        j = rule(pd.read_parquet(OUT / f"acro_train_{c}.parquet"))
+        j = rule(pd.read_parquet(OUT / f"{RULE}_train_{c}.parquet"))
         g_ = gt[gt.sx.isin(set(j.sx))]
         j["y"] = pd.MultiIndex.from_arrays([j.s1, j.sx]).isin(pd.MultiIndex.from_arrays([g_.s1, g_.sx]))
         j["fold"] = fo.reindex(j.s1).to_numpy()
@@ -159,6 +163,6 @@ def holdout():
 
 if __name__ == "__main__":
     if sys.argv[1] == "pairs":
-        pairs(sys.argv[2], sys.argv[3])
+        pairs(*sys.argv[2:])
     else:
         holdout()
