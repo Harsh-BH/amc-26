@@ -1,0 +1,2 @@
+train US: 400,000 pairs, src chars p50/p95/p99 [60.0, 82.0, 92.0]; 210s peak 0.93 GB
+train India: 400,000 pairs, src chars p50/p95/p99 [92.0, 139.0, 159.0]; 115s peak 1.06 GB

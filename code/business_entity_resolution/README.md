@@ -45,11 +45,13 @@ order (training included), except the bge cross-encoder: its checkpoint `data/wo
 downloaded (SETUP.md step 5), and `run.ensure_ce` stops with instructions when it is missing. With the caches present
 it only scores, decides and writes.
 
-**The final zip's files are `--recipe sub_iu54_frgc70 --drop-sibling-cands`** (the master's final as of 27 Sep 07:30;
-public LB [FINAL LB]): **India / US = #54's combiner** (below) with P54's duplicate step, **the unseen country (France) = #37_gc70's
-chain** (`sub37` below: #31's chain + veto + empty-S1 rescue 0.90 + group completion 0.70). `--recipe sub_iu54_frgc70`
-rebuilds `output/sub_iu54_frgc70`'s matching file (the duplicate copies written after each line's sorted ids, as P54
-did); `--drop-sibling-cands` gives the small candidate set of the zip.
+**The final zip's files are `--recipe sub66_final --drop-sibling-cands`** (the default recipe; **public LB 0.987391**,
++0.000706 over #54): **India / US = #54's combiner** (below) with P54's duplicate step, **the unseen country (France) =
+`sub_iu54_best`'s chain** (#37_gc70's chain with the Qwen band blend, P55's band veto, P62's acronym block and P54's
+duplicate step, below) + **P64's legal-form conflict veto** + **P66's address-less exact names** (P64 / P66 below).
+`--recipe sub66_final` rebuilds `output/sub66_final`'s matching file byte for byte (the duplicate / acronym / P66 adds
+written after each line's sorted ids, as the probes did); `--drop-sibling-cands` gives the small candidate set of the
+zip (7,660,700 pairs, 4.42 per S1). `--recipe sub_iu54_frgc70` is the earlier final (#54's India / US + #37_gc70's France).
 
 - **India / US = the combiner** (`iu_stack.py`, recipe field `iu="fullzoo"`; `--iu a10` falls back to #34): P44's
   bagged residual combiner over #8c's argmax pairs. Its columns are P34's a10 columns + P44's exclusivity / group /
@@ -75,9 +77,16 @@ did); `--drop-sibling-cands` gives the small candidate set of the zip.
   Jaccard ≥ 0.6, every S1 street token present; change set referenced on #clean's France lines as staged, then fit on
   this base: `acro_tiers`, `acro_fit`) and P54's duplicate step on every country. The acronym block's pairs join the
   candidate list.
+- **P64 / P66 (27 Sep afternoon):** `sub64` = `sub_iu54_best` + P64's legal-form conflict veto as the last stage
+  (`france.lf_veto`: S1 and SX both carry a legal form and the forms are disjoint, e.g. SARL vs SAS → the pair leaves
+  the matching file; candidates unchanged); `sub64_frgc70` = `sub_iu54_frgc70` + the same veto. `sub66_final` = `sub64`
+  + P66's address-less exact names (`france.xfc_adds`, on #37's frame: an argmax SX with an empty address whose full
+  normalised name equals its S1's, a name and an S1 core no other S1 of the country carries, p ≥ 0.30, free SX, caps
+  5 S2 / 6 S3; fit on the final lines, P64 conflicts skipped) + P54's duplicate step once more; `sub66` =
+  `sub_iu54_frgc70` + the same adds.
 - `--recipe sub_clean_iu34` keeps #34's India / US (the a10 stacker); `--recipe sub54` is the uploaded #54 (LB
   0.986685): the same chain with P40's address-less names (0.70) and P46's noise-word tier, in #54's order, no P55.
-- Reproduction: `sub_iu54_frgc70`, `sub_iu54_best`, `sub_iu54_fr38_55n` and `sub_clean` rebuild their folders' matching
+- Reproduction: `sub66_final`, `sub_iu54_frgc70`, `sub_iu54_best`, `sub_iu54_fr38_55n` and `sub_clean` rebuild their folders' matching
   files byte for byte; `sub_clean_iu34` its folder with 0 differing lines as ID sets (both files); `sub54` differs in 2
   France lines (the union #43_r90 it descends from is not a sequential rule).
 - Extra inputs of the final chain: `data/work/p55/fr_plain_s{0,1,2}.txt` (P55's boosters, fit on the LOCO frames by

@@ -1,12 +1,12 @@
-# P68-iu-retrieval — RESULT (27 Sep ~14:25 IST; India done, US paused for P43's final package)
+# P68-iu-retrieval — RESULT (final, 27 Sep ~14:50 IST: India and US both negative, no file)
 ## TL;DR            (3 lines: the answer, the number, the recommendation)
 - **Recovering India/US retrieval misses does not pay: the missed records get retrieved, but the matcher can't confirm them.** On the India holdout (50% of the SX files), two extra searches for addressed SX add 1,265,831 new pairs. Only **244 are true**, and only **38** of those reach m2 p ≥ 0.71. The searches are P3's own view at ranks 2-4 (P3 keeps the top 2) and an address-only view at ranks 0-4.
 - **India gate (add-only on free SX, t picked on half 0):** h1 **+0.00004 ± 0.00002 F0.5**, i.e. ≈ +0.00002 LB-eq on the sample, and ≈ +0.00004 at full volume. The adds are 90-100% precise, but there are only 20-59 of them.
-- **Recommendation: no India file.** A US holdout run was started and killed at P43's request. The master decides whether to rerun it (≈ 30 min CPU, then ≈ 1 h for the test side). My best guess for the US is ≤ +0.0001 LB.
+- **US holdout (55% of the SX files) is the same:** 1,812,611 new pairs, **254 true, 46 at p ≥ 0.71**. Best arm (all, t 0.71): h1 **+0.00004 ± 0.00001**, i.e. ≈ +0.000014 LB-eq on the sample. That misses the lead's gate (+0.00015 LB at 3 SE) by ~10×.
+- **Recommendation: no file for either country; stop spending on retrieval.** The missed pairs are now retrieved, but the matcher cannot confirm them.
 
 ## Recommendation   (exactly what the master should adopt: module, function signature, config)
-- **Adopt nothing for India.**
-- **US: optional.** If a CPU window opens after P43, run the US holdout first. Only if `gate_final` gives h1 ≥ 2 SE, run the free-only test search and `feats_c` with `P68_KEEP` set from the gate's slices, then `build`:
+- **Adopt nothing (India and US both fail).** The commands below stay for the record (a stronger matcher could reuse the retrieval):
 ```
 P68_THREADS=15 P68_FILES=0,2,4,6,8,10 .venv/bin/python probes/P68-iu-retrieval/p68.py search train US
 .venv/bin/python probes/P68-iu-retrieval/p68.py feats train US && .venv/bin/python probes/P68-iu-retrieval/p68.py gate US
@@ -25,6 +25,8 @@ Ledger rows are logged under the old probe name P67-iu-retrieval.
 |---|---|---|---|
 | search-train-India | holdout, SX files 0/2/4/6 (50%), hits on holdout (fold 0) S1 | 1,638,931 hits (na ranks 2-4 / addr ranks 0-4), 1.7 GB peak, ~16 min at 8 threads | — |
 | feats-train-India | same | 1,265,831 new pairs not in the X files (R1 547,583 / R2 791,997). The pruner keeps (q ≥ 0.03) 1,357. m2 p ≥ 0.71: 42. **True: 244; true at p ≥ 0.71: 38** | — |
+| search / feats-train-US | holdout, SX files 0/2/…/10 (55%) | 2,427,732 hits → 1,812,611 new pairs (R1 816,571 / R2 1,135,341). Pruner keeps 1,217; m2 p ≥ 0.71: 49. **True 254; true at p ≥ 0.71: 46** | — |
+| gate-US | as gate-India | t 0.71: h0 +0.00002 ± 0.00001, h1 +0.00004 ± 0.00001, 45 adds at 1.00. t 0.5: 78 adds at 0.83. Pruned arm ≈ equal. Slices ≈ equal (+0.00002) | drop |
 | gate-India | holdout, #8c base (P23 dump), free SX only, caps 5/6 | best new pair per free SX, p ≥ t. t 0.5: h0 +0.00006 ± 0.00003, h1 +0.00004 ± 0.00002, 59 adds at 0.90 precision. t 0.9: 24 adds at 1.00. Pruned arm equal. Slices: na ranks 2-4 carry most of it (54 of 58 adds), addr view 7-20 adds | drop |
 
 **Why:** P23's blocking-miss tags said an address-only search finds 24% (India) / 60% (US) of addressed misses within the top 5. Retrieval does recover them, but the recovered pairs are exactly the records whose evidence is weak (renamed, heavily corrupted, chain members), so m2 scores them low. India's addresses rarely carry a house number (26% of S1), so a renamed India copy has nothing left to confirm it. The oracle loss P36 assigned to blocking misses (0.0022 LB-eq) assumes perfect acceptance and is not reachable with the current matcher.
@@ -51,4 +53,4 @@ Ledger rows are logged under the old probe name P67-iu-retrieval.
 - Test side: new pairs enter candidate_pairs.tsv (the model scores them), which costs candidates per S1.
 
 ## Open questions   (for the master; each with your best guess)
-- Run the US? Only if CPU is idle after P43. Best guess ≤ +0.0001 LB, not worth crowding the final package.
+- None. The retrieval ceiling is real, but only a matcher that can confirm renamed / weak-address copies would unlock it.

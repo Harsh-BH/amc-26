@@ -261,16 +261,17 @@ re-writes. To force a step to rebuild, delete its cache file(s) from the table i
 
 ## 13. Current status (update as it changes)
 
-- **The command now produces the final (27 Sep, master): `sub_iu54_frgc70`** = #54's India / US (the combiner of
-  `iu_stack.py`: P44 + P45's r_all + 16 zoo members, refit on the full holdout by P50; P54's duplicate copies) + #37_gc70's
-  France (the #31 chain + veto + rescue 0.90 + group completion 0.70). It rebuilds `output/sub_iu54_frgc70`'s matching
-  file **byte for byte**; `--drop-sibling-cands` gives the zip's candidate file (7,658,108 pairs, 4.42 per S1).
-  Official validator `--check-ids` PASS. Public LB: [FINAL LB].
+- **The command now produces the final (27 Sep 14:45): `sub66_final`, public LB 0.987391** = #54's India / US (the
+  combiner of `iu_stack.py`: P44 + P45's r_all + 16 zoo members, refit on the full holdout by P50; P54's duplicate
+  copies) + #37_gc70's France chain with the Qwen band blend (P38), P55's veto, P62's acronym block, P54's duplicate
+  step, P64's legal-form veto and P66's address-less exact names. It rebuilds `output/sub66_final`'s matching file
+  **byte for byte**; `--drop-sibling-cands` gives the zip's candidate file (7,660,700 pairs, 4.42 per S1).
+  `--recipe sub_iu54_frgc70` is the earlier final (#37_gc70's France).
 - 27 Sep alternatives: `--recipe sub_clean` (France = `france.chain`, P42 / P41 / P48 / P54 / P47 / P55), `sub_clean_iu34`
   (the same with #34's India / US: 0 differing lines as sets vs its folder), `sub54` (the uploaded #54, LB 0.986685).
   `--iu a10` returns India / US to #34 (byte-identical to #37_gc70 then).
 - Needs, beyond #37's files: the combiner inputs and boosters and, for `sub_clean`, P55's boosters and P48's `r_lo` (step 5).
-- Leaderboard: 0.986304 (#37_gc70) → **0.986685 (#54)** → final [FINAL LB].
+- Leaderboard: 0.986304 (#37_gc70) → 0.986685 (#54) → **0.987391 (final, `sub66_final`)**.
 
 ### Before 27 Sep 07:30 (history)
 
