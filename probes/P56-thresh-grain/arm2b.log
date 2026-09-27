@@ -1,0 +1,6 @@
+cells 84 h0-admissible 2 48s
+gc 0.5 0.9 chain|US_India:-0.59(h1 -2.21, 793) chain|India_US:+0.13(h1 +0.06, 946) m2|US_India:-1.38(h1 -1.04, 1176) m2|India_US:+1.71(h1 +1.66, 996)
+gc 0.7 0.8 chain|US_India:+2.32(h1 +2.74, 219) chain|India_US:-0.03(h1 -0.19, 284) m2|US_India:+0.13(h1 +0.12, 315) m2|India_US:-0.44(h1 -0.51, 287)
+maxmin gc 0.7 0.8 chain|US_India:+2.32 chain|India_US:-0.03 m2|US_India:+0.13 m2|India_US:-0.44
+maxmin hn 0.9 0.8 chain|US_India:+0.82 chain|India_US:-0.50 m2|US_India:+0.29 m2|India_US:-0.80
+gate False

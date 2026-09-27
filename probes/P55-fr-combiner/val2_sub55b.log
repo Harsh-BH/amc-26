@@ -1,0 +1,8 @@
+  source ['ledger.py', 'requirements.txt', 'sm_train.py', 'solution.py'] -> s3://sagemaker-114872709824-ap-south-1/amc26/source/p55-val2-55b-0927-052555/sourcedir.tar.gz
+[09/27/26 05:26:07] INFO     Found credentials in shared     credentials.py:1392
+                             credentials file:                                  
+                             ~/.aws/credentials                                 
+sagemaker.config INFO - Not applying SDK defaults from location: /etc/xdg/sagemaker/config.yaml
+sagemaker.config INFO - Not applying SDK defaults from location: /home/harsh1/.config/sagemaker/config.yaml
+submitted p55-val2-55b-0927-052555 on ml.m5.xlarge (spot)
+  python sm_launch.py --profile harsh --status p55-val2-55b-0927-052555

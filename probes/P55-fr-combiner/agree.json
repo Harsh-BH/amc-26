@@ -1,0 +1,22 @@
+{
+ "pooled": {
+  "veto": 3198,
+  "veto_in_pooled": 1.0,
+  "add": 4846,
+  "add_in_pooled": 1.0
+ },
+ "fit_India": {
+  "veto": 3616,
+  "veto_in_pooled": 0.767,
+  "add": 4260,
+  "add_in_pooled": 0.736
+ },
+ "fit_US": {
+  "veto": 2439,
+  "veto_in_pooled": 0.895,
+  "add": 7450,
+  "add_in_pooled": 0.623
+ },
+ "pooled_veto_in_both_single": 0.582,
+ "pooled_add_in_both_single": 0.627
+}
