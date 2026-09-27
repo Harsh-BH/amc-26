@@ -1,0 +1,70 @@
+{
+ "chain:US_India": {
+  "r>=0.9": {
+   "added": 933,
+   "prec": 0.89,
+   "dF": 0.00048,
+   "r_cov": 1.0
+  },
+  "r>=0.99": {
+   "added": 565,
+   "prec": 0.954,
+   "dF": 0.000414,
+   "r_cov": 1.0
+  },
+  "hn_eq_share_of_adds": 0.186,
+  "prec_hn_eq": 0.635,
+  "prec_not_hn_eq": 0.62
+ },
+ "chain:India_US": {
+  "r>=0.9": {
+   "added": 3066,
+   "prec": 0.751,
+   "dF": -0.000155,
+   "r_cov": 1.0
+  },
+  "r>=0.99": {
+   "added": 2026,
+   "prec": 0.903,
+   "dF": 0.000658,
+   "r_cov": 1.0
+  },
+  "hn_eq_share_of_adds": 0.336,
+  "prec_hn_eq": 0.947,
+  "prec_not_hn_eq": 0.421
+ },
+ "m2:US_India": {
+  "r>=0.9": {
+   "added": 1172,
+   "prec": 0.962,
+   "dF": 0.000922,
+   "r_cov": 1.0
+  },
+  "r>=0.99": {
+   "added": 929,
+   "prec": 0.985,
+   "dF": 0.000821,
+   "r_cov": 1.0
+  },
+  "hn_eq_share_of_adds": 0.226,
+  "prec_hn_eq": 0.543,
+  "prec_not_hn_eq": 0.481
+ },
+ "m2:India_US": {
+  "r>=0.9": {
+   "added": 3022,
+   "prec": 0.831,
+   "dF": 0.000529,
+   "r_cov": 1.0
+  },
+  "r>=0.99": {
+   "added": 2314,
+   "prec": 0.944,
+   "dF": 0.001047,
+   "r_cov": 1.0
+  },
+  "hn_eq_share_of_adds": 0.351,
+  "prec_hn_eq": 0.96,
+  "prec_not_hn_eq": 0.342
+ }
+}
