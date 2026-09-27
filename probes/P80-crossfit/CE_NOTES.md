@@ -96,3 +96,12 @@ ext = o[o.fold <= 1].groupby(["q1", "qx"], as_index=False).agg(  # folds 0-1: lo
 - `solution_p80ce.py`: the instance side. It builds the texts, calls `p13sol.main`, then writes the oof files.
 - `launch_ce.py <A|B> <instance> [--dry-run]`: sm_launch with P13's pinned bundle. Always `--profile harsh`.
 - `JOBS`: the launched jobs.
+
+## Progress (27 Sep 22:05)
+
+- **CE_A has finished training.** It ran the full recipe: 2 epochs, 4,048 steps, 652 s at 800 pairs/s, final loss 0.1835.
+  - Out-of-fold val AUC on the fold 4–5 band: r India 0.960 / US 0.914. The band GBDT scores 0.821 / 0.793.
+  - Fold-0 holdout band: AUC r **India 0.9623 / US 0.9479**, against the shipped CE's 0.9710 / 0.9564. The stack with p reaches 0.9746 / 0.963 (shipped: 0.977 / 0.967).
+  - So the 1/3-data CE is weaker by about 0.009 AUC. Keep that in mind when a combiner trained on these OOF scores is applied to the shipped CE's test r.
+  - Checkpoint: `results/p80ce-A-0927-2141/ckpt/ce_bge_pool.pt`. Scoring is running now.
+- **CE_B has passed its build and self-check and is training.** Peak memory so far is 29% of the xlarge's 32 GB.
