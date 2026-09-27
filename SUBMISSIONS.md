@@ -113,12 +113,12 @@ Which staged folders `run.py --split test --stage model` rebuilds (27 Sep recipe
 | staged folder | run.py flags | checked |
 |---|---|---|
 | `sub_iu54_frgc70` (default final) | `--recipe sub_iu54_frgc70` (default; = `sub37` + `iu=fullzoo` + P54 dup on the labelled countries) | **matching byte-identical** (md5 7f559944…); `--drop-sibling-cands` → `output/sub_iu54_frgc70_small` (7,658,108 candidates, 4.42/S1, md5 64ed1800…), validator `--check-ids` PASS (SageMaker p43-val-final-0730) |
-| `sub_iu54_best` (upload #2) | `--recipe sub_iu54_best` (Qwen France CE → P55 no-rescue veto → P62 acronym block + rule → dup, all countries) | **matching byte-identical** (md5 24176ee7…); candidates: 1 France line differs (a #54 France dup candidate this lineage does not produce). Acronym: 3,538 adds, 2,638 new candidates (= P50) |
+| `sub_iu54_best` (upload #2) → standby **`output/sub_iu54_best_small`** (same matching, 7,660,700 candidates = 4.42/S1, validator `--check-ids` PASS p43-val-best-0830) | `--recipe sub_iu54_best` (Qwen France CE → P55 no-rescue veto → P62 acronym block + rule → dup, all countries) | **matching byte-identical** (md5 24176ee7…); candidates: 1 France line differs (a #54 France dup candidate this lineage does not produce). Acronym: 3,538 adds, 2,638 new candidates (= P50) |
 | `sub_iu54_fr38_55n` | `--recipe sub_iu54_fr38_55n` (Qwen France CE, then P55's band veto without its rescue stage on the bge frame) | **matching byte-identical** |
 | `sub_iu54_fr38` | `--recipe sub_iu54_fr38` (Qwen France CE: `fr_r` + Qwen `w_france`) | same code path as `sub_iu54_fr38_55n` minus the veto (not re-run alone) |
-| `sub_clean` | `--recipe sub_clean` (France: `france.chain`, ORDER_CLEAN; India/US fullzoo; dup) | France: `france.chain` = `sub_clean_fr` exactly and = `sub_clean` but for its 49 duplicate copies (which `dup_add` adds); India/US = `sub_iu54_frgc70`'s (verified) |
+| `sub_clean` | `--recipe sub_clean` (France: `france.chain`, ORDER_CLEAN; India/US fullzoo; dup) | **matching byte-identical** (full run.py run) |
 | `sub_clean_iu34` | `--recipe sub_clean_iu34` (India/US = #34's a10) | **0 differing lines as sets, both files** |
-| `sub54` (LB 0.986685) | `--recipe sub54` (France: ORDER_54 with P40 / P46 / #48's veto, no P55) | France (chain on P42's frame): 2 S1 differ by 1 pair each beyond the 32 duplicate copies (P38's on43 rebuild of the union #43_r90 is 2 rows short too); India/US = `sub_iu54_frgc70`'s |
+| `sub54` (LB 0.986685) | `--recipe sub54` (France: ORDER_54 with P40 / P46 / #48's veto, no P55) | full run.py run: **2 France lines differ as ID sets**, India/US 0 (the union #43_r90 it descends from is 2 rows away from any sequential rule; P38's on43 rebuild has the same gap) |
 | `sub37_gc70` (LB 0.986304) | `--recipe sub37` (default) | byte-identical, both files |
 | `sub37_final_small` | `--recipe sub37_small` | matching = `sub37_gc70`; validator `--check-ids` PASS |
 | `sub37_gc70_hn90` | `--recipe sub37_hn90` (= `--hn-extra 0.9`) | byte-identical, both files |

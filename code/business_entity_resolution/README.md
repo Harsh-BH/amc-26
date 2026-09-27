@@ -77,9 +77,9 @@ did); `--drop-sibling-cands` gives the small candidate set of the zip.
   candidate list.
 - `--recipe sub_clean_iu34` keeps #34's India / US (the a10 stacker); `--recipe sub54` is the uploaded #54 (LB
   0.986685): the same chain with P40's address-less names (0.70) and P46's noise-word tier, in #54's order, no P55.
-- Reproduction: `sub_iu54_frgc70` rebuilds its folder's matching file byte for byte; `sub_clean_iu34` its folder with 0
-  differing lines as ID sets (both files); `sub_clean`'s France chain equals its folder's France lines (+ the duplicate
-  step); `sub54`'s France is 2 pairs off (the union #43_r90 it descends from is not a sequential rule).
+- Reproduction: `sub_iu54_frgc70`, `sub_iu54_best`, `sub_iu54_fr38_55n` and `sub_clean` rebuild their folders' matching
+  files byte for byte; `sub_clean_iu34` its folder with 0 differing lines as ID sets (both files); `sub54` differs in 2
+  France lines (the union #43_r90 it descends from is not a sequential rule).
 - Extra inputs of the final chain: `data/work/p55/fr_plain_s{0,1,2}.txt` (P55's boosters, fit on the LOCO frames by
   `probes/P55-fr-combiner/p55.py scores`), `data/work/p48/r_lo_France.parquet` (P48's bge scores of the France pairs
   outside the CE band, AWS GPU job), `data/work/p36/morph_test.json` (the brand syllables; recomputed from the test

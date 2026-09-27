@@ -40,3 +40,11 @@ Top 3 now: 0.991483 / 0.991043 / 0.990881.
 `run.py` (default recipe `sub_iu54_frgc70`) rebuilds the matching file byte for byte. Docs filled; `[FINAL LB]` slot left for
 the final score. Backed up to S3 (amc26-offload/final/) and Drive (gdrive:amc26-offload/final/). Code pushed to main.
 If `sub_iu54_best` scores higher on the LB, P43 re-zips it (its stages are being ported now; ~30 min).
+
+## Final package status (08:50)
+- `output/final/Yeti_submission.zip` = sub_iu54_frgc70 matches + small candidates (4.42/S1); validator PASS on the unzipped zip.
+- STANDBY: `output/sub_iu54_best_small` (validator PASS). If sub_iu54_best wins on the LB, switching the zip takes ~5 min:
+  `.venv/bin/python code/business_entity_resolution/src/package.py --team Yeti --out output/sub_iu54_best_small --dest output/final`
+  then validate and copy to S3/Drive final/ — just tell me the scores.
+- Backups: S3 amc26-offload/final/ and gdrive:amc26-offload/final/ (0 differences).
+- Docs have a [FINAL LB] slot to fill once the final score is known.
