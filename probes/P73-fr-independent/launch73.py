@@ -19,7 +19,14 @@ HERE = ROOT / "probes/P73-fr-independent"
 MODELS = {"bge": ("BAAI/bge-reranker-v2-m3", 1e-5, 2),                          # Apache-2.0, 568M, multilingual
           "cam": ("antoinelouis/crossencoder-camembert-base-mmarcoFR", 2e-5, 2),  # MIT, 111M, French
           "ele": ("cross-encoder/ms-marco-electra-base", 2e-5, 2),
-          "ele4": ("cross-encoder/ms-marco-electra-base", 2e-5, 4)}   # 4 epochs (user, 16:45)                # Apache-2.0, 109M, English
+          "ele4": ("cross-encoder/ms-marco-electra-base", 2e-5, 4),   # 4 epochs (user, 16:45)
+          "mxb": ("mixedbread-ai/mxbai-rerank-base-v1", 2e-5, 4),      # Apache-2.0, 184M (DeBERTa-v3)
+          "mxl": ("mixedbread-ai/mxbai-rerank-large-v1", 1e-5, 2),     # Apache-2.0, 435M
+          "mml": ("cross-encoder/mmarco-mMiniLMv2-L12-H384-v1", 3e-5, 4),  # Apache-2.0, 118M, multilingual
+          "bgb": ("BAAI/bge-reranker-base", 2e-5, 4),                  # MIT, 278M
+          "bgl": ("BAAI/bge-reranker-large", 1e-5, 2),                 # MIT, 560M
+          "ele6": ("cross-encoder/ms-marco-electra-base", 2e-5, 6)}    # 6 epochs
+                # Apache-2.0, 109M, English
 FRAME = {"India": "fb_US_India", "US": "fb_India_US", "France": "fb_France"}
 
 
@@ -40,7 +47,7 @@ runs = []
 for r in what.split(","):
     k, m = r.split(":")
     mod, lr, ep = MODELS[m]
-    h = "h" if k in ("Indiah", "USh") else "n" if k in ("Indian", "USn", "Francen") else ""   # h: strict v2h; n: v3 noise list
+    h = "h" if k in ("Indiah", "USh") else "n" if k in ("Indian", "USn", "Francen") else "r" if k in ("Indiar", "USr", "Francer") else ""   # h: strict v2h; n: v3 noise list
     runs.append({"k": k, "m": m + h, "model": mod, "lr": lr, "epochs": ep, "score": [FRAME[k.removesuffix(h) if h else k]],
                  "save": k.startswith("France"),
                  "cap_s": 2400})

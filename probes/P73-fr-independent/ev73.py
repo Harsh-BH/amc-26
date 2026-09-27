@@ -35,7 +35,7 @@ FSETS = {"base": [], "bge": ["r_bge"], "ele": ["r_ele"], "cam": ["r_cam"], "bgeh
          "p70": ["kind", "w_s", "w_e"], "p67+p70": ["r_p67", "kind", "w_s", "w_e"],       # P70's label-free columns (LOCO only)
          "p67+ele+p70": ["r_p67", "r_ele", "kind", "w_s", "w_e"],
          "p67+ele+bge": ["r_p67", "r_ele", "r_bge"], "p67+eleh+bgeh": ["r_p67", "r_eleh", "r_bgeh"],
-         "ele4": ["r_ele4"], "ele4n": ["r_ele4n"], "p67+ele4": ["r_p67", "r_ele4"], "p67+ele4n": ["r_p67", "r_ele4n"]}
+         "ele4": ["r_ele4"], "ele4n": ["r_ele4n"], "p67+ele4": ["r_p67", "r_ele4"], "p67+ele4n": ["r_p67", "r_ele4n"], "p67+mxbn": ["r_p67", "r_mxbn"], "p67+mmln": ["r_p67", "r_mmln"], "p67+bgbn": ["r_p67", "r_bgbn"], "p67+ele6n": ["r_p67", "r_ele6n"], "p67+ele4r": ["r_p67", "r_ele4r"], "mxbn": ["r_mxbn"], "mmln": ["r_mmln"], "bgbn": ["r_bgbn"], "ele6n": ["r_ele6n"], "ele4r": ["r_ele4r"]}
 
 
 def fetch(job):
