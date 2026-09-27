@@ -1,0 +1,136 @@
+{
+ "US_India": {
+  "same core+city+hn": {
+   "free_n": 2484,
+   "free_prec": 0.664,
+   "wilson": [
+    0.645,
+    0.682
+   ],
+   "dF": -0.000842,
+   "dF_h1": -0.000853,
+   "se_h1": 0.00021,
+   "add": 2481,
+   "add_prec": 0.665
+  },
+  "... minus hidden shift": {
+   "free_n": 1843,
+   "free_prec": 0.888,
+   "wilson": [
+    0.873,
+    0.902
+   ],
+   "dF": 0.00124,
+   "dF_h1": 0.001206,
+   "se_h1": 0.000143,
+   "add": 1841,
+   "add_prec": 0.889
+  },
+  "... minus shift, lf ok": {
+   "free_n": 1781,
+   "free_prec": 0.919,
+   "wilson": [
+    0.906,
+    0.931
+   ],
+   "dF": 0.001453,
+   "dF_h1": 0.001423,
+   "se_h1": 0.000132,
+   "add": 1779,
+   "add_prec": 0.92
+  },
+  "... minus shift, lf ok, key unique": {
+   "free_n": 339,
+   "free_prec": 0.982,
+   "wilson": [
+    0.962,
+    0.992
+   ],
+   "dF": 0.00038,
+   "dF_h1": 0.000366,
+   "se_h1": 5.2e-05,
+   "add": 338,
+   "add_prec": 0.985
+  },
+  "hidden shift only": {
+   "free_n": 641,
+   "free_prec": 0.019,
+   "wilson": [
+    0.011,
+    0.032
+   ],
+   "dF": -0.00209,
+   "dF_h1": -0.002066,
+   "se_h1": 0.000155,
+   "add": 640,
+   "add_prec": 0.019
+  }
+ },
+ "India_US": {
+  "same core+city+hn": {
+   "free_n": 2080,
+   "free_prec": 0.904,
+   "wilson": [
+    0.891,
+    0.916
+   ],
+   "dF": 0.001068,
+   "dF_h1": 0.001197,
+   "se_h1": 0.000109,
+   "add": 2077,
+   "add_prec": 0.904
+  },
+  "... minus hidden shift": {
+   "free_n": 1924,
+   "free_prec": 0.977,
+   "wilson": [
+    0.969,
+    0.983
+   ],
+   "dF": 0.001423,
+   "dF_h1": 0.001495,
+   "se_h1": 9.7e-05,
+   "add": 1921,
+   "add_prec": 0.977
+  },
+  "... minus shift, lf ok": {
+   "free_n": 734,
+   "free_prec": 0.988,
+   "wilson": [
+    0.977,
+    0.994
+   ],
+   "dF": 0.000577,
+   "dF_h1": 0.000625,
+   "se_h1": 6.2e-05,
+   "add": 733,
+   "add_prec": 0.988
+  },
+  "... minus shift, lf ok, key unique": {
+   "free_n": 223,
+   "free_prec": 1.0,
+   "wilson": [
+    0.983,
+    1.0
+   ],
+   "dF": 0.00021,
+   "dF_h1": 0.000228,
+   "se_h1": 4.1e-05,
+   "add": 223,
+   "add_prec": 1.0
+  },
+  "hidden shift only": {
+   "free_n": 156,
+   "free_prec": 0.006,
+   "wilson": [
+    0.001,
+    0.035
+   ],
+   "dF": -0.000355,
+   "dF_h1": -0.000299,
+   "se_h1": 4.9e-05,
+   "add": 156,
+   "add_prec": 0.006
+  }
+ }
+}

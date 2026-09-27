@@ -1,0 +1,156 @@
+{
+ "US_India": {
+  "exact (core+key+city)": {
+   "n": 30294,
+   "prec": 0.998,
+   "free_n": 558,
+   "free_prec": 0.943,
+   "free_wilson": [
+    0.92,
+    0.959
+   ],
+   "dF": 0.000521,
+   "dF_h1": 0.000484,
+   "se_h1": 6.7e-05,
+   "add": 557,
+   "add_prec": 0.944
+  },
+  "+ key unique": {
+   "n": 20236,
+   "prec": 0.998,
+   "free_n": 345,
+   "free_prec": 0.954,
+   "free_wilson": [
+    0.926,
+    0.971
+   ],
+   "dF": 0.000331,
+   "dF_h1": 0.000332,
+   "se_h1": 5.7e-05,
+   "add": 344,
+   "add_prec": 0.956
+  },
+  "+ key unique + S1 core unique": {
+   "n": 8289,
+   "prec": 0.998,
+   "free_n": 154,
+   "free_prec": 0.968,
+   "free_wilson": [
+    0.926,
+    0.986
+   ],
+   "dF": 0.000153,
+   "dF_h1": 0.000121,
+   "se_h1": 3.7e-05,
+   "add": 153,
+   "add_prec": 0.974
+  },
+  "+ key unique + S1 core unique + lf ok": {
+   "n": 8280,
+   "prec": 0.999,
+   "free_n": 152,
+   "free_prec": 0.98,
+   "free_wilson": [
+    0.944,
+    0.993
+   ],
+   "dF": 0.000168,
+   "dF_h1": 0.000143,
+   "se_h1": 3e-05,
+   "add": 151,
+   "add_prec": 0.987
+  },
+  "+ key unique + lf ok": {
+   "n": 20216,
+   "prec": 0.999,
+   "free_n": 336,
+   "free_prec": 0.979,
+   "free_wilson": [
+    0.958,
+    0.99
+   ],
+   "dF": 0.000366,
+   "dF_h1": 0.000361,
+   "se_h1": 5.2e-05,
+   "add": 335,
+   "add_prec": 0.982
+  }
+ },
+ "India_US": {
+  "exact (core+key+city)": {
+   "n": 164002,
+   "prec": 1.0,
+   "free_n": 1310,
+   "free_prec": 0.996,
+   "free_wilson": [
+    0.991,
+    0.998
+   ],
+   "dF": 0.001111,
+   "dF_h1": 0.001149,
+   "se_h1": 8.3e-05,
+   "add": 1308,
+   "add_prec": 0.996
+  },
+  "+ key unique": {
+   "n": 136090,
+   "prec": 1.0,
+   "free_n": 1043,
+   "free_prec": 0.997,
+   "free_wilson": [
+    0.992,
+    0.999
+   ],
+   "dF": 0.000901,
+   "dF_h1": 0.000958,
+   "se_h1": 7.8e-05,
+   "add": 1042,
+   "add_prec": 0.997
+  },
+  "+ key unique + S1 core unique": {
+   "n": 67493,
+   "prec": 1.0,
+   "free_n": 319,
+   "free_prec": 0.997,
+   "free_wilson": [
+    0.982,
+    0.999
+   ],
+   "dF": 0.000288,
+   "dF_h1": 0.00033,
+   "se_h1": 4.7e-05,
+   "add": 319,
+   "add_prec": 0.997
+  },
+  "+ key unique + S1 core unique + lf ok": {
+   "n": 67225,
+   "prec": 1.0,
+   "free_n": 118,
+   "free_prec": 1.0,
+   "free_wilson": [
+    0.968,
+    1.0
+   ],
+   "dF": 0.000118,
+   "dF_h1": 0.000135,
+   "se_h1": 3.1e-05,
+   "add": 118,
+   "add_prec": 1.0
+  },
+  "+ key unique + lf ok": {
+   "n": 135084,
+   "prec": 1.0,
+   "free_n": 223,
+   "free_prec": 1.0,
+   "free_wilson": [
+    0.983,
+    1.0
+   ],
+   "dF": 0.00021,
+   "dF_h1": 0.000228,
+   "se_h1": 4.1e-05,
+   "add": 223,
+   "add_prec": 1.0
+  }
+ }
+}
