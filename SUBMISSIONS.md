@@ -107,16 +107,22 @@ overstated precision (0.994 vs 0.912 for the rules).
 **P42 ranking (27 Sep 01:40):** #42_both is expected at +0.0005 against #41's +0.0002, #37_gc70_hn90's +0.0003 and #39_ind80's +0.0003. It passes both LOCO directions on both analogues, and it contains 75% of #41's pairs and all of hn90's kind of extras. Upload order: **#42_both** (or #42_both_on41 if only one France slot is left) → #42_both_on41 or #41 → #42_r90. If #42_both loses: rebuild `t=0.99,r=0.97` without the hn stage (LOCO +0.0028 / +0.0005). #37_gc70_hn90 is superseded: 18,162 of its 18,180 extras are inside #42_both. #41_hn90 is superseded with it. #39_ind80 ranks below: 59% of its adds are inside #42_both, and it fails US→India by −0.06. Details: `probes/P42-fr-joint-tune/RESULT.md`.
 
 **Upload next (27 Sep, base = #37_gc70 LB 0.986304):** 1) **#41** (P41: gc70 + synthetic-brand recovery; passes the plain LOCO both ways at precision 0.98–0.99, expected +0.0002). 2) **#41_hn90** (= #41 ∪ #37_gc70_hn90, so it tests hn90's 14,974 non-brand extras on top of #41). If it loses, keep #41. (Alternative order: #37_gc70_hn90 first, then #41_hn90 if it gains or #41 if it loses.) 2) #37_gc70_r70. Not staged (LOCO fails both ways or ≈ 0): gc at 0.6 / 0.5 (US→India −0.00012 / −0.00026, India→US +0.00013 / +0.00023 vs gc70); retrieval for no-candidate one-sided S1 (ceiling ≤ 1.7k S1, junk-like precision). Rebuild any P37 file in 15 s: `P37_BASE=<base dir> .venv/bin/python probes/P37-fr-complete/p37.py build <mode> <t> <out>`.
-**Final zip (P43, 27 Sep, updated 07:30).** Default final (master): **`output/sub_iu54_frgc70`** = #54's India/US lines
-(P44 combiner + P45 r_all + 16 zoo columns, full-holdout refit, P54 duplicate copies) + #37_gc70's France lines.
-`output/final/Yeti_submission.zip` = `output/sub_iu54_frgc70_small` (the same matching file, the small candidate set) + src +
+**Final zip (P43, 27 Sep, updated 14:45).** Final = the best public upload **`output/sub66_final` (LB 0.987391)** = #54's
+India/US lines + `sub_iu54_best`'s France chain + P64's veto + P66's adds; `run.py --recipe sub66_final` (the default)
+rebuilds its matching file byte for byte (md5 c6246285…; candidates 1 France line off, the #54 dup candidate).
+`output/final/Yeti_submission.zip` = `output/sub66_final_small` (the same matching file + `sub_iu54_best_small`'s
+candidates, which `--recipe sub66_final --drop-sibling-cands` writes: P64 / P66 / the second dup pass leave the
+candidate list alone; every match is in it) + src +
 README + requirements + the filled doc; backups `s3://sagemaker-114872709824-ap-south-1/amc26-offload/final/` and
 `gdrive:amc26-offload/final/`. **The zip must hold the best-public upload's matching file**, rebuilt by its code.
 Which staged folders `run.py --split test --stage model` rebuilds (27 Sep recipes first):
 
 | staged folder | run.py flags | checked |
 |---|---|---|
-| `sub_iu54_frgc70` (default final) | `--recipe sub_iu54_frgc70` (default; = `sub37` + `iu=fullzoo` + P54 dup on the labelled countries) | **matching byte-identical** (md5 7f559944…); `--drop-sibling-cands` → `output/sub_iu54_frgc70_small` (7,658,108 candidates, 4.42/S1, md5 64ed1800…), validator `--check-ids` PASS (SageMaker p43-val-final-0730) |
+| **`sub66_final` (final, LB 0.987391)** | `--recipe sub66_final` (default; `sub64` + P66 xfc adds on #37's frame, fit on the final lines, + P54's dup again) | **matching byte-identical** (md5 c6246285…), stage counts = P66's (class 10,403 of 40,822, 1,900 on #37's base, 1,884 fit on 1,810 S1, 0 P64 conflicts, dup 0); candidates 1 France line off (as `sub_iu54_best`) |
+| `sub64` | `--recipe sub64` (`sub_iu54_best` + P64's legal-form veto, last stage) | veto count 344 = P64's (checked inside the `sub66_final` run) |
+| `sub64_frgc70`, `sub66` | `--recipe sub64_frgc70` / `sub66` (the same stages on `sub_iu54_frgc70`) | not re-run (same code path; `sub66`'s 1,900 adds = the `sub66_final` run's count on #37's base) |
+| `sub_iu54_frgc70` (earlier final) | `--recipe sub_iu54_frgc70` ( = `sub37` + `iu=fullzoo` + P54 dup on the labelled countries) | **matching byte-identical** (md5 7f559944…); `--drop-sibling-cands` → `output/sub_iu54_frgc70_small` (7,658,108 candidates, 4.42/S1, md5 64ed1800…), validator `--check-ids` PASS (SageMaker p43-val-final-0730) |
 | `sub_iu54_best` (upload #2) → standby **`output/sub_iu54_best_small`** (same matching, 7,660,700 candidates = 4.42/S1, validator `--check-ids` PASS p43-val-best-0830) | `--recipe sub_iu54_best` (Qwen France CE → P55 no-rescue veto → P62 acronym block + rule → dup, all countries) | **matching byte-identical** (md5 24176ee7…); candidates: 1 France line differs (a #54 France dup candidate this lineage does not produce). Acronym: 3,538 adds, 2,638 new candidates (= P50) |
 | `sub_iu54_fr38_55n` | `--recipe sub_iu54_fr38_55n` (Qwen France CE, then P55's band veto without its rescue stage on the bge frame) | **matching byte-identical** |
 | `sub_iu54_fr38` | `--recipe sub_iu54_fr38` (Qwen France CE: `fr_r` + Qwen `w_france`) | same code path as `sub_iu54_fr38_55n` minus the veto (not re-run alone) |

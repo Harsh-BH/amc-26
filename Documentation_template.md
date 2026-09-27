@@ -48,10 +48,11 @@ France's threshold and rules were validated with leaderboard uploads that change
 
 - **Holdout F0.5 (India + US, report half): 0.98984** with the a10 stacker (0.98956 before it; all S1 at #8c: 0.98990),
   against 0.7708 for an exact-key rule baseline.
-- **Best public leaderboard: 0.986304** (#37_gc70, 26 Sep 23:32; France ≈ 0.966). The path there: 0.980017 (#5) →
+- **Best public leaderboard: 0.987391** (the final entry, `sub66_final`, 27 Sep 14:22). The path there: 0.980017 (#5) →
   0.981142 (D4, France stricter) → 0.984072 (#9ab) → 0.9856 (#31, the France chain) → 0.985647 (#34_veto) → 0.98596
   (#34v, empty-S1 rescue) → 0.986304 (#37, group completion) → **0.986685** (#54, 27 Sep: the India/US combiner + the
-  France chain of 4.9). **Final entry: #54's India/US with #37's France (`sub_iu54_frgc70`), public LB [FINAL LB].**
+  France chain of 4.9) → **0.987391** (`sub66_final`: #54's India/US + #37's France with the Qwen CE, P55's veto, the
+  acronym rule, P64's legal-form veto and P66's address-less names, 4.10). **Final entry: `sub66_final`, public LB 0.987391.**
 - The whole gap between holdout and leaderboard was France: at #5 the leaderboard implied India + US ≈ 0.989 and
   France ≈ 0.93.
 
@@ -140,7 +141,7 @@ shared ledger; nothing was merged without its number.
   | blocking ∪ rule pairs | 27.5M | 15.87 (16.76 / 15.71 / 15.72) | 0.9917 (14.2 / S1 on holdout) |
   | after the pruner (what the matcher and the cross-encoder score) | 8,370,573 | 4.83 (5.14 / 4.90 / 4.63) | 0.9874 (4.30 / S1) |
   | after the sibling-decoy stage (#37, `sub37_small`) | 7,658,102 | 4.42 (4.48 / 4.75 / 4.00) | 0.9872 (India / US 4.31 / 3.92 per S1) |
-  | **the final `candidate_pairs.tsv`** (`sub_iu54_frgc70 --drop-sibling-cands`: the decoy stage + P54's 7 duplicate candidates) | **7,658,108** | **4.42 (4.48 / 4.75 / 4.00)** | — |
+  | **the final `candidate_pairs.tsv`** (`sub66_final --drop-sibling-cands`: the decoy stage + the acronym block's 2,638 and P54's duplicate candidates) | **7,660,700** | **4.42** | — |
 
   The pruner's list is 130 MB, down from 377 MB; the final file is 121 MB. 42,182 test Source 1 have no candidate in
   the final file (22,641 after the pruner), and all of them are among the empty answers.
@@ -394,14 +395,16 @@ rule on the same France pair rows, applied in this order after the post-rules (t
 - vs #54: France only, 11,838 lines (+1,149 / −11,059 pairs). vs #37: France +32,731 / −3,241 pairs.
 - Shape before P55: 3.26 matches per France S1 (India / US 3.38), 5.9% empty, 76.7% of S1 with both sources.
 
-### 4.10 France variants on the final base (27 Sep; recipes `sub_iu54_fr38`, `sub_iu54_fr38_55n`, `sub_iu54_best`)
-On #54's India / US + #37's France, three France changes that passed their checks, stacked in this order:
+### 4.10 France variants on the final base (27 Sep; recipes `sub_iu54_fr38`, `sub_iu54_fr38_55n`, `sub_iu54_best`, `sub64`, `sub66_final`)
+On #54's India / US + #37's France, five France changes that passed their checks, stacked in this order (the last row is the final, LB 0.987391):
 
 | change | rule | France test | evidence |
 |---|---|---|---|
 | Qwen France CE (P38) | the band blend uses Qwen3-Reranker-4B + LoRA (Apache-2.0, 4.02B, fine-tuned on India + US on AWS) instead of bge, with out-of-domain weights [0.8943, 0.3729, −0.0521]; the rest of #37's chain unchanged (the veto keeps bge's r) | 6,885 lines, +3,685 / −3,431 pairs | LOCO Qwen − bge **+0.00141 ± 0.00017 / +0.00109 ± 0.00014** France-F0.5 (8 SE both ways); band AUC 0.857 / 0.868 vs 0.821 / 0.829 |
 | P55 veto without its rescue stage | P55's band veto (4.9) on the bge chain's frame, minus its P42 rescue-stage pairs (the LB-proven #34v rescues) | −619 pairs | P55 veto arm LOCO positive both ways |
 | P62 acronym rule | an acronym block (the S1 core's acronym = the SX's one-token core, same house number and city) + an address check (token Jaccard ≥ 0.6, every S1 street token present), unambiguous pairs only; free SX, caps; the block's pairs join the candidate list | +3,538 pairs (2,638 new candidates) | train precision 0.997 (India) / 0.9997 (US) |
+| P64 legal-form veto (`sub64`) | the last stage: a France pair whose S1 and SX both carry a legal form, the forms disjoint (SARL vs SAS, SAS vs SA, SCI vs SNC), leaves the matching file (`france.lf_veto`) | −344 pairs (336 S1) | LOCO (gc70 chain) +0.00300 ± 0.00013 / +0.00074 ± 0.00007 |
+| P66 address-less exact names (`sub66_final`) | on #37's frame: an argmax SX with an empty address whose full normalised name (legal form kept) equals its S1's, a name and an S1 core no other France S1 carries, p ≥ 0.30, free SX, caps 5 / 6; fit on the final lines, P64 conflicts skipped (`france.xfc_adds`) | +1,884 pairs (1,810 S1) | train precision 0.996 / 0.987; LOCO +0.000046 ± 0.000017 / +0.000004 ± 0.000003 |
 
 ## 5. Results & Error Analysis
 
@@ -412,8 +415,8 @@ On #54's India / US + #37's France, three France changes that passed their check
   - The holdout's competing (non-holdout) band pairs keep the e5 blend, since bge scores were computed only for the
     holdout's own band.
   - Two independent audits (at #3) found no label leakage. The threshold-tuning optimism is at most 0.00003.
-  - **Public leaderboard: best 0.986304 (#37_gc70, 26 Sep 23:32).** Final entry = the best public upload:
-    27 Sep: #54 0.986685 (best so far); final entry `sub_iu54_frgc70` (#54's India/US + #37's France): [FINAL LB].
+  - **Public leaderboard: best 0.987391 (`sub66_final`, 27 Sep 14:22), the final entry** (= the best public upload):
+    +0.000706 over #54 (0.986685), +0.001087 over #37_gc70 (0.986304).
 
 ### 5.1 Ablation — every step on the same full-corpus holdout
 
@@ -457,11 +460,8 @@ The public leaderboard is a subset of test (all three countries).
 | #34v_r90 — 23:00 | #34_veto + France empty-S1 rescue at p ≥ 0.90 (4.8) | 0.98596 | +0.00031 |
 | #37_gc70 — 23:32 | #34v_r90 + France group completion at p ≥ 0.70 (4.8) | 0.986304 | +0.00034, France ≈ 0.966 |
 | **#54 — 27 Sep 05:32** | India / US: the combiner + r_all + zoo, full-holdout refit (4.4c); France: the chain of 4.9 with P46 / P40 and without P55 | **0.986685** | **best**: +0.00038, about a quarter of the expected +0.0015–0.002 |
-| 27 Sep, slot 2 | **`sub_iu54_frgc70`**: #54's India / US (4.4c) + #37's France (4.7–4.8), the default final | [LB] | [Δ vs 0.986685] |
-| 27 Sep, slot 3 | [`sub_iu54_best`: + Qwen France CE, P55 band veto, acronym rule — only if the LB prefers it] | [LB] | |
-| 27 Sep, slot 4 | [later upload] | [LB] | |
-| 27 Sep, slot 5 | [later upload] | [LB] | |
-| **final entry** | the best public upload (organiser ruling) | **[FINAL LB]** | the zip's `output/` holds its matching file with the small candidate set |
+| **`sub66_final` — 27 Sep 14:22** | #54's India / US (4.4c) + #37's France (4.7–4.8) + the Qwen CE, P55's veto and the acronym rule (4.10) + P64's legal-form veto (−344 pairs) + P66's address-less exact names (+1,884) | **0.987391** | **best**: +0.000706 vs #54 (expected 0.9870–0.9873) |
+| **final entry** | the best public upload (organiser ruling): `sub66_final` | **0.987391** | the zip's `output/` holds its matching file with the small candidate set |
 
 Every France test sits on the same India/US files, so each leaderboard delta measures one France change (#34_veto
 changed both: India / US by the a10 stacker, France by the veto).
@@ -537,9 +537,9 @@ changed both: India / US by the a10 stacker, France by the veto).
 
 - **Entry point:** `python src/run.py --split test --stage model --out output/` writes both TSVs, asserts the format
   rules and runs the official validator.
-  - The default recipe is **`sub_iu54_frgc70`** (the final: #54's India / US + #37's France); **the zip's `output/` is
-    `--recipe sub_iu54_frgc70 --drop-sibling-cands`** (the same matching file, byte for byte, with 4.42 candidates per
-    Source 1). `--recipe sub_clean | sub_clean_iu34 | sub54` are the 27 Sep alternatives, `--recipe sub37 | sub37_hn90 |
+  - The default recipe is **`sub66_final`** (the final, LB 0.987391); **the zip's `output/` is
+    `--recipe sub66_final --drop-sibling-cands`** (the same matching file, byte for byte, with 4.42 candidates per
+    Source 1). `--recipe sub64 | sub66 | sub_iu54_best | sub_iu54_frgc70 | sub_clean | sub_clean_iu34 | sub54` are the 27 Sep alternatives, `--recipe sub37 | sub37_hn90 |
     sub41 | sub42_both | sub40x | sub43_r90 | sub46_on43 | sub34 | sub31 …` the 26–27 Sep night's, and
     `--recipe sub9ab|sub8c|…|sub4` the earlier submissions; `--iu a10|full|fullzoo` switches India / US.
   - Each recipe reproduces its staged folder (byte for byte or as ID sets per line; SUBMISSIONS.md lists which).
