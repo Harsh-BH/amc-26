@@ -65,3 +65,10 @@ leave-one-country-out proxies (US→India, India→US) and France-only leaderboa
 - **Limitations we state openly:** several signals exploit this dataset's generator (sibling house-number offsets,
   synthetic brands, noise words), learned from the data itself; France gains rest on LOCO proxies and public-LB deltas;
   the last change sets ship as recorded rows with their generating scripts.
+- **Future improvements (with more time), in order:** (1) cross-fit the matcher and cross-encoder over all training
+  folds so the second-stage combiner learns from ~1.6–1.8M Source 1 instead of the 220k holdout (≈7× more data;
+  stages: fold halves → m2 cross-fit → CE cross-fit → out-of-fold frames → stage C on folds 2–9 → owner re-decision →
+  France via LOCO-gated out-of-domain blend; ~1 day, ≈$10 GPU); (2) finish the India owner re-decision (passed both
+  fold-0 halves); (3) turn every recorded change set into a `run.py` stage; (4) a later-stage candidate set (~3 per
+  S1); (5) more blockers for recall, then prune back; (6) France self-training on agreement pseudo-labels;
+  (7) our own implementation of the credited third-party rules.

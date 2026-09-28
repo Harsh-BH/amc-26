@@ -32,7 +32,7 @@
 | Output validity | one line per test S1 (all three countries); every match inside the candidate set; one owner per S2/S3; official validator `--check-ids` PASS | `src/verify_outputs.py`, `src/reproduce.sh` |
 | Reproducibility | one command rebuilds both files and checks their md5 against the leaderboard upload; the recorded change sets rebuild byte for byte; their generating scripts ship in `src/experiments/` | §8; `src/reproduce.sh`; `src/experiments/INDEX.md` |
 | Code quality | every module, function and class has a docstring; 17 / 17 module self-checks pass (run 29 Sep); end-to-end test with an injected unseen country | §8 test log; `python src/<module>.py`; README §6 |
-| Self-evaluation | contributions tied to measured gains; limitations, risks and next steps stated openly | §2.3, §6.1–6.2 |
+| Self-evaluation | contributions tied to measured gains; limitations and risks stated openly; seven costed future improvements with stages, led by a 7× larger cross-fitted second stage | §2.3, §6.1–6.2 |
 | Cost | laptop-scale pipeline (every scoring step ≤ 3 GB RAM); $179.85 of AWS usage for the whole challenge, covered by credits | §8 compute table |
 
 ---
@@ -537,13 +537,99 @@ Every France test sat on unchanged India/US files, so each of those leaderboard 
 - **Third-party rules.** 16,118 France pairs come from a public repository's rules. They are credited and were
   filtered by our own holdout-checked rule (§7).
 
-### 6.2 Next steps
+### 6.2 Future improvements (with more time)
 
-- Port each recorded change set into a `run.py` recipe step, so that one command writes `sub90u` without recorded rows.
-- India stage-C owner re-decision: its fold-0 blend passed on both halves, but its test CE scores were not ready in time.
-- Re-implement the third-party ADD rules in our own code.
-- Ship a later-stage candidate set (the pairs the final decision stage actually compares) to shrink
-  `candidate_pairs.tsv` below 4.43 per S1.
+Ordered by expected value. The first idea is the main one. Each lists its evidence, stages, cost and risk.
+
+**1. Train the second stage on ~7× more data by cross-fitting the whole stack (top priority).**
+- **Why.** Our India / US combiner (§4.3) learns only from the holdout: 220,358 Source 1 of fold 0.
+  - The matcher and the cross-encoder were trained on folds 2–5 and 4–9, so their scores on those folds are
+    in-sample, and over-confident.
+  - A second stage fitted on such scores learns the wrong trust levels. So we fitted it on the only fold whose
+    scores are honest.
+  - Cross-fitting gives every training record an out-of-sample score. The second stage can then learn from folds 2–9:
+    about 1.6–1.8M Source 1, ≈ 7–8× more.
+- **Evidence it pays.**
+  - Our own learning curve still rises: the full-holdout refit gained +0.000039 ± 0.000019 for 1.5× the data (P50).
+  - Our partial cross-fit (P80) was US only, with two m2 halves, a cross-fitted CE and stage C re-deciding only the
+    non-argmax pairs. It still gained **+0.000287 ± 0.000033** on US fold 0.
+  - The public repository credited in §7 uses this design at full scale: 1.6M Source 1, 3.9M pairs. On its own
+    India / US validation it reports stage C at 0.9922 vs 0.9888 for its stage B, and 0.99182 vs 0.98963 with vs
+    without the cross-encoder columns. Its validation differs from ours, so the numbers are not directly comparable,
+    but the size of the jump is the reason this idea comes first.
+- **Stages.**
+  1. *Folds.* Keep fold 0 untouched as the holdout and fold 1 for early stopping. Split the fitting folds into two
+     halves, A = {2–5} and B = {6–9}.
+  2. *Matcher cross-fit.* Train m2 on A and score B, then train on B and score A. Folds 0–1 and test take the
+     logit-mean of both boosters, so every pair's p is out of sample (P80's stage 1, extended from {2,3}/{4,5} to all
+     eight folds).
+  3. *Cross-encoder cross-fit.* Fine-tune bge-reranker-v2-m3 on A's uncertain band and score B's band, and the
+     reverse. Test takes the logit-mean of the two checkpoints. Also score *every* argmax pair (r_all), not only the
+     band.
+  4. *Frames on out-of-fold scores.* Recompute the US house-number stacker, the a10 columns, the exclusivity / group /
+     house-number-corruption columns, the generator traces and the anchors on all folds from the out-of-fold p and r.
+     Competitors must carry out-of-fold scores too: 90% of a record's rival Source 1 sit in other folds.
+  5. *Second stage on 7× data.* Fit the combiner / stage C (LightGBM, 5 seeds) on folds 2–9 with early stopping on
+     fold 1. Cross-fit it once more (C_A / C_B), so that its own scores are out of sample for the owner re-decision.
+  6. *Owner re-decision and threshold.* Each record goes to its best Source 1 among all its candidates, with caps
+     5 / 6. Tune t on fold 1, and report the paired per-S1 F0.5 on the two halves of fold 0 (the §2.1 yardstick).
+  7. *France.* Apply the India + US stage C to France with out-of-domain blend weights, gated by both LOCO
+     directions before use, as for every France model (§4.5).
+- **Cost.** About one day:
+  - two m2 fits (~45 min each on CPU);
+  - two CE fine-tunes and their scoring (~3–4 A10G-hours, ≈ $10);
+  - the frames (~1 h);
+  - stage C (minutes).
+- **Risk.** Our combiner already carries r_all and 16 zoo columns, so part of the rival's jump may already be in our
+  number. A realistic target is +0.0005 to +0.002 LB-eq on India / US; this is untested.
+
+**2. Finish the India owner re-decision.**
+- **Evidence.** P80's India blend (w 1.0) passed on both halves of fold 0: +0.000112 ± 0.000066 and +0.000297 ± 0.000079,
+  each tuned on the other half.
+- **Stages.**
+  1. Score India's test pairs with the cross-fitted CE (one GPU job).
+  2. `stagec.py fit India --ce`, then `blend`, then `w1_test India`.
+  3. `build_sub.py` on the India lines only.
+  4. Check with `verify_outputs.py`.
+- **Cost.** ~2 h. **Expected:** ≈ +0.0001 LB.
+
+**3. Make every recorded change set a `run.py` stage.**
+- **Why.** One command from the raw data to `sub90u`, with no recorded rows.
+- **Stages.**
+  1. For each experiment in `experiments/INDEX.md`, move its builder into `france.py` / `iu_stack.py` as a recipe step.
+  2. Cache its GPU scores the way `run.py` caches the bge scores.
+  3. Regression test: the new recipe must rebuild `sub90u` byte for byte (md5 a8ad38b5…).
+- **Cost.** 1–2 days. No score change by design.
+
+**4. A smaller candidate set from a later cascade stage.**
+- **Why.** Candidate-set size is ranked. After the matcher, most pairs with a very low p never become a decision or a
+  competitor that matters.
+- **Stages.**
+  1. On the holdout, measure how often a pair with m2 p < ε is ever an argmax, a rival or a match.
+  2. Choose ε on the final F0.5, the way the pruner's τ was chosen (§3).
+  3. Feed only the surviving pairs to the CE and the stackers, and write that set as `candidate_pairs.tsv`.
+- **Target.** ~3 candidates per Source 1 (from 4.43) at < 0.0001 F0.5.
+
+**5. Higher blocking recall, then prune back.**
+- **Why.** The pruned list misses ~1.3% of true pairs. The public repository loses ~0.3% by unioning many searches.
+- **Stages.**
+  1. Add blockers: an e5-small embedding search on names, an "only business at this exact address" key, and extra
+     word-level searches.
+  2. Union them, and measure recall on the full train corpus.
+  3. Retrain the pruner on the wider list, keeping the per-S1 budget at or below today's 4.43.
+- **Risk.** Part of the missing 1.3% is irreducible: same-name look-alikes elsewhere.
+
+**6. France self-training.**
+- **Why.** France has no labels, and our France-independent CE (P73) already showed that confident pseudo-labels help.
+- **Stages.**
+  1. Take France pairs where the combiner, the bge and the Qwen CE all agree with high confidence.
+  2. Train a France-specific matcher / combiner on them.
+  3. Validate the same loop by simulation on India and US (LOCO: hide the labels, pseudo-label, compare).
+  4. Iterate while both LOCO directions gain.
+
+**7. Own implementation of the third-party ADD rules.**
+- **Stages.** Re-derive each kept rule class (same street, address-less record) in `france.py`. Test each class on
+  both LOCO pools, and keep only classes that pass both countries. This removes the external dependency.
 
 ---
 
