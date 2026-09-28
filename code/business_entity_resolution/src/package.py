@@ -4,7 +4,7 @@
     python code/business_entity_resolution/src/package.py --selftest
 
     output/matching_results.tsv, output/candidate_pairs.tsv
-    code/business_entity_resolution/{src/*.py, src/experiments/**, README.md, requirements.txt, bge_train_requirements.txt}
+    code/business_entity_resolution/{src/*.py, src/*.sh, src/experiments/**, README.md, requirements.txt, bge_train_requirements.txt}
     Documentation_template.md (or .pdf), filled in and not renamed, taken from the repo root or docs/ when it exists
     src/final_changes.parquet / final_patch.parquet: the recorded change sets of final_build.py / final_patch.py
 """
@@ -37,7 +37,8 @@ def doc(roots=(ROOT, ROOT / "docs")) -> Path | None:
 def files(out: Path, code: Path, documentation: Path | None):
     """(source path, path inside the zip) for every member: the two TSVs, the code folder, the recorded change sets, the doc."""
     yield from ((out / n, f"output/{n}") for n in HEADERS)
-    yield from ((p, f"code/business_entity_resolution/src/{p.name}") for p in sorted((code / "src").glob("*.py")))
+    yield from ((p, f"code/business_entity_resolution/src/{p.name}")
+                for p in sorted((code / "src").iterdir()) if p.suffix in (".py", ".sh"))
     yield from ((p, f"code/business_entity_resolution/{p.relative_to(code).as_posix()}")   # the change sets' experiment scripts
                 for p in sorted((code / "src" / "experiments").rglob("*")) if p.suffix in (".py", ".sh", ".md"))
     yield from ((code / n, f"code/business_entity_resolution/{n}") for n in ("README.md", "requirements.txt",

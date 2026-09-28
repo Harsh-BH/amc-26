@@ -27,6 +27,8 @@ This folder is a self-contained copy of our pipeline. From the raw TSVs it regen
 | `src/final_build.py` + `final_changes.parquet` | applies the recorded France change sets of 27 Sep afternoon → `sub77` |
 | `src/final_patch.py` + `final_patch.parquet` | applies the recorded evening change sets → `sub90u` (the final) |
 | `src/experiments/` | the experiment scripts that produced those recorded change sets (`INDEX.md` maps each one) |
+| `src/reproduce.sh` | **one command**: the three steps of §2, then `verify_outputs.py`, the md5 check and the official validator |
+| `src/verify_outputs.py` | recomputes the headline numbers from the two TSVs and checks the invariants: one line per test S1, every match inside the candidate set, one owner per S2/S3 (15 s, stdlib only) |
 | `src/test_*.py` | end-to-end and rule tests (§6) |
 | `src/package.py` | builds and checks `Yeti_submission.zip` |
 | `requirements.txt` | pinned versions and licences (`bge_train_requirements.txt`: the extra pins of the GPU job) |
@@ -52,6 +54,8 @@ HF_HUB_OFFLINE=0 .venv/bin/python -c "from transformers import AutoModelForSeque
 
 ## 2. Reproduce the final submission
 
+`bash code/business_entity_resolution/src/reproduce.sh` does all of this plus the checks. Step by step:
+
 ```bash
 # 1. the pipeline: raw TSVs -> sub66_final (public LB 0.987391) with the small candidate set
 .venv/bin/python code/business_entity_resolution/src/run.py --split test --stage model --recipe sub66_final \
@@ -60,6 +64,7 @@ HF_HUB_OFFLINE=0 .venv/bin/python -c "from transformers import AutoModelForSeque
 .venv/bin/python code/business_entity_resolution/src/final_build.py output/sub66_final_small output/sub77 --upto 41
 # 3. the recorded evening change sets -> sub90u (LB 0.989382, the final), < 1 min
 .venv/bin/python code/business_entity_resolution/src/final_patch.py output/sub77 output/sub90u
+.venv/bin/python code/business_entity_resolution/src/verify_outputs.py output/sub90u   # invariants + numbers below
 md5sum output/sub90u/*.tsv
 #   f311dc4d44e4587ece2e74541072c2e2  candidate_pairs.tsv   (7,668,008 pairs, 4.43 per S1)
 #   a8ad38b59e75013bcb53ec13578b5529  matching_results.tsv  (5,848,223 pairs)
@@ -245,6 +250,7 @@ The blend refit on holdout half 0 returns [0.678, 0.715, 0.337] for m2_big (CFG 
 .venv/bin/python code/business_entity_resolution/src/block.py              # blocking self-check
 .venv/bin/python code/business_entity_resolution/src/metric.py             # metric self-check (PDF example)
 .venv/bin/python code/business_entity_resolution/src/package.py --selftest
+.venv/bin/python code/business_entity_resolution/src/verify_outputs.py --selftest      # output-invariant checks
 ```
 
 `--stage rules` reproduces submission #2, the rules-only baseline, byte for byte.

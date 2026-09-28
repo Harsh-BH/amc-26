@@ -19,6 +19,22 @@
 
 ---
 
+## At a glance: evaluation criteria → evidence
+
+| criterion | what we deliver | where to verify |
+|---|---|---|
+| Leaderboard score | public F0.5 **0.989382** (`sub90u`); +0.0094 over our first upload, every step measured (§5.2) | §5.1–5.2 |
+| Candidate-set size and efficiency | **4.43 candidates per Source 1** (7,668,008 pairs), cut from 15.87 by a learned pruner for −0.00024 F0.5; recall 0.9917 → 0.9872; blocking in ~36 min at 2.7 GB RAM on a laptop | §3; `src/block.py`, `src/prune.py`; `src/verify_outputs.py` recomputes the count |
+| Soundness of the approach | one-parent structure used end to end; every change passed a paired full-corpus holdout test (+0.0002 at ≥ 3 SE); failed ideas reported with their numbers | §2, §4, §5.4 |
+| Unseen country (France) | label-free chain, chosen on LOCO proxies and France-only uploads; France found as "test label absent from train", never named in code | §4.5; `run.unseen()`, `src/france.py` |
+| Model licences / size | every model MIT or Apache-2.0, ≤ 8B (largest 4.02B), run locally, fine-tuned on the provided data only | §7 table; `requirements.txt` header |
+| No external data / fair play | no APIs, geocoding, registries, postal or city tables; hand-written lists only of the allowed kinds; third-party code credited | §7 |
+| Output validity | one line per test S1 (all three countries); every match inside the candidate set; one owner per S2/S3; official validator `--check-ids` PASS | `src/verify_outputs.py`, `src/reproduce.sh` |
+| Reproducibility | one command rebuilds both files and checks their md5 against the leaderboard upload; the recorded change sets rebuild byte for byte; their generating scripts ship in `src/experiments/` | §8; `src/reproduce.sh`; `src/experiments/INDEX.md` |
+| Code quality | every module, function and class has a docstring; each module has a runnable self-check; end-to-end test with an injected unseen country | `src/test_pipeline.py`, `python src/<module>.py`, README §6 |
+
+---
+
 ## 1. Executive Summary
 
 - **The pipeline.** Reverse TF-IDF blocking, then a learned pruner, then a LightGBM matcher on 65 label-free features,
@@ -525,6 +541,9 @@ unlabelled test rows, which the organisers allow):
 
 ## 8. Reproducibility
 
+- **One command:** `bash code/business_entity_resolution/src/reproduce.sh` runs the three steps below, then
+  `verify_outputs.py` (the invariants and headline numbers), the md5 check against the leaderboard upload, and the
+  official validator with `--check-ids`.
 - **Regenerate the files** (repository root; `code/business_entity_resolution/README.md` has setup, caches and
   runtimes):
   ```bash
@@ -563,7 +582,8 @@ unlabelled test rows, which the organisers allow):
 versions; every library is MIT / Apache-2.0 / BSD / ISC), `src/`.
 
 - **Entry points:** `src/run.py` (the pipeline; `--split test|holdout|dev`, `--recipe` selects any earlier submission),
-  then `src/final_build.py` and `src/final_patch.py` (the recorded change sets). `src/package.py` builds this zip.
+  then `src/final_build.py` and `src/final_patch.py` (the recorded change sets). `src/reproduce.sh` chains them with
+  every check; `src/verify_outputs.py` recomputes the headline numbers from the TSVs; `src/package.py` builds this zip.
 - **Modules, in pipeline order:**
   - `io_tsv.py`: TSV ↔ parquet with `QUOTE_NONE`.
   - `worlds.py`: folds and evaluation worlds.
