@@ -84,6 +84,7 @@ def band(country: str, seed: int = 0):
 
 
 def _join(t: pa.Table) -> np.ndarray:
+    """'name | addr' per row of a P3 text table, as an object array."""
     import pyarrow.compute as pc
     return np.array(pc.binary_join_element_wise(t["name"], t["addr"], pa.scalar(" | ", pa.large_string())).to_pylist(), dtype=object)
 
@@ -104,6 +105,8 @@ def texts(split: str, country: str, q1: np.ndarray, qx: np.ndarray):
 
 
 def load_model(path=None):
+    """e5-small tokenizer + 1-logit sequence classifier on the GPU; path = a fine-tuned checkpoint
+    loaded over it (non-strict: the checkpoint lacks the frozen word embeddings)."""
     import torch
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
     tok = AutoTokenizer.from_pretrained(BASE)
@@ -248,6 +251,7 @@ def train(epochs: int = EPOCHS, bs: int = 128, lr: float = 6e-5, oob: float = 0.
 
 
 def logit(x):
+    """logit of x clipped to [1e-6, 1 - 1e-6], float64."""
     x = np.clip(x.astype(np.float64), 1e-6, 1 - 1e-6)
     return np.log(x / (1 - x))
 
@@ -270,6 +274,8 @@ def blend(p: np.ndarray, r: np.ndarray, w: list, lo: float = LO, hi: float = HI)
 
 
 def _check():
+    """Self-check of the blend rule: out-of-band / unscored pairs keep p, r moves band pairs both ways,
+    identity weights return p."""
     p = np.array([0.05, 0.5, 0.5, 0.5, 0.95], np.float32)
     r = np.array([0.9, np.nan, 0.1, 0.9, 0.1], np.float32)
     q = blend(p, r, [1.0, 1.0, 0.0])

@@ -5,7 +5,7 @@ A 200 x 31 LightGBM residual (init_score = logit p) on #8c's argmax pairs: each 
 stacker only re-scores that pair, and the pair is kept when sigma(raw + logit p) >= t. Columns = SX context (runner-up
 p2 / margin, masked where the runner-up carries the holdout-only e5 blend), S1 context, twin counts (other candidate
 S1 of the SX with the argmax S1's exact name / address / legal-stripped core), name-only flag, error category.
-The booster (data/work/p34/a10_h0.txt) is fit on the India + US holdout half 0 (probes/P34-a10-stack/ho.py: 2 s,
+The booster (data/work/p34/a10_h0.txt) is fit on the India + US holdout half 0 (experiment P34's holdout script: 2 s,
 bit-identical refit).
 
 features() is the one builder for holdout and test, so the two cannot drift. Everything is keyed on integer codes:
@@ -41,6 +41,8 @@ lg = lambda x: np.log(np.clip(x, 1e-4, 1 - 1e-4) / (1 - np.clip(x, 1e-4, 1 - 1e-
 
 
 def norm(s: str) -> list:
+    """Tokens of a name / address: '.' dropped, accents stripped, lower case, split on runs of anything but
+    a-z, 0-9 and Indic letters."""
     s = unicodedata.normalize("NFKD", s.replace(".", ""))
     s = "".join(ch for ch in s if not unicodedata.combining(ch)).lower()
     return re.sub(r"[^a-z0-9ऀ-෿]+", " ", s).split()
@@ -105,6 +107,7 @@ def features(q1, qx, p, p_m2, r, am, scored, s1t, sxt, t: float = T) -> pd.DataF
     p, p_m2, r = (np.asarray(x, np.float64) for x in (p, p_m2, r))
 
     def twins(key_of_s1):              # other rows of the same SX whose S1 has the same key
+        """Per pair: the other rows of its SX whose S1 has the same key (key_of_s1: one value per S1 code)."""
         k = pd.factorize(key_of_s1)[0].astype(np.int64)[q1]
         _, inv, cnt = np.unique((qx << 32) | k, return_inverse=True, return_counts=True)
         return cnt[inv] - 1
@@ -159,6 +162,7 @@ def features(q1, qx, p, p_m2, r, am, scored, s1t, sxt, t: float = T) -> pd.DataF
 
 
 def fit(X: pd.DataFrame, y: np.ndarray):
+    """The a10 booster: ROUNDS trees of PRM on X[COLS], residual on init_score = logit p, 'cat' categorical."""
     import lightgbm as lgb
     ds = lgb.Dataset(X[COLS], y, init_score=X.lp.to_numpy(), categorical_feature=["cat"], free_raw_data=True)
     return lgb.train(PRM, ds, ROUNDS)

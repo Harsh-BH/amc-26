@@ -3,7 +3,7 @@
     python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # the final (27 Sep): sub_iu54_frgc70
         --drop-sibling-cands (the final zip: same matches, 4.42 candidates per S1) | --recipe sub_clean | sub54 | sub37 | … | sub4
         --rescue T / --gc T / --hn-extra T / --veto TAU / --t-country France=T: the unseen country's bars (0 = off)
-    python code/business_entity_resolution/src/run.py --split holdout --stage model   # dense holdout F0.5 -> pipe ledger
+    python code/business_entity_resolution/src/run.py --split holdout --stage model   # dense F0.5 -> the submission log
     python code/business_entity_resolution/src/run.py --split dev --stage model       # the small dev world
     python code/business_entity_resolution/src/run.py --split test --stage rules      # submission #2 (rules only)
 
@@ -36,7 +36,7 @@ Every artifact is rebuilt from the training data when absent: parquet copies, fo
 transliteration table, place_freq, the TF-IDF vectorizers, the P3 texts + candidates (block.split_cands), the
 rules.feats caches (feats), the X feature files (features.build), M2 (train_matcher.py) and the cross-encoder
 (rerank.py band + train), c_hn (train_matcher.py --hn). Nothing is downloaded except the e5-small base weights
-(README); the bge CE is fine-tuned on AWS and its checkpoint downloaded (SETUP.md).
+(README); the bge CE is fine-tuned on AWS (bge_train.py) and its checkpoint downloaded (README, section 2).
 """
 import argparse
 import functools
@@ -65,7 +65,7 @@ import rules as R
 from metric import score
 from worlds import WORK
 
-PROCS = 2           # ponytail: rules.feats workers (~0.5 GB each) sized for a 2.6 GB cap; 4+ on a bigger box
+PROCS = 2           # Note: rules.feats workers (~0.5 GB each) sized for a 2.6 GB cap; 4+ on a bigger box
 PIECE = 500_000     # raw rows per rules.feats call when building a feature cache
 N_TEST_S1 = 1_732_544
 CCOLS = ["s1", "sx", "block_score", "block_rank_s1", "block_rank_sx", "via"]
@@ -156,14 +156,14 @@ RECIPES["sub64"] = dict(RECIPES["sub_iu54_best"], lf_veto=True)
 RECIPES["sub64_frgc70"] = dict(RECIPES["sub_iu54_frgc70"], lf_veto=True)
 RECIPES["sub66_final"] = dict(RECIPES["sub64"], xfc=0.30, dup_last=True)
 RECIPES["sub66"] = dict(RECIPES["sub_iu54_frgc70"], xfc=0.30)
-# N54 (night/aditya): the unseen country's decoy-word pairs (france.decoy_mask) leave the final lines, after P66 / before dup_last
+# N54: the unseen country's decoy-word pairs (france.decoy_mask) leave the final lines, after P66 / before dup_last
 RECIPES["sub66_final_n54"] = dict(RECIPES["sub66_final"], decoy=0.25)
 # #54 (uploaded 27 Sep 05:32, LB 0.986685): the chain in the order it was staged (build38.full + fr54): recipe -> brand and
 # P40 address-less (both on the gc70-style lists, unioned) -> P46 tier -> P48 veto -> P47 class -> P54 rescue; no P55
 RECIPES["sub54"] = dict(RECIPES["sub_clean"], chain=dict(_CHAIN, xf=0.70, swap=0.05, p55=None,
                                                          order=("brand", "xf", "swap", "veto54", "cls", "u54")))
 RECIPE = "sub66_final"   # the final (LB 0.987391); #37_gc70 = sub37 (0.986304), #54 = sub54 (0.986685)
-CHN = WORK / "p31" / "c_hn.txt"   # P26's hn-aware matcher (AWS: probes/P26-france-da, SETUP.md), for fr31
+CHN = WORK / "p31" / "c_hn.txt"   # P26's hn-aware matcher (trained on AWS in experiment P26; see README), for fr31
 CAP = None                  # --cap 5,6: at most 5 S2 and 6 S3 matches per S1 (the train truth never exceeds them)
 DROP_SIB_CANDS = False      # --drop-sibling-cands: unaccepted decoy-offset pairs leave candidate_pairs.tsv
 VETO = None                 # (tau, r file): fr31's P30 veto (recipe sub31_veto)
@@ -252,6 +252,7 @@ def feats(split: str, side: str, country: str, load: bool = True) -> pd.DataFram
         tmp, w, buf = path.with_suffix(".tmp"), None, []
 
         def flush():
+            """rules.feats of the buffered raw rows -> one more row group of the cache's tmp file."""
             nonlocal w
             t = pa.Table.from_pandas(R.feats(pd.concat(buf, ignore_index=True), procs=PROCS), preserve_index=False)
             w = w or pq.ParquetWriter(tmp, t.schema)
@@ -294,12 +295,14 @@ def p3_cands(split: str, country: str, scored=None, cols=CCOLS) -> pa.Table:
 
 
 def holdout_s1():
+    """(holdout world S1: entity_id, country; its truth links: s1, sx)."""
     s1 = pd.read_parquet(WORK / "worlds/holdout/s1.parquet", columns=["entity_id", "country"])
     t = pd.read_parquet(WORK / "worlds/holdout/truth.parquet")
     return s1, t
 
 
 def truth_of(ids, t: pd.DataFrame) -> dict:
+    """{s1: set of true sx} for ids, from the truth links t (links of other S1 ignored)."""
     truth = {s: set() for s in ids}
     for a, b in zip(t.s1, t.sx):
         if a in truth:
@@ -473,8 +476,8 @@ def ensure_ce():
     """Train the recipe's cross-encoder from the train data when rerank.CE is absent (~30 min per epoch, GPU)."""
     if RR.CE.exists():
         return
-    assert RR.FAMILY == "e5", (f"{RR.CE} is P13's bge CE, fine-tuned on AWS (probes/P13-aws-rerank, SETUP.md): download "
-                               "it to that path; this pipeline trains only the e5-small CE")
+    assert RR.FAMILY == "e5", (f"{RR.CE} is P13's bge CE, fine-tuned on a GPU by bge_train.py (README §2): put "
+                               "it at that path; this pipeline trains only the e5-small CE")
     import train_matcher
     train_matcher.prepare()
     for c in RR.CFG["countries"]:
@@ -561,7 +564,7 @@ def drop_sib_cands(d: dict, acc: np.ndarray):
 
 
 def half(ids) -> np.ndarray:
-    """P5's tune (0) / report (1) halves of the S1: a hash of the id, stable across runs and probes."""
+    """P5's tune (0) / report (1) halves of the S1: a hash of the id, stable across runs and experiments."""
     return (pd.util.hash_pandas_object(pd.Series(list(ids)), index=False).to_numpy() >> 7) % 2
 
 
@@ -636,7 +639,7 @@ def france31(c: str) -> dict:
     v = FR.world(M.CACHE / "fr_idf144")
     path = v / "p9" / f"chn_test_{c}_{M.tag(CHN)}_{M.tag(prune.MODEL)}_{M.tau(c)}.parquet"
     if not path.exists():
-        if not CHN.exists():                            # P26's recipe from the train data (~1 h, > 3 GB): SETUP.md
+        if not CHN.exists():                            # P26's recipe from the train data (~1 h, > 3 GB; README)
             import train_matcher
             train_matcher.main(CHN, M.FOLDS, hn=True)
         assert M.tau(c) == prune.TAU, "france.chn prunes at prune.TAU"
@@ -794,7 +797,7 @@ def iu_stage(tag: str, split: str, c: str, q1, qx, p: np.ndarray, pm, r, id1: pa
 
 
 def ensure_a10():
-    """P34's a10 booster (the recipe's A10 path); fit from the holdout when absent, as probes/P34-a10-stack/ho.py did:
+    """P34's a10 booster (the recipe's A10 path); fit from the holdout when absent, as experiment P34 did:
     #8c's holdout rows of each CE country (P17's stack on, a10 off; band pairs without a cached bge r take #7's e5
     blend, CE_MISSING "fallback" = P23's dump), a10.features on the scored S1's argmax pairs, one fit on the S1 of
     holdout half 0 with the countries pooled (~2 GB, minutes with the holdout caches)."""
@@ -894,7 +897,7 @@ def write_lists(f, s1_ids: pa.Array, q1: np.ndarray, sx_ids: pa.Array, qx: np.nd
                 tail: dict | None = None):
     """Append one row per S1 in s1_ids order (empty list allowed): 's1<TAB>sx,sx,...', ids sorted and de-duplicated.
     Pairs come as row numbers (q1 into s1_ids, qx into sx_ids), so the pair ids are Python strings only one chunk
-    of S1 at a time (from probes/P7-scale/chunks.py write_lists). tail: {row: [sx id, ...]} appended after the sorted
+    of S1 at a time (from experiment P7's chunked writer). tail: {row: [sx id, ...]} appended after the sorted
     ids of that row, in order (the duplicate step's copies, as P54 wrote them)."""
     k = np.unique((q1.astype(np.int64) << 32) | qx.astype(np.int64))
     q1, qx = k >> 32, k & 0xFFFFFFFF
@@ -1258,7 +1261,7 @@ def run(split: str, stage: str, out: Path, world=None, log=True, check=True) -> 
     print({k: round(v, 4) if isinstance(v, float) else v for k, v in m.items()}, flush=True)
     if log and world is None:
         try:
-            from ledger import log as ledger_log       # the team ledger lives at the repo root, not in the package
+            from ledger import log as ledger_log       # the submission log (ledger.py) is not in the zip
         except ImportError:
             return m
         cfg = {"feats": "rules.feats (P2 to_latin + P1)", "cands": "P3 block.CFG ∪ rule-accepted (by_state)",

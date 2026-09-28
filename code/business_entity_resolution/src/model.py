@@ -32,16 +32,19 @@ _M = None
 
 
 def feats(X: pd.DataFrame) -> list:
+    """Feature columns of an X frame: every column except the ids / label / bookkeeping ones (DROP)."""
     return [c for c in X.columns if c not in DROP]
 
 
 def predict(model, X: pd.DataFrame) -> np.ndarray:
+    """M2 p (float32) for the rows of X, in the booster's feature order."""
     if not len(X):
         return np.zeros(0, np.float32)
     return model.predict(X[model.feature_name()], num_threads=PARAMS["num_threads"]).astype(np.float32)
 
 
 def load():
+    """The M2 booster, loaded once; trained first (train_matcher.main) when BOOSTER is absent."""
     global _M
     if _M is None:
         import lightgbm as lgb
@@ -70,6 +73,7 @@ def argmax_sx(qx: np.ndarray, p: np.ndarray) -> np.ndarray:
 
 
 def tau(c: str | None) -> float | None:
+    """Pruner threshold of country c: its TAU_COUNTRY override, else TAU (None = no pruning)."""
     return TAU_COUNTRY.get(c, TAU)
 
 
@@ -93,7 +97,8 @@ def score(pairs: pd.DataFrame, f1: pd.DataFrame, fx: pd.DataFrame) -> tuple:
 
 def probs_path(split: str, c: str) -> Path:
     """split_probs' cache: data/work/p9/m2_<split>_<c>_<booster hash>[_<pruner hash>_<tau>].parquet."""
-    # ponytail: keyed by the booster / pruner only -- delete data/work/p9/m2_* (and p4/X) whenever the features change
+    # Limitation: the key covers the booster / pruner only -- delete data/work/p9/m2_* (and p4/X) whenever the
+    # features change
     if tau(c) is None:
         return CACHE / f"m2_{split}_{c}_{tag(BOOSTER)}.parquet"
     import prune

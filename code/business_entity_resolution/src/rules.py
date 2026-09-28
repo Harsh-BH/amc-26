@@ -26,8 +26,8 @@ _FREQ = None
 
 
 def freq() -> dict:
-    """Place counts over TRAIN S1 addresses -- fitted on train only until the organisers say whether unlabelled
-    test statistics are allowed (docs/PROBLEM.md open question 4). France places are unseen, so city_key there
+    """Place counts over TRAIN S1 addresses, fitted on train only (the organisers later allowed unlabelled test
+    statistics; this stage keeps the train-only fit). France places are unseen, so city_key there
     falls back to a consistent choice and place overlap carries the address evidence."""
     global _FREQ
     if _FREQ is None:
@@ -39,6 +39,8 @@ def freq() -> dict:
 
 
 def _feats(d: pd.DataFrame) -> pd.DataFrame:
+    """Rule features, one row per record of d: id, country, romanised name core, website core, is_web,
+    state, city key, house number and places ('|'-joined)."""
     name, addr = T.to_latin(d.business_name), T.to_latin(d.business_address)   # no-op for Latin rows
     a = N.address_fields(addr, d.country, freq())
     return pd.DataFrame({"id": d.entity_id.to_numpy(), "country": d.country.to_numpy(),
@@ -49,6 +51,8 @@ def _feats(d: pd.DataFrame) -> pd.DataFrame:
 
 
 def feats(df: pd.DataFrame, chunk: int = 150_000, procs: int = 4) -> pd.DataFrame:
+    """_feats over df; a frame above `chunk` rows goes through `procs` forkserver workers, one chunk per
+    task. The place-freq and transliteration caches are built first, in this process."""
     freq(); T.table()                                    # build both caches once, on disk, before workers start
     if len(df) <= chunk:                                 # incl. an empty frame (a country with no S2/S3)
         return _feats(df)
@@ -60,6 +64,8 @@ def feats(df: pd.DataFrame, chunk: int = 150_000, procs: int = 4) -> pd.DataFram
 
 
 def addr_score(x: pd.DataFrame, y: pd.DataFrame) -> np.ndarray:
+    """Address evidence per aligned row pair: 4 * house number + 2 * city + place overlap + state
+    (each equality needs a non-empty value)."""
     eq = lambda u, v: ((u.to_numpy() == v.to_numpy()) & (u.to_numpy() != ""))
     po = np.array([p != "" and bool(set(p.split("|")) & set(q.split("|"))) for p, q in zip(x.places, y.places)])
     return 4 * eq(x.hn, y.hn) + 2 * eq(x.city, y.city) + po + eq(x.state, y.state)
@@ -73,6 +79,7 @@ def pick(cand: pd.DataFrame, need: int = 2) -> pd.DataFrame:
 
 
 def _scored(m: pd.DataFrame) -> pd.DataFrame:
+    """[sx, s1, sc] of a key-join result (columns suffixed _a = the S1 side, _b = the S2/S3 side)."""
     side = lambda s: m[[c + s for c in ADDR]].set_axis(ADDR, axis=1)
     return pd.DataFrame({"sx": m.id_b.to_numpy(), "s1": m.id_a.to_numpy(), "sc": addr_score(side("_a"), side("_b"))})
 
@@ -114,6 +121,7 @@ def match(f1: pd.DataFrame, fx: pd.DataFrame, chunk: int = 400_000, by_state: bo
 
 
 def to_sets(pairs: pd.DataFrame, keys) -> dict:
+    """{s1: set(sx)} for every S1 in keys; pairs of other S1 are ignored."""
     out = {s: set() for s in keys}
     for a, b in zip(pairs.s1, pairs.sx):
         if a in out:                                    # dense mode: distractor S1s are not scored
@@ -122,6 +130,8 @@ def to_sets(pairs: pd.DataFrame, keys) -> dict:
 
 
 def train_s1_feats() -> pd.DataFrame:
+    """Rule features of every train S1 (the dense competitors), cached at
+    data/work/rules_s1feat_train.parquet."""
     path = WORK / "rules_s1feat_train.parquet"
     if not path.exists():
         feats(pd.read_parquet(WORK / "train_source1.parquet")).to_parquet(path, index=False)
@@ -129,6 +139,9 @@ def train_s1_feats() -> pd.DataFrame:
 
 
 def evaluate(world: str = "holdout", dense: bool = False, by_state: bool = False) -> dict:
+    """The rule matcher on a world: metric.score (macro F0.5, per country) + pair precision / recall,
+    candidate recall, candidates per S1 and runtime. dense: every other train S1 competes too;
+    by_state: the state-partitioned join."""
     t0 = time.time()
     s1, sx, truth = load_world(world)
     groups = dict(zip(s1.entity_id, s1.country))

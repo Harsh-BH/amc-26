@@ -1,6 +1,11 @@
-# Python 3.12. Exactly what src/ imports; licences in parentheses (all MIT / Apache-2.0 / BSD / ISC).
-# Pretrained models: BAAI/bge-reranker-v2-m3 (Apache-2.0, 568M, default CE since #8, fine-tuned on an AWS A10G by
-# src/bge_train.py) and intfloat/multilingual-e5-small (MIT, 118M, #4-#7's CE, fine-tuned by rerank.py train).
+# Python 3.12. Exactly what the pipeline (src/*.py) imports; licences in parentheses (all MIT / Apache-2.0 / BSD / ISC).
+# Pretrained models (all run locally, all <= 8B, fine-tuned only on the provided data):
+#   BAAI/bge-reranker-v2-m3            Apache-2.0  568M   main cross-encoder (fine-tuned by src/bge_train.py on one A10G)
+#   intfloat/multilingual-e5-small     MIT         118M   earlier cross-encoder (#4-#7), fine-tuned by rerank.py train
+#   Qwen/Qwen3-Reranker-4B (+ LoRA)    Apache-2.0  4.02B  France band blend / gate (experiment P38, SageMaker GPU job)
+#   cross-encoder/ms-marco-electra-base Apache-2.0 109M   France-independent CE (experiments P73 / P79)
+# src/experiments/ additionally uses catboost==1.2.10 (Apache-2.0, zoo members) and boto3 (Apache-2.0, only to launch
+# the SageMaker jobs); neither is needed to reproduce the submission files.
 numpy==2.5.3            # BSD-3
 pandas==3.0.6           # BSD-3
 pyarrow==25.0.1         # Apache-2.0

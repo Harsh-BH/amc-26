@@ -18,7 +18,7 @@ Supplied inputs (label-free test files, read here; everything else is computed f
                                               the argmax pairs (pack(): P50's T_{c} frame + zoo_test_{c}, which
                                               zoo_test.py aligned from the members' S3 pred/test_{c}.parquet)
   data/work/p50/{full,fullzoo}_s{0..4}.txt    the boosters (fit on the FULL India + US holdout, 5 seeds; the fit path
-                                              stays in probes/P50-idea-batch/e_ship.py fit / e_zoo.py fit)
+                                              stays in experiment P50: its e_ship / e_zoo fit scripts)
 Test only: the boosters saw every holdout S1, so a holdout run through them would be in-sample.
 Checked (27 Sep): run.py --recipe sub52_iu -> p'' bit-identical to P50's prob_test_{c}_fullzoo on every argmax pair,
 India / US lines = sub52_max's (0 differing as ID sets; sub54 = those + P54's 14 dup copies); --iu a10 -> sub37_gc70
@@ -173,6 +173,7 @@ def features(c: str, q1, qx, p, p_m2, r, id1: pa.Array, idx: pa.Array, zoo: bool
 
 
 def boosters(tag: str) -> list:
+    """The 5 seed boosters of tag ('full' | 'fullzoo')."""
     import lightgbm as lgb
     return [lgb.Booster(model_file=str(W / BOOSTERS[tag].format(s))) for s in SEEDS]
 

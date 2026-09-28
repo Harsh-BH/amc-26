@@ -24,6 +24,9 @@ from worlds import load_world
 
 
 def world(n: int = 1500, seed: int = 0, unseen: str = "Xland"):
+    """(S1, SX, truth) of the test world: n S1 per dev-world country with their true S2/S3 + 2n
+    distractors, 200 US S1 copied under the `unseen` label (ids + 'x', records copied too) and 3 S1-only
+    'Yland' rows (ids + 'y')."""
     s1, sx, truth = load_world("dev")
     s1 = s1.groupby("country").sample(n=n, random_state=seed)
     kids = set().union(*(truth[s] for s in s1.entity_id))
@@ -40,6 +43,7 @@ def world(n: int = 1500, seed: int = 0, unseen: str = "Xland"):
 
 
 def check(out: Path, s1: pd.DataFrame, sx: pd.DataFrame):
+    """Assert the output contract (module docstring) on both TSVs under `out`; returns the matches {s1: set}."""
     c1, cx = dict(zip(s1.entity_id, s1.country)), dict(zip(sx.entity_id, sx.country))
     got = []
     for name, col in (("matching_results.tsv", "matched_entity_ids"), ("candidate_pairs.tsv", "candidate_entity_ids")):

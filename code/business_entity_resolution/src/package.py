@@ -4,9 +4,9 @@
     python code/business_entity_resolution/src/package.py --selftest
 
     output/matching_results.tsv, output/candidate_pairs.tsv
-    code/business_entity_resolution/{src/*.py, README.md, requirements.txt}
+    code/business_entity_resolution/{src/*.py, src/experiments/**, README.md, requirements.txt, bge_train_requirements.txt}
     Documentation_template.md (or .pdf), filled in and not renamed, taken from the repo root or docs/ when it exists
-    src/final_changes.parquet: final_build.py's change sets, when present (data/work/p78/)
+    src/final_changes.parquet / final_patch.parquet: the recorded change sets of final_build.py / final_patch.py
 """
 import argparse
 import re
@@ -35,9 +35,13 @@ def doc(roots=(ROOT, ROOT / "docs")) -> Path | None:
 
 
 def files(out: Path, code: Path, documentation: Path | None):
+    """(source path, path inside the zip) for every member: the two TSVs, the code folder, the recorded change sets, the doc."""
     yield from ((out / n, f"output/{n}") for n in HEADERS)
     yield from ((p, f"code/business_entity_resolution/src/{p.name}") for p in sorted((code / "src").glob("*.py")))
-    yield from ((code / n, f"code/business_entity_resolution/{n}") for n in ("README.md", "requirements.txt"))
+    yield from ((p, f"code/business_entity_resolution/{p.relative_to(code).as_posix()}")   # the change sets' experiment scripts
+                for p in sorted((code / "src" / "experiments").rglob("*")) if p.suffix in (".py", ".sh", ".md"))
+    yield from ((code / n, f"code/business_entity_resolution/{n}") for n in ("README.md", "requirements.txt",
+                                                                           "bge_train_requirements.txt") if (code / n).exists())
     if CHANGES:   # final_build.py's add-on change sets (#76 / #77)
         yield CHANGES, "code/business_entity_resolution/src/final_changes.parquet"
     if (code / "src" / "final_patch.parquet").exists():   # final_patch.py's evening lines (#84)
@@ -64,6 +68,7 @@ def check(zp: Path, rows: int, need_doc: bool) -> list:
 
 
 def build(team: str, out: Path, dest: Path, rows: int = N_TEST_S1, code: Path = CODE, documentation=None) -> Path:
+    """Write dest/<team>_submission.zip from out/ (the two TSVs), the code folder and the doc, then check() it."""
     assert re.fullmatch(r"[A-Za-z0-9_.-]+", team), f"team name {team!r}: letters, digits, _ . - only"
     documentation = documentation or doc()
     if documentation is None:
@@ -79,6 +84,7 @@ def build(team: str, out: Path, dest: Path, rows: int = N_TEST_S1, code: Path = 
 
 
 def _selftest():
+    """Self-check: a two-row toy zip builds and passes check(); a wrong row count fails."""
     with tempfile.TemporaryDirectory() as d:
         d = Path(d)
         (d / "out").mkdir()

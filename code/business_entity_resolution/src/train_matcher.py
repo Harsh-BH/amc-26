@@ -43,6 +43,8 @@ def countries() -> list:
 
 
 def prepare():
+    """Every input M2's training reads: data/work (run.ensure), then per country the P3 texts and
+    rules.feats caches (run.prepare) and the X files (features.build)."""
     import run                                          # P3 texts / candidates + rules.feats caches, then X
     run.ensure("train")
     for c in countries():
@@ -59,6 +61,7 @@ def load(folds, frac: float = 1.0, seed: int = 0, dtype=np.float32, hn: bool = F
     cols = M.feats(pd.DataFrame(columns=pq.read_schema(files[0]).names))
     names = cols + (FR.HN if hn else [])
     def keep(t):
+        """Row mask of an X table: fold in `folds` and inside the S1-hash sample `frac`."""
         q1, f = t.column("q1").to_numpy().astype(np.uint64), t.column("fold").to_numpy()
         return np.isin(f, folds) & ((q1 * np.uint64(2654435761) + np.uint64(seed)) % np.uint64(1000) < frac * 1000)
 
@@ -85,16 +88,24 @@ def load(folds, frac: float = 1.0, seed: int = 0, dtype=np.float32, hn: bool = F
 
 def main(out: Path = M.BOOSTER, folds=M.FOLDS, val_frac: float = 0.25, frac: float = 1.0, rounds: int = 8000,
          hn: bool = False):
+    """Fit M2 on the train folds `folds` (float16 rows via Seq), early-stopped on a val_frac S1-hash sample
+    of fold 1 (100 rounds patience, at most `rounds`); saved to out and returned. frac: S1-hash sample of
+    the train folds; hn: + france.HN (c_hn)."""
     import lightgbm as lgb
 
     class Seq(lgb.Sequence):
+        """lgb.Sequence over the float16 training matrix: LightGBM builds the Dataset from it batch by batch,
+        so no full-precision copy of X is made."""
         def __init__(self, a):
+            """Wrap the row array a; LightGBM reads batch_size rows at a time."""
             self.a, self.batch_size = a, 65_536
 
         def __getitem__(self, i):
+            """Row(s) i as float64."""
             return self.a[i].astype(np.float64)       # LightGBM samples rows as double
 
         def __len__(self):
+            """Number of rows."""
             return len(self.a)
 
     assert not {0, 1} & set(folds), "never train on folds 0 (holdout) / 1 (early stopping)"

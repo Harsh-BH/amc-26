@@ -1,6 +1,6 @@
 """Cross-script (Indic S2/S3 vs Latin S1) true pairs from the full train set, via DuckDB (streams, <1 GB).
 
-    .venv/bin/python probes/P2-script/pairs.py        # -> data/work/p2_pairs.parquet (all folds, India)
+    python src/pairs.py        # -> data/work/p2_pairs.parquet (all folds, India; experiment P2)
 """
 import time
 import duckdb
@@ -10,6 +10,8 @@ IND = "[ऀ-ൿ]"
 
 
 def build(out=f"{W}/p2_pairs.parquet"):
+    """Every true (Indic-script India S2/S3, its S1) pair of the train data -> parquet `out`: fold (of the
+    S1), sx, xn / xa (S2/S3 name / address), sn / sa (S1 name / address). translit.table learns from it."""
     con = duckdb.connect(config={"memory_limit": "900MB", "threads": 4, "preserve_insertion_order": False})
     con.execute(f"""COPY (
         WITH x AS (SELECT entity_id, business_name, business_address FROM '{W}/train_source2.parquet'

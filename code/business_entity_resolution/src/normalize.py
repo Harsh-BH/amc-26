@@ -1,6 +1,6 @@
 """normalize.py v1 (P1-taxonomy) — name/address normalisers, pandas Series in, Series out.
 
-    .venv/bin/python probes/P1-taxonomy/normalize.py      # self-check
+    python src/normalize.py      # self-check
 
 Everything folds through anyascii (ISC) first, so every regex after `fold` sees ASCII only (RE2's
 ASCII-only \\w/\\b are then safe). Indic names get anyascii's crude romanisation; if P2's `to_latin`
@@ -54,11 +54,13 @@ LEGAL = {  # mined from dropped/swapped tokens on US + India true pairs
 }
 HONORIFIC = {"ms", "m/s", "sri", "shri", "smt", "mr", "mrs", "dr", "the"}   # mined prefixes (M/s -> "ms")
 GENERIC = {"center", "centre", "services", "service"}   # mined: generator appends these 5-15x more than it drops them;
-# stripping them: dense exact-key F0.5 0.7748 -> 0.7831 at equal precision (ledger exact-keys-D_*-dense-generic)
+# stripping them: dense exact-key F0.5 0.7748 -> 0.7831 at equal precision (submission log exact-keys-D_*-dense-generic)
 STOP = {"and", "of", "www", "com", "net", "org", "et", "de", "des", "du", "la", "le", "les", "l", "d"}  # fr: domain
 
 
 def _tok_fix(t: str) -> str:
+    """One name token: a leading 'ln' read as 'in' (I/l confusion); digits inside a mixed token mapped
+    to letters (ordinals such as 4th kept)."""
     if t.startswith("ln"):                        # I->l confusion: lnc, lndia, lnternational
         t = "i" + t[1:]
     if not t.isdigit() and not t.isalpha() and not _ORD.match(t):
@@ -82,6 +84,9 @@ def _merge_letters(toks: list) -> list:
 
 
 def _name_norm(x: str) -> str:
+    """name_norm of one folded string: '(ID: n)' tails and '| site' parts dropped, the name after the
+    last alias marker (when text sits on both sides), punctuation-free tokens, adjacent repeats
+    collapsed."""
     x = _ID_TAIL.sub(" ", x)
     x = x.split("|")[0]
     m = None
@@ -115,6 +120,7 @@ def _is_legal(t: str, nxt: str) -> bool:
 
 
 def _core(x: str, country: str) -> str:
+    """name_core of one name_norm string, given the record's folded country word."""
     toks = x.split()
     keep = [t for i, t in enumerate(toks) if t not in HONORIFIC and t not in STOP and t not in GENERIC and t != country
             and not _is_legal(t, toks[i + 1] if i + 1 < len(toks) else "")]
@@ -309,13 +315,14 @@ def fr_departements() -> dict:
                                                                                         "business_address", "country"])],
                                    ignore_index=True)
         m = learn_fr_departements(rows(1), pd.concat([rows(2), rows(3)], ignore_index=True))
-        tmp = FR_CACHE.with_suffix(f".{os.getpid()}.tmp")    # ponytail: rules.feats workers that all miss the cache
-        tmp.write_text(json.dumps(m, indent=1))              # each learn it once; build it in the parent to avoid that
+        tmp = FR_CACHE.with_suffix(f".{os.getpid()}.tmp")    # Limitation: rules.feats workers that all miss the cache
+        tmp.write_text(json.dumps(m, indent=1))              # each learn it once; upgrade: build it in the parent first
         tmp.replace(FR_CACHE)
     return json.loads(FR_CACHE.read_text())
 
 
 def _ckey(country: pd.Series | None, n: int) -> list:
+    """Folded country per row ('' for every row when country is None)."""
     return list(fold(country)) if country is not None else [""] * n
 
 
@@ -356,6 +363,7 @@ def address_fields(addr: pd.Series, country: pd.Series | None = None, freq: dict
 
 
 def addr_norm(addr: pd.Series, country: pd.Series | None = None) -> pd.Series:
+    """address_fields' addr_norm alone."""
     return address_fields(addr, country).addr_norm.astype("str")
 
 
@@ -365,15 +373,18 @@ def state(addr: pd.Series, country: pd.Series | None = None) -> pd.Series:
 
 
 def place_segments(addr: pd.Series, country: pd.Series | None = None) -> pd.Series:
+    """address_fields' places alone (a list per row)."""
     return address_fields(addr, country).places
 
 
 def city_key(addr: pd.Series, country: pd.Series | None = None, freq: dict | None = None) -> pd.Series:
+    """address_fields' city_key alone (freq as there)."""
     return address_fields(addr, country, freq).city_key.astype("str")
 
 
 def place_freq(addr: pd.Series, country: pd.Series | None = None) -> dict:
-    """segment -> count over `addr` (fit it on S1 addresses; see Risks in RESULT.md)."""
+    """segment -> count over `addr` (fit it on S1 addresses; rules.freq fits it on train S1 only, since test-side
+    statistics are an open rules question)."""
     return place_segments(addr, country).explode().dropna().value_counts().to_dict()
 
 
@@ -407,6 +418,8 @@ def house_number(addr: pd.Series, country: pd.Series | None = None) -> pd.Series
     f = fold(addr).str.replace(_PLACEHOLDER.pattern, " ", regex=True).str.replace(_POBOX.pattern, " ", regex=True)
 
     def one(x: str) -> str:
+        """House number of one folded address: the first non-unit segment that starts (after its label) with
+        a number."""
         for seg in x.split(","):
             if _UNIT.match(seg.strip()):
                 continue
@@ -420,6 +433,8 @@ def house_number(addr: pd.Series, country: pd.Series | None = None) -> pd.Series
 
 # ---------------------------------------------------------------- self-check
 def _check():
+    """Self-check on toy rows: names, cores, acronyms, websites, states, house numbers, city keys,
+    addr_norm, postcodes and the learned departements."""
     S = lambda *v: pd.Series(list(v), dtype="str")
     got = name_norm(S("Hogue, Marquez & Ramirez (Incorporated)", "Deltahalo Co f/k/a Hogue, Marquez & Ramirez Inc",
                       "Tech Fimanie Private (Limited) | www.techfiman.com", "Golden Energy (ID: 85685)",

@@ -15,7 +15,7 @@ Keep: each SX's top-2 S1 (top-10 if its address is empty) + each S1's top-10 amo
 Full corpus (holdout S1 vs 10.3M train S2/S3, 2.2M S1 pool): pair recall 0.9916 at 14.2 candidates / S1.
 Scale: country_pairs() streams SX chunks; split_cands() is the per-country full run (texts cached on disk, ids via
 arrow): 35 min for all of test, peak 2.7 GB on India at shard=300k (lower CFG["shard"] to fit a smaller box).
-Promoted from probes/P3-block/{block,full}.py (P3 evidence: probes/P3-block/RESULT.md).
+Promoted from experiment P3 (its blocking and full-scale scripts; the numbers above are its results).
 """
 import json
 import pickle
@@ -69,6 +69,7 @@ _PUNCT = r"[\s,.;:'\"()\[\]{}\-&/|#!?*+_@%$~`^<>=]+"
 
 
 def _latin(s: pd.Series, how: str) -> pd.Series:
+    """Latin text: how = 'p2' (P2 to_latin, then anyascii on what is left) | 'anyascii' | 'none' (unchanged)."""
     if how == "none":
         return s
     if how == "p2":
@@ -80,6 +81,8 @@ def _latin(s: pd.Series, how: str) -> pd.Series:
 
 
 def clean(s: pd.Series, how: str, is_addr: bool = False) -> pd.Series:
+    """Blocking text: website fragments removed from names, NULL placeholders from addresses (is_addr), then
+    Latin, lower case, punctuation runs -> one space."""
     s = s.fillna("").astype("string")
     if is_addr:
         s = s.str.replace(_NULL.pattern, " ", regex=True)
@@ -135,6 +138,7 @@ def fit_views(train_sx: pd.DataFrame, cfg: dict = CFG, sample: int = 1_000_000, 
 
 
 def _l2(X: sp.csr_matrix) -> sp.csr_matrix:
+    """Row-wise L2 normalisation of a CSR matrix (all-zero rows stay zero), float32."""
     n = np.sqrt(np.asarray(X.multiply(X).sum(1)).ravel()).astype(np.float32)
     n[n == 0] = 1
     return sp.csr_matrix(sp.diags(1 / n) @ X, dtype=np.float32)
@@ -170,6 +174,7 @@ def topk(Q: sp.csr_matrix, CTs, k: int, cfg: dict):
 
 
 def _best(qi, ci, sc, k):
+    """The k highest-score hits per query qi, sorted by qi then score desc."""
     o = np.lexsort((-sc, qi))
     qi, ci, sc = qi[o], ci[o], sc[o]
     keep = ranks(qi) < k
@@ -354,6 +359,8 @@ def candidates(s1_df: pd.DataFrame, sx_df: pd.DataFrame, cfg: dict = CFG, vecs: 
 
 
 def _check():
+    """Self-check on a toy world: true pairs found, never across countries, with and without the state
+    partition and with the default CFG; derive() and the rank columns."""
     s1 = pd.DataFrame({"entity_id": ["S1-1", "S1-2", "S1-3"], "country": ["US", "US", "France"],
                        "business_name": ["Twisted Deli", "Metro Holding Co", "Bien & Frères SAS"],
                        "business_address": ["4 Dix Road, Woburn, MA", "3860 Pin Oak Road, Raleigh, NC",
@@ -385,13 +392,14 @@ def _check():
     print("block self-check ok")
 
 
-# ---------------------------------------------------------------- full scale (from probes/P3-block/full.py)
+# ---------------------------------------------------------------- full scale (from experiment P3's full-scale script)
 COLS = ["entity_id", "business_name", "business_address", "country"]
 TXT = {"train": P3 / "txt", "test": P3 / "txt_test"}      # cached texts, P3's layout
 CHUNK = 500_000                                      # SX rows per cached text file
 
 
 def peak_gb() -> float:
+    """Peak resident memory of this process so far, in GB (ru_maxrss is in KB on Linux)."""
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6
 
 
@@ -454,6 +462,7 @@ def idf_domain(vec: dict) -> dict:
 
 
 def _txt(d: pd.DataFrame) -> pd.DataFrame:
+    """block.texts of raw rows, with their entity_id as the first column."""
     t = texts(d, CFG)
     t.insert(0, "entity_id", d.entity_id.to_numpy())
     return t
@@ -478,6 +487,7 @@ def prep(split: str, country: str):
 
 
 def _write_txt(buf, p):
+    """Texts of the buffered raw rows -> p, unless p already exists (prep resumes)."""
     if not p.exists():
         _txt(pd.concat(buf, ignore_index=True)).to_parquet(p, index=False)
 
@@ -496,6 +506,7 @@ def split_cands(split: str, country: str, log=print) -> Path:
     sh = CFG["shard"]
 
     def chunks():
+        """(global SX row offset, texts of one shard) over every cached SX text file, in order."""
         for o, p in zip(offs, files):
             tb = pd.read_parquet(p, columns=["name", "addr", "st"])
             for i in range(0, len(tb), sh):

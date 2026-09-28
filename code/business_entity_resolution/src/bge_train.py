@@ -48,6 +48,7 @@ class S3:
     same files also land in model_dir -> model.tar.gz)."""
 
     def __init__(self, uri: str):
+        """uri = 's3://bucket/prefix'; the boto3 client is created only when it is set."""
         self.on = bool(uri)
         if self.on:
             import boto3
@@ -55,6 +56,7 @@ class S3:
             self.c = boto3.client("s3")
 
     def _try(self, fn, key):
+        """Run fn() up to 3 times with a growing back-off; after the last failure return None (upload skipped)."""
         for i in range(3):
             try:
                 return fn()
@@ -63,17 +65,25 @@ class S3:
                 time.sleep(5 * (i + 1))
 
     def put(self, path, key: str):
+        """Upload a local file to <prefix>/<key>."""
         if self.on:
             self._try(lambda: self.c.upload_file(str(path), self.bucket, f"{self.prefix}/{key}"), key)
 
     def put_json(self, obj, key: str):
+        """Upload obj as JSON to <prefix>/<key>."""
         if self.on:
             body = json.dumps(obj, default=str).encode()
             self._try(lambda: self.c.put_object(Bucket=self.bucket, Key=f"{self.prefix}/{key}", Body=body), key)
 
 
 class Job:
+    """One SageMaker run of params['phases']: data files, token caches, models, deadline planning and the event
+    log. main() builds it and calls run()."""
+
     def __init__(self, train_dir, model_dir, params):
+        """params override DEFAULTS (the nested cap_s / speed / epochs dicts merge key by key). Inputs are read
+        from train_dir, r files go to model_dir/r, checkpoints to params['checkpoint_dir']/p13; the deadline
+        counts from T0 (process start)."""
         import torch
         self.torch, self.P = torch, {**DEFAULTS, **params}
         self.P["cap_s"] = {**DEFAULTS["cap_s"], **params.get("cap_s", {})}
@@ -92,6 +102,7 @@ class Job:
 
     # ------------------------------------------------------------------ bookkeeping
     def log(self, **kw):
+        """One event: printed and appended to model_dir/log.jsonl with the elapsed seconds (and peak GPU memory)."""
         kw = {"t": round(time.time() - T0), **kw}
         if self.dev == "cuda":
             kw["gpu_gb"] = round(self.torch.cuda.max_memory_allocated() / 1e9, 2)
@@ -100,17 +111,21 @@ class Job:
             f.write(json.dumps(kw, default=str) + "\n")
 
     def flush_log(self):
+        """Upload log.jsonl (a no-op without an S3 prefix)."""
         self.s3.put(self.out / "log.jsonl", "log.jsonl")
 
     def left(self):
+        """Seconds left before the job's deadline."""
         return self.deadline - time.time()
 
     def data(self, name):
+        """Data file <name>.parquet of the train channel, read once and cached."""
         if name not in self.D:
             self.D[name] = pd.read_parquet(self.src / f"{name}.parquet")
         return self.D[name]
 
     def write(self, tag, d, r):
+        """Write r for the (s1, sx) rows of d to model_dir/r/r_<tag>.parquet and upload it."""
         f = self.out / "r" / f"r_{tag}.parquet"
         pd.DataFrame({"s1": d.s1.to_numpy(), "sx": d.sx.to_numpy(), "r": r.astype(np.float32)}).to_parquet(f, index=False)
         self.s3.put(f, f"r/{f.name}")
@@ -145,12 +160,16 @@ class Job:
                 time.sleep(20)
 
         class Scorer(torch.nn.Module):
+            """The model body plus a 1-logit head: the HF classifier's own logit (bge), or the last token's hidden
+            state times the yes - no output-embedding row (qwen)."""
             def __init__(s):
+                """Wrap the loaded body; w (qwen's yes - no row) becomes a trainable parameter."""
                 super().__init__()
                 s.m = body
                 s.w = None if w is None else torch.nn.Parameter(w)
 
             def forward(s, x, msk):
+                """One logit per row of x (token ids, right-padded) under attention mask msk."""
                 if s.w is None:
                     return s.m(input_ids=x, attention_mask=msk).logits.float().squeeze(-1)
                 h = s.m(input_ids=x, attention_mask=msk).last_hidden_state
@@ -193,6 +212,7 @@ class Job:
         return self.tok[key]
 
     def batch(self, ids, off, j, pad):
+        """Right-padded (input ids, attention mask) tensors on the device for pairs j of a token cache (ids, off)."""
         torch = self.torch
         ln = (off[j + 1] - off[j]).astype(np.int64)
         L = int(ln.max())
@@ -202,6 +222,7 @@ class Job:
         return torch.from_numpy(x).to(self.dev), torch.from_numpy(msk.astype(np.int64)).to(self.dev)
 
     def ac(self):
+        """Autocast context for the forward passes: bf16 on the GPU, disabled on CPU."""
         # bf16 on the GPU; plain fp32 on CPU (the rehearsal), where bf16 autocast is ~10x slower
         return self.torch.autocast(self.dev, dtype=self.torch.bfloat16, enabled=self.dev == "cuda")
 
@@ -270,6 +291,8 @@ class Job:
         self.flush_log()
 
     def test(self, fam, tok, sc, pad, tag, countries):
+        """Score + write the test band of each country, skipping a country whose estimated scoring time (+10%)
+        no longer fits the deadline."""
         for c in countries:
             n = len(self.data(f"test_{c}"))
             if n / self.speed[f"{fam}_score"] * 1.1 > self.left():
@@ -394,6 +417,8 @@ class Job:
         return step * bs
 
     def save(self, sc, tag):
+        """Upload the trainable weights (fp16; the frozen word embeddings left out) as ckpt/ce_<tag>.pt, then
+        delete the local copy."""
         f = self.ck / f"ce_{tag}.pt"
         frozen = {k for k, p in sc.named_parameters() if not p.requires_grad}     # the base model's word embeddings
         self.torch.save({k: v.half() for k, v in sc.state_dict().items() if k not in frozen}, f)
@@ -418,24 +443,31 @@ class Job:
 
     # ------------------------------------------------------------------ plan
     def n(self, *names):
+        """Total rows of the named data files."""
         return sum(len(self.data(x)) for x in names)
 
     def est(self, fam, train_pairs=0, cap=0, score_pairs=0):
+        """Estimated seconds of a phase: training (at most cap) + scoring at the measured or planned speeds, + 60."""
         tr = min(cap, train_pairs / self.speed[f"{fam}_train"]) if train_pairs else 0
         return tr + score_pairs / self.speed[f"{fam}_score"] + 60
 
     def fits(self, what, need):
+        """True when need seconds (+10%) fit before the deadline; the plan decision is logged either way."""
         ok = need * 1.1 < self.left()
         self.log(ev="plan", what=what, need_s=round(need), left_s=round(self.left()), run=ok)
         return ok
 
     def run(self):
+        """Run the phases in order. Each is planned against the deadline first (skipped when it does not fit),
+        loads a fresh model, and writes its r files; the pooled fine-tunes also save their checkpoint."""
         H = ("holdout_India", "holdout_US")
         tv = self.n("val_India", "val_US")
         todo = list(self.P["phases"])
         models, checked = {}, {}
 
         def model(fam, fresh=False):
+            """The family's (tok, scorer, pad), loaded fresh when asked (or first needed) and self-checked once;
+            None when qwen failed its self-check."""
             if fresh or fam not in models:
                 models.pop(fam, None)
                 gc.collect()
@@ -527,11 +559,14 @@ class Job:
 
 
 def _logit(x):
+    """logit of probabilities clipped to [1e-6, 1 - 1e-6], float64."""
     x = np.clip(np.asarray(x, np.float64), 1e-6, 1 - 1e-6)
     return np.log(x / (1 - x))
 
 
 def main(train_dir, test_dir, model_dir, out_dir, params):
+    """SageMaker entry point (sm_train calls it): logs the library versions, then runs every phase of a Job.
+    test_dir / out_dir are unused: the inputs come from the 'train' channel, the outputs go to model_dir (+ S3)."""
     import importlib.metadata as md
     import torch
     os.environ.setdefault("HF_HOME", str(Path(params.get("checkpoint_dir", "/tmp")) / "hf"))

@@ -87,6 +87,7 @@ def _cos(A: sp.csr_matrix, Bm: sp.csr_matrix) -> np.ndarray:
 
 
 def _l2(X):
+    """float32 CSR rows, L2-normalised (block._l2)."""
     return B._l2(X.astype(np.float32).tocsr())
 
 
@@ -135,10 +136,12 @@ def context(pairs: pd.DataFrame, q1: np.ndarray, qx: np.ndarray) -> pd.DataFrame
 
 
 def _take(r: pd.DataFrame, col: str, ix: np.ndarray) -> list:
+    """Values of column col at rows ix of r, as a list."""
     return r[col].iloc[ix].tolist()
 
 
 def _fz(scorer, a, b, **kw):
+    """A rapidfuzz scorer over the aligned pairs (a[k], b[k]), scaled to [0, 1] float32."""
     return (cpdist(a, b, scorer=scorer, workers=-1, dtype=np.float32, **kw) / 100).astype(np.float32)
 
 
@@ -233,6 +236,8 @@ def featurize(pairs: pd.DataFrame, r1: pd.DataFrame, rx: pd.DataFrame, i: np.nda
 
 # ---------------------------------------------------------------- full scale (P4 featrun.py)
 def sx_files(split, c):
+    """(P3's SX text files of a split / country, sorted; their cumulative row offsets from 0): qx is a
+    global row over these files."""
     files = sorted(B.TXT[split].glob(f"{c}_sx_*.parquet"))
     return files, np.cumsum([0] + [pq.ParquetFile(p).metadata.num_rows for p in files])
 
@@ -304,10 +309,12 @@ def cands(split, c) -> pd.DataFrame:
 
 
 def _key(a, b):
+    """int64 pair key a << 32 | b."""
     return (np.asarray(a, np.int64) << 32) | np.asarray(b, np.int64)
 
 
 def xfiles(split, c) -> list:
+    """The X feature files of a split / country, one per SX text file."""
     return [XDIR / f"{split}_{f.stem}.parquet" for f in sx_files(split, c)[0]]
 
 
@@ -416,6 +423,8 @@ def build(split, c):
 
 
 def _check():
+    """Self-check on a toy pool: 65 float32 columns, NaN context for rule-only pairs, core / web / hn / city
+    equality, cosines, context counts and the Indic transliteration."""
     s1 = pd.DataFrame({"entity_id": ["S1-1", "S1-2", "S1-3"], "country": ["US", "US", "India"],
                        "business_name": ["Twisted Deli LLC", "Metro Holding Co", "Sunrise Traders Pvt Ltd"],
                        "business_address": ["4 Dix Road, Woburn, MA", "3860 Pin Oak Road, Raleigh, NC",

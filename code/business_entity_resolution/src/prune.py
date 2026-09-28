@@ -4,7 +4,7 @@ A small LightGBM (300 trees x 31 leaves) on 30 of the 65 pair features -- blocki
 similarities -- scores every blocked pair; a pair reaches the matcher (m2_big + the cross-encoder) only if q >= TAU,
 or it is a rule-accepted pair (guard rail). The X context columns (s1_* / sx_*, block ranks) stay computed over the
 FULL blocking list, so m2_big's p on a kept pair is exactly the p it had before pruning -- the pruner only removes
-pairs. Test: 15.87 -> 4.83 candidates per S1 at a holdout cost of -0.00024 F0.5 (P10 RESULT.md).
+pairs. Test: 15.87 -> 4.83 candidates per S1 at a holdout cost of -0.00024 F0.5 (experiment P10).
 
     python code/business_entity_resolution/src/prune.py train   # train folds 2,3 (never 0/1) -> data/work/p10/pruner.txt
     python code/business_entity_resolution/src/prune.py         # self-check
@@ -74,6 +74,7 @@ def load_model(path=MODEL):
 
 
 def score(m, X: pd.DataFrame) -> np.ndarray:
+    """Pruner q (float32) for the rows of X, in the model's feature order."""
     if not len(X):
         return np.zeros(0, np.float32)
     return m.predict(X[m.feature_name()].to_numpy(np.float32), num_threads=8).astype(np.float32)
@@ -85,6 +86,7 @@ def prune(X: pd.DataFrame, q: np.ndarray, tau: float = TAU) -> np.ndarray:
 
 
 def _check():
+    """Self-check: the keep mask is q >= tau or rule-accepted."""
     X = pd.DataFrame({"rule_acc": [0, 1, 0, 0]})
     assert prune(X, np.array([0.5, 0.0, 0.009, 0.01], np.float32), 0.01).tolist() == [True, True, False, True]
     print("prune self-check ok")

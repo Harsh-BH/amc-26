@@ -20,6 +20,8 @@ def decide(p: pd.DataFrame, t: float) -> pd.DataFrame:
 
 
 def write(probs_tmpl: str, out: Path, t: float, t_country: dict) -> dict:
+    """Both submission TSVs under `out`, one country at a time from probs_tmpl.format(country=...) (a
+    country without a file gets empty rows), at t or its t_country override. -> per-country stats."""
     s1_all = pd.read_parquet(WORK / "test_source1.parquet", columns=["entity_id", "country"])
     out.mkdir(parents=True, exist_ok=True)
     stats, rows = {}, 0

@@ -98,6 +98,7 @@ def train(X: pd.DataFrame, y: np.ndarray, tr: np.ndarray, out: Path):
 
 
 def stacked(m, X: pd.DataFrame) -> np.ndarray:
+    """Stacked p per row of X: sigmoid(logit p + the residual booster's raw score)."""
     if not len(X):
         return np.zeros(0, np.float32)
     return (1 / (1 + np.exp(-(X.lp.to_numpy(np.float64) + m.predict(X, raw_score=True))))).astype(np.float32)
@@ -112,6 +113,8 @@ def sib_mask(h1: np.ndarray, hx: np.ndarray) -> np.ndarray:
 
 
 def _check():
+    """Self-check on toy rows: the sibling mask, house-number classes, support features and X_of's
+    columns."""
     assert list(sib_mask(np.array(["10", "10", "10", "", "100"]), np.array(["13", "12", "7", "3", "121"]))) == \
         [True, False, False, False, True]
     h1, hx = np.array(["10", "10", "10", "10", ""], object), np.array(["13", "1", "10", "300", "4"], object)

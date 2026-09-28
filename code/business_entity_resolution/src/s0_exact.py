@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 SRC = Path(__file__).resolve().parent
-sys.path[:0] = [str(SRC), str(SRC.parents[2])]          # src/ and the repo root (ledger.py)
+sys.path[:0] = [str(SRC), str(SRC.parents[2])]          # src/ and the repo root (ledger.py, the submission log)
 from worlds import WORK, load_world
 from metric import score
 from ledger import log
@@ -17,14 +17,18 @@ PUNCT = r"[\s,.;:'\"()\[\]{}\-&/|#!?*+_@%$~`^<>=]+"    # explicit class: RE2's \
 
 
 def norm(s: pd.Series) -> pd.Series:
+    """Lower case, punctuation runs -> one space, stripped."""
     return s.str.lower().str.replace(PUNCT, " ", regex=True).str.strip()
 
 
 def key(df: pd.DataFrame) -> pd.Series:
+    """Exact-match key: country | normalised name | normalised first address segment."""
     return df.country + "|" + norm(df.business_name) + "|" + norm(df.business_address.str.split(",").str[0])
 
 
 def match(s1: pd.DataFrame, sx: pd.DataFrame) -> dict:
+    """{s1 id: set(sx ids)} for every S1: each S2/S3 joins an S1 with the same key (the first one when
+    several share it); an S1 with an empty normalised name never matches."""
     k1 = pd.DataFrame({"s1": s1.entity_id, "k": key(s1)})
     k1 = k1[norm(s1.business_name) != ""]                 # never match on an empty name
     kx = pd.DataFrame({"sx": sx.entity_id, "k": key(sx)})
@@ -36,6 +40,7 @@ def match(s1: pd.DataFrame, sx: pd.DataFrame) -> dict:
 
 
 def write(sets: dict, path: Path, col: str):
+    """{s1: ids} -> a submission TSV at path with second column `col` (ids sorted, comma-joined)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(f"source1_entity_id\t{col}\n")

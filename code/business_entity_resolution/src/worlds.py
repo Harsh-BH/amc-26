@@ -1,4 +1,5 @@
-"""Deterministic folds + test-like mini-worlds (see plan Task 0.3 for the why).
+"""Deterministic folds + test-like mini-worlds: labelled train subsets padded with unlinked S2/S3 to the test set's
+records-per-S1 density, so a world's F0.5 measures the matcher under test-like competition.
 
     python src/worlds.py            # build gt_pairs, folds, and the dev/holdout/train worlds
 """
@@ -13,10 +14,13 @@ WORLDS = {"dev": ([1], 30_000), "holdout": ([0], None), "train": ([2, 3, 4, 5, 6
 
 
 def folds(ids: pd.Series, k: int = 10) -> np.ndarray:
+    """Fold 0..k-1 of each id from a hash of the id string: the same on every run (int8)."""
     return (pd.util.hash_pandas_object(ids, index=False).to_numpy() % k).astype(np.int8)
 
 
 def build_base():
+    """gt_pairs.parquet (one s1, sx row per true link) and s1_folds.parquet (train S1 id, country,
+    fold)."""
     gt = pd.read_parquet(WORK / "train_ground_truth.parquet")
     pairs = (gt.assign(sx=gt.matched_entity_ids.str.split(",")).explode("sx")
                .query("sx.notna() and sx != ''", engine="python")[["source1_entity_id", "sx"]]
@@ -28,6 +32,9 @@ def build_base():
 
 
 def build_world(name: str, fold_ids: list, n_s1: int | None, seed: int = 0):
+    """World `name` under data/work/worlds/: the S1 of fold_ids (a country-stratified sample of about
+    n_s1 when set), all their true S2/S3, plus unlinked S2/S3 of the same country up to TEST_DENSITY
+    records per S1. Writes s1 / sx / truth parquet files."""
     s1 = pd.read_parquet(WORK / "s1_folds.parquet")
     s1 = s1[s1.fold.isin(fold_ids)]
     if n_s1:
@@ -52,6 +59,7 @@ def build_world(name: str, fold_ids: list, n_s1: int | None, seed: int = 0):
 
 
 def load_world(name: str):
+    """(s1, sx, truth) of a built world; truth = {s1 id: set of true sx ids}, empty for a singleton."""
     d = WORK / "worlds" / name
     s1, sx, links = (pd.read_parquet(d / f) for f in ("s1.parquet", "sx.parquet", "truth.parquet"))
     truth = {s: set() for s in s1.entity_id}
@@ -61,6 +69,8 @@ def load_world(name: str):
 
 
 def _check():
+    """Self-check on the dev world: truth covers every S1, every true child is present, the test density
+    and the singleton share hold."""
     s1, sx, truth = load_world("dev")
     assert set(truth) == set(s1.entity_id)
     kids = set().union(*truth.values())

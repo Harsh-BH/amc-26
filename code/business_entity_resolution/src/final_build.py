@@ -1,4 +1,4 @@
-"""The final submission: run.py's sub66_final + the unseen country's add-on change sets -> #76 (LB 0.988292) / #77.
+"""The final submission: run.py's sub66_final + the unseen country's add-on change sets -> #76 / #77 (LB 0.988292).
 
     python code/business_entity_resolution/src/run.py --split test --stage model --recipe sub66_final \
         --drop-sibling-cands --out output/sub66_final_small
@@ -7,15 +7,15 @@
     python code/business_entity_resolution/src/final_build.py output/sub66_final_small output/sub79q --upto 73q  # #79q
     python code/business_entity_resolution/src/final_build.py --selftest
 
-Steps, in order (an add set = a probe's staged file's pairs that sub66_final's line lacks, in that file's order):
-  67q     P67: synthetic-French-tuned bge combiner, Qwen-gated         (probes/P67-fr-synth,    output/sub67q)
-  70a     P70: role-word pairs                                         (probes/P70-fr-roles,    output/sub70a)
-  t975ce  P69: the loosened unseen-country bar, CE-gated               (probes/P69-fr-loosen,   output/sub66_t975ce)
+Steps, in order (an add set = an experiment's staged file's pairs that sub66_final's line lacks, in that file's order):
+  67q     P67: synthetic-French-tuned bge combiner, Qwen-gated         (experiments/P67-fr-synth,    output/sub67q)
+  70a     P70: role-word pairs                                         (experiments/P70-fr-roles,    output/sub70a)
+  t975ce  P69: the loosened unseen-country bar, CE-gated               (experiments/P69-fr-loosen,   output/sub66_t975ce)
           -> #75a (P75's combine)
-  n54     N54: decoy-word pairs leave (france.decoy_mask, s > .25, on #75a's France pairs; probes/P74-n54-adapt/build74.py)
-  71a     P71: noise-word pairs                                        (probes/P71-fr-noiseword, output/sub71a)  -> #76
-  41      P41's brand rule on sub66_final                              (probes/P70-fr-roles/p41_on.py)           -> #77
-  73v     P73/P79: pairs the France-independent CE combiner vetoes      (probes/P79-p73-takeover/build79.py)
+  n54     N54: decoy-word pairs leave (france.decoy_mask, s > .25, on #75a's France pairs; experiments/P74-n54-adapt/build74.py)
+  71a     P71: noise-word pairs                                        (experiments/P71-fr-noiseword, output/sub71a)  -> #76
+  41      P41's brand rule on sub66_final                              (experiments/P70-fr-roles/p41_on.py)           -> #77
+  73v     P73/P79: pairs the France-independent CE combiner vetoes      (experiments/P79-p73-takeover/build79.py)
   73q     P73/P79: its adds + restores (build67 swap @ .95) with P38 France Qwen r >= .5 or unscored     -> #79q
   73x     P73/P79: its remaining adds (Qwen r < .5); both minus N54's removals                              -> #79
 An add keeps one owner per SX and at most 5 S2 / 6 S3 per S1, and skips a pair sub66_final or an earlier step already has
@@ -34,8 +34,8 @@ SRC = Path(__file__).resolve().parent
 STEPS = ("67q", "70a", "t975ce", "n54", "71a", "41", "73v", "73q", "73x")
 REMOVE = {"n54", "73v"}
 CAP = {"S2": 5, "S3": 6}
-# ponytail: the add-on pairs ship as rows (probes/P78-final-pkg2/extract.py, 22,562 rows) -- each came from a probe's GPU
-# model or frame run by hand, not from run.py. Upgrade path: port each probe's stage into france.py as a recipe step.
+# Note: the add-on pairs ship as recorded rows (experiments/P78-final-pkg2/extract.py, 22,562 rows) -- each came from an
+# experiment's own GPU model or frame (src/experiments/INDEX.md), not from run.py. Upgrade: port each stage into france.py.
 CHANGES = next((p for p in (SRC / "final_changes.parquet", *(q / "data/work/p79/final_changes.parquet" for q in SRC.parents),
                             SRC.parents[2] / "data/work/p78/final_changes.parquet")
                 if p.exists()), None)
@@ -95,12 +95,14 @@ def build(base: Path, out: Path, changes, upto: str = "71a", skip=()) -> dict:
 
 
 def load(path=CHANGES):
+    """The recorded change sets as (step, s1, sx) rows, in application order."""
     import pyarrow.parquet as pq
     t = pq.read_table(path).to_pydict()
     return list(zip(t["step"], t["s1"], t["sx"]))
 
 
 def _selftest():
+    """Self-check: adds respect one owner per SX and the 5 / 6 caps, removals drop pairs, candidates gain every match."""
     with tempfile.TemporaryDirectory() as d:
         d = Path(d)
         (d / "b").mkdir()

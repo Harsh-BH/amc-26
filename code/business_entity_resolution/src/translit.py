@@ -119,6 +119,7 @@ def table() -> dict:
 
 
 def _span(p: str, tab: dict) -> str:
+    """One Indic span -> Latin: the whole span from the table, else word by word (table, then roman)."""
     return tab.get(p) or " ".join(tab.get(w) or roman(w) for w in p.split(" "))
 
 
@@ -148,6 +149,7 @@ FOLD = [(re.compile(a), b) for a, b in FOLD]
 
 @lru_cache(maxsize=1 << 20)
 def _fold(s: str) -> str:
+    """Phonetic key of one string: accents stripped, lower case, then the FOLD rewrites in order."""
     s = "".join(c for c in unicodedata.normalize("NFKD", s.lower()) if not unicodedata.combining(c))
     for a, b in FOLD:
         s = a.sub(b, s)

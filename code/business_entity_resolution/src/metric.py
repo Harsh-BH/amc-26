@@ -7,6 +7,8 @@ import sys
 
 
 def f_beta(pred: set, true: set, beta: float = 0.5) -> float:
+    """F-beta of one S1's predicted id set against its true set. An empty truth (singleton) scores 1 only
+    for an empty prediction; no true positive scores 0."""
     if not true:                      # singleton: empty is perfect, anything else is 0
         return 1.0 if not pred else 0.0
     tp = len(pred & true)
@@ -42,6 +44,7 @@ def read_sets(path) -> dict:
 
 
 def _check():
+    """Self-check: the statement's worked example, the singleton rules and the per-group means."""
     ex = f_beta({"S2-47", "S2-193", "S3-812"}, {"S2-47", "S3-812"})
     assert round(ex, 3) == 0.714, ex                                  # the PDF's worked example
     assert f_beta(set(), set()) == 1.0 and f_beta({"S2-1"}, set()) == 0.0   # singleton rules

@@ -12,11 +12,13 @@ WORK = Path(os.environ.get("ER_WORK", "data/work"))
 
 
 def read_tsv(path) -> pd.DataFrame:
+    """One dataset TSV -> DataFrame of str columns; 'NA' and '' stay literal strings."""
     return pd.read_csv(path, sep="\t", quoting=csv.QUOTE_NONE, dtype=str,
                        keep_default_na=False, engine="c")
 
 
 def convert():
+    """Every DATA/*/*.tsv -> WORK/<stem>.parquet, asserting no line was merged or dropped by the parse."""
     WORK.mkdir(parents=True, exist_ok=True)
     for f in sorted(DATA.glob("*/*.tsv")):
         df = read_tsv(f)
@@ -29,6 +31,7 @@ def convert():
 
 
 def _check():
+    """Self-check: literal quotes do not merge lines; 'NA' and '' survive as strings."""
     with tempfile.NamedTemporaryFile("w", suffix=".tsv", delete=False, encoding="utf-8") as t:
         t.write('entity_id\tbusiness_name\tbusiness_address\tcountry\n'
                 'S1-1\tJoe\'s "Best" Pizza\t12 "A" Rd, Pune\tIndia\n'

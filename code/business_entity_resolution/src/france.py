@@ -1,8 +1,8 @@
 """The unseen-country chain (#31's France, LB 0.9856; + #34v / #37's decision-time additions, LB 0.986304), label-free
 throughout. It runs on every test S1 label absent from train S1 (run.unseen(): France is the only one); C is set by
-run.py, no country is named here. Ported from probes P20 (rescore, R1), P26 (house-number features, c_hn), P28 (bxneg),
-P29 (paren_hn, key tier, cap), P30 (veto), P31 (the chain), P34v (rescue) and P37 (group completion). run.py drives
-it (--recipe sub31* / sub37*):
+run.py, no country is named here. Ported from experiments P20 (rescore, R1), P26 (house-number features, c_hn),
+P28 (bxneg), P29 (paren_hn, key tier, cap), P30 (veto), P31 (the chain), P34v (rescue) and P37 (group completion).
+run.py drives it (--recipe sub31* / sub37*):
 
   world(base)  data/work/p9/fr31 = #9ab's idf144 France world (base) with rf_test_sx_France's house numbers re-parsed
                where an address segment opens with '(n)' ('(520) RUE X': 1.6% of France S2/S3, P6 / P29)
@@ -54,6 +54,7 @@ def strip(core: str) -> str:
 
 
 def paren_hn(addr: pd.Series) -> pd.Series:
+    """'(520) RUE X' -> '520 RUE X': a segment that opens with a parenthesised number loses the brackets."""
     return addr.fillna("").astype(str).str.replace(PAREN, r"\1\2", regex=True)
 
 
@@ -175,6 +176,8 @@ def chn(model: Path, out: Path):
         cols, seen = pf.schema_arrow.names, []
 
         def rescored(X):
+            """X with every record-derived column (features.strings, rule_acc) recomputed on the R1 cores, in
+            the X file's column order."""
             S = F.strings(r1, rx, X.q1.to_numpy(), X.qx.to_numpy() - off, counts, m1, mx).round(3)
             S["rule_acc"] = np.isin(F._key(X.q1, X.qx), ak).astype(np.float32)
             X = X.reset_index(drop=True)
@@ -183,6 +186,8 @@ def chn(model: Path, out: Path):
             return X[cols]
 
         def sink(X):
+            """Record a rescored batch in the full list (q1, qx, name_cos) and write its pruner-kept rows to the
+            scratch file."""
             nonlocal w
             keep = M.kept(X)
             full.append((X.q1.to_numpy(np.int32), X.qx.to_numpy(np.int32), X.name_cos.to_numpy(np.float32)))
@@ -276,6 +281,7 @@ _NUM = re.compile(r"[a-z]?[-/]?(\d+)([a-z](?![a-z0-9]))?")     # N.house_number'
 
 
 def _street(x: str) -> str:
+    """street_key of one folded address."""
     segs = x.split(",")
     for i, seg in enumerate(segs):                              # the segment N.house_number takes the number from
         s = seg.strip()
@@ -299,12 +305,15 @@ def street_key(addr: pd.Series) -> pd.Series:
 
 
 def _rf(path: Path, ids, cols: list) -> pd.DataFrame:
+    """Columns cols of a rules.feats file at ids (id index, ids order; NaN where an id is not in the file)."""
     t = pq.read_table(path, columns=["id", *cols])
     t = t.filter(pc.is_in(t.column("id"), value_set=pa.array(ids, pa.large_string())))
     return t.to_pandas().set_index("id").reindex(ids)
 
 
 def _addr(sources: tuple, ids) -> pd.Series:
+    """Raw business_address of ids from the unseen country's test sources (1 = S1, 2 / 3 = S2 / S3); ''
+    when absent."""
     out = [pq.read_table(WORK / f"test_source{i}.parquet", columns=["entity_id", "business_address"],
                          filters=[("country", "==", C)]).to_pandas() for i in sources]
     a = pd.concat(out, ignore_index=True).drop_duplicates("entity_id").set_index("entity_id").business_address
@@ -450,6 +459,7 @@ def complete(q1, qx, is2, p, am, acc, h1, hx, rescue_t=None, gc_t=None, hn_t=Non
     p, sib = np.asarray(p, np.float64), S.sib_mask(h1, hx)
 
     def add(name, t, m):
+        """Log one stage's added pairs; return acc with them."""
         print(f"{C}: {name} p >= {t:g}: +{int(m.sum()):,} pairs to {len(np.unique(q1[m])):,} S1", flush=True)
         return acc | m
 
@@ -588,6 +598,8 @@ _WEBN = re.compile(r"www|\.[a-z]{2,4}\b|@|#|com\b", re.I)
 
 
 def btoks(s: str) -> list:
+    """Letter tokens of a name for the brand detector: accents stripped, lower case, the digit-for-letter
+    typos undone (0 1 5 8 -> o l s b)."""
     s = unicodedata.normalize("NFKD", s)
     s = "".join(ch for ch in s if not unicodedata.combining(ch)).lower().translate(_DIG)
     return re.findall(r"[a-z]+", s)
@@ -667,13 +679,14 @@ def brand_mask(s1: np.ndarray, sx: np.ndarray, v: Path) -> np.ndarray:
 
 # ---------------------------------------------------------------- the final chain (#sub_clean, 27 Sep): P42 recipe stages ->
 # P41 brand (on the gc70 lists) -> P48 CE veto -> P54 in-band CE rescue -> P47 hn-change class -> P55 combiner. Each stage
-# is its probe's rule, on the same France pair rows (the post-rules file order); stage functions are the probes' code.
+# is its experiment's rule, on the same France pair rows (the post-rules file order); stage functions are their code.
 LO, HI, CAPS = 0.02, 0.98, (5, 6)                  # the CE band (run.py rerank.CFG) and train's max S2 / S3 per S1
 W_BLEND = (0.9245, 0.2595, 0.0515)                 # the unseen country's out-of-domain bge blend (= run.W_FRANCE)
 HN_OK = (4, 5)                                     # P47: hn_rel classes of the class stage (-1 / -2, other non-sibling)
 
 
 def _logit(p):
+    """logit of p clipped to [1e-6, 1 - 1e-6]."""
     p = np.clip(p, 1e-6, 1 - 1e-6)
     return np.log(p / (1 - p))
 
@@ -687,6 +700,7 @@ def rank_in(key, p, rows):
 
 
 def counts(s1, is2, pred, n):
+    """(S2 count, S3 count) of the accepted pairs pred per S1 row, arrays of length n."""
     return np.bincount(s1[pred & is2], minlength=n), np.bincount(s1[pred & ~is2], minlength=n)
 
 
@@ -772,6 +786,7 @@ def sx_feats(sx, g):
 
 
 def _dens(v, n):
+    """Per value: how many values of v are >= it, divided by n (the S1 count)."""
     q = np.sort(v)
     return (len(q) - np.searchsorted(q, v, side="left")) / n
 
@@ -869,7 +884,7 @@ def chain(f: dict, c: dict) -> np.ndarray:
     g = c_hn's p, pbl = the bge blend before the post-rules, r = CE r (P30's pool first, then the band cache; NaN = none),
     r_lo = P48's CE r of the other pairs, h1 / hx house numbers (fixed SX side), s1 / sx ids, n = #S1, v = the fr31
     world, learn = P3's blocked list (swap only). c: t (decision), anchor (post-rules t), rescue / gc / hn (P42), then the
-    stages of c["order"] (default ORDER_CLEAN), each its probe's rule:
+    stages of c["order"] (default ORDER_CLEAN), each its experiment's rule:
       P42 recipe stages on p (base t, rescue, gc, hn-equal extras) -> lines, always first
       brand  P41 brand pairs at c["brand"], computed on the gc70-style lists (anchor t, rescue 0.90, gc 0.70), unioned
       xf     P40 address-less exact names at c["xf"], computed on the gc70-style lists + brand, unioned
@@ -1001,6 +1016,7 @@ def acro_pairs(jac: float = 0.6, st_min: float = 1.0) -> pd.DataFrame:
     j.columns = ["s1", "sx"]
 
     def grab(files, ids):
+        """P3's cleaned address of ids from the given text files (entity_id index)."""
         v = pa.array(sorted(set(ids)), pa.string())
         t = [pq.read_table(x, columns=["entity_id", "addr"]) for x in files]
         t = pa.concat_tables([x.filter(pc.is_in(x["entity_id"], value_set=v)) for x in t]).to_pandas()
@@ -1083,6 +1099,8 @@ LF_LONG = {"private": "pvt", "limited": "ltd", "incorporated": "inc", "corporati
 
 
 def _lf_canon(t: str) -> str:
+    """Canonical legal-form token: a LEGAL word through LF_CANON, anything else the short form of the
+    closest long form (a typo of it)."""
     from rapidfuzz.fuzz import ratio
     if t in N.LEGAL:
         return LF_CANON.get(t, t)
@@ -1090,6 +1108,8 @@ def _lf_canon(t: str) -> str:
 
 
 def _lf_sig(x: str) -> str:
+    """Legal-form signature of one name_norm string: its canonical forms, sorted and '+'-joined; '' when it
+    has none, or when every token is legal (an acronym or a bare form)."""
     toks = x.split()
     leg = [t for i, t in enumerate(toks) if not (i == 0 and t == "co" and len(toks) > 1)      # 'Co-op ...', 'Co Name'
            and N._is_legal(t, toks[i + 1] if i + 1 < len(toks) else "")]
@@ -1182,11 +1202,14 @@ def xfc_adds(q1, qx, is2, p, am, base, sib, s1, sx, t: float = 0.3) -> np.ndarra
 
 
 def argmax(qx, p):
+    """model.argmax_sx: the mask of each SX's highest-p pair."""
     import model as M
     return M.argmax_sx(qx, p)
 
 
 def _check():
+    """Self-check on toy rows: R1 strip, the '(n)' fix, street keys, name_rel, hn_feats, the cap, rescue /
+    group completion, brand syllables, fkey, legal-form signatures / classes, xfc and complete()."""
     assert [strip(c) for c in ["martin fils", "fils", "wallon cie", "dupont freres", ""]] == ["martin", "fils", "wallon",
                                                                                               "dupont", ""]
     assert paren_hn(pd.Series(["(520) RUE X, Lyon", "A, (12) Rue", "12 (3) rue"])).tolist() == \
@@ -1245,7 +1268,7 @@ def _check():
 
 def decoy_mask(s1: np.ndarray, sx: np.ndarray, am: np.ndarray, acc: np.ndarray, s_min: float = 0.25,
                n_min: int = 20) -> np.ndarray:
-    """N54 (night/aditya): accepted unseen-country pairs whose SX core swaps in (name_rel 'sub1') or adds ('add1') ONE
+    """N54: accepted unseen-country pairs whose SX core swaps in (name_rel 'sub1') or adds ('add1') ONE
     generator DECOY word, at any house-number relation. Decoy words come from the label-free lens (lens_table on the
     argmax pairs): >= n_min hn-present swap pairs and sibling-offset share s > s_min (France: comite, ecole, amicale,
     club, parents ...; the noise words sit at s <= 0.09). Decoys copy the S1 name, swap one org word and often keep the
