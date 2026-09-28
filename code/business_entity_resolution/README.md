@@ -48,8 +48,8 @@ HF_HUB_OFFLINE=0 .venv/bin/python -c "from transformers import AutoModelForSeque
   with the official validator at `data/student_resource/utils/validate_submission.py`. Two environment variables
   override the paths: `ER_DATA` (the `dataset/` directory) and `ER_WORK` (intermediate files, default `data/work`).
   Every command runs from the repository root.
-- **Hardware.** The measurements below come from a 16-core laptop with 15 GB RAM and one RTX 3050 6 GB, and every step
-  fits a 3 GB memory cap. The cross-encoder steps need a GPU and take the lock `/tmp/amc-gpu.lock` (`flock`). The
+- **Hardware.** The measurements below come from a 16-core laptop with 15 GB RAM and one RTX 3050 6 GB. Every scoring step
+  fits a 3 GB memory cap; matcher training peaks at 3.7 GB. The cross-encoder steps need a GPU and take the lock `/tmp/amc-gpu.lock` (`flock`). The
   cross-encoder fine-tuning (`bge_train.py`) needs a ≥ 16 GB GPU; we ran it as an AWS SageMaker job on one A10G.
 
 ## 2. Reproduce the final submission
@@ -254,6 +254,18 @@ The blend refit on holdout half 0 returns [0.678, 0.715, 0.337] for m2_big (CFG 
 ```
 
 `--stage rules` reproduces submission #2, the rules-only baseline, byte for byte.
+
+**Last run (29 Sep 2026, CPU):**
+
+| check | result | time |
+|---|---|---|
+| module self-checks: metric, verify_outputs, final_build, package, stack, a10, prune, features, block, normalize, translit, france, rerank, io_tsv, worlds | 15 / 15 ok | ≤ 48 s each |
+| `test_rules.py` (holdout world) | ok: F0.5 0.8201, pair precision 0.9937 | 297 s |
+| `test_rules_cands.py` (state-partitioned rules) | ok: F0.5 0.8215, pair precision 0.9940 | 73 s |
+| `verify_outputs.py output/sub90u` | ok: 7,668,008 candidates (4.426 per S1), 5,848,223 matches, every match a candidate, one owner per S2/S3 | 15 s |
+| `final_build.py` → `final_patch.py` from `sub66_final_small` | byte for byte `sub77` (9e4fb898…), then `sub90u` (a8ad38b5… / f311dc4d…) | < 1.5 min |
+| official validator `--check-ids` on the zip's `output/` | PASS | ~1 min |
+| `test_pipeline.py` (end to end, injected unseen country) | last passed 26 Sep; needs the CE checkpoint and a GPU | — |
 
 ## 7. Runtimes and memory
 

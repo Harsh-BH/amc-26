@@ -31,7 +31,9 @@
 | No external data / fair play | no APIs, geocoding, registries, postal or city tables; hand-written lists only of the allowed kinds; third-party code credited | §7 |
 | Output validity | one line per test S1 (all three countries); every match inside the candidate set; one owner per S2/S3; official validator `--check-ids` PASS | `src/verify_outputs.py`, `src/reproduce.sh` |
 | Reproducibility | one command rebuilds both files and checks their md5 against the leaderboard upload; the recorded change sets rebuild byte for byte; their generating scripts ship in `src/experiments/` | §8; `src/reproduce.sh`; `src/experiments/INDEX.md` |
-| Code quality | every module, function and class has a docstring; each module has a runnable self-check; end-to-end test with an injected unseen country | `src/test_pipeline.py`, `python src/<module>.py`, README §6 |
+| Code quality | every module, function and class has a docstring; 17 / 17 module self-checks pass (run 29 Sep); end-to-end test with an injected unseen country | §8 test log; `python src/<module>.py`; README §6 |
+| Self-evaluation | contributions tied to measured gains; limitations, risks and next steps stated openly | §2.3, §6.1–6.2 |
+| Cost | laptop-scale pipeline (every scoring step ≤ 3 GB RAM); $179.85 of AWS usage for the whole challenge, covered by credits | §8 compute table |
 
 ---
 
@@ -56,7 +58,7 @@
 | Candidate set fed to the matcher | **7,668,008 pairs = 4.43 per Source 1** (France 4.51 / India 4.75 / US 4.00), down from 15.87 after blocking. Holdout pair recall is 0.9917 after blocking and 0.9872 in the final set |
 | Matches written | 5,848,223 pairs; 3.38 per Source 1 (France 3.31, India 3.38, US 3.39); 5.8% of Source 1 empty in each country |
 | Models | LightGBM (MIT) throughout; cross-encoders bge-reranker-v2-m3 (Apache-2.0, 568M), Qwen3-Reranker-4B + LoRA (Apache-2.0, 4.02B), ms-marco-electra-base (Apache-2.0, 109M). All run locally, all ≤ 8B, all fine-tuned only on the provided data (§7) |
-| Compute | one laptop (16 cores, 15 GB RAM, RTX 3050 6 GB, every step under a 3 GB RAM cap) plus rented AWS SageMaker instances for cross-encoder fine-tuning / scoring and two large LightGBM fits (§8) |
+| Compute | one laptop (16 cores, 15 GB RAM, RTX 3050 6 GB; every scoring step ≤ 3 GB RAM) plus rented AWS SageMaker instances for cross-encoder fine-tuning / scoring; all AWS usage over the challenge $179.85, covered by the challenge credits (§8) |
 
 ## 2. Methodology
 
@@ -149,6 +151,22 @@ raw TSVs ──► transliteration (learned Indic→Latin word table) ──► 
   decisions, reranking, France, pruning, …), each in its own git branch.
 - Each experiment wrote its holdout result to a shared log, and nothing was merged without its number.
 - About 90 experiments ran over the 72 hours. §5.4 lists the ones that failed.
+
+### 2.3 Contributions and their measured gain
+
+| contribution | measured gain | measured on |
+|---|---|---|
+| cross-encoder on the matcher's uncertain band only (0.02 < p < 0.98) | **+0.0066 ± 0.0002** (e5-small), then **+0.00059 ± 0.00007** for bge-reranker-v2-m3 | holdout, report half |
+| learned pruner (meta-blocking) | candidates −70% (15.87 → 4.83 per S1) for −0.00024 ± 0.00003 | holdout; LB −0.00019 |
+| generator-aware house-number stacker (signed sibling offsets + support counts) | US **+0.00055 ± 0.00009** | holdout, report half |
+| re-scoring each record's best pair from its competition (a10 stacker → bagged combiner with the CE on every argmax pair) | **+0.000656 ± 0.000062** LB-eq over the a10 stacker, which gave +0.00021 ± 0.00006 | holdout, report half |
+| cross-fitted stage-C owner re-decision (US) | **+0.000287 ± 0.000033** | US fold 0 |
+| label-free stricter threshold for the unseen country | 0.980017 → 0.981142 | public LB, France-only uploads |
+| France chain: own-text IDF, rebuilt records, house-number-aware matcher, CE blend with out-of-domain weights, rules | 0.981142 → 0.9856 (+0.0045, with the India/US CE upgrade in between) | public LB |
+| structural completion (empty-S1 rescue, one-sided-group completion) | +0.00031, +0.00034 | public LB |
+| France change sets from CE / combiner / word-role experiments | +0.000901, then +0.000183 | public LB |
+| filtered same-site ADD rules (credited, §7) + trace / anchor combiner | +0.000548 | public LB |
+| pass-3 adds + US owner re-decision | +0.000359 | public LB |
 
 ## 3. Candidate Generation (Blocking)
 
@@ -499,6 +517,34 @@ Every France test sat on unchanged India/US files, so each of those leaderboard 
   - a group holding only one source is usually missing its other half;
   - a generator-built record keeps its business's exact site.
 
+### 6.1 Limitations and risks
+
+- **Generator-specific signals.** Several features exploit how this dataset was generated: the sibling house-number
+  offsets, the synthetic-brand syllables, the noise and decoy words, and the `(n)` house-number format. They were
+  learned from the provided data (the offsets from training labels, the rest label-free from the test rows), not
+  hand-coded knowledge. On real-world data these constants would not transfer, but the mechanism would: learn the
+  decoy patterns of the data from its own statistics.
+- **France has no labels.** Every France gain rests on LOCO proxies and public-LB deltas, and LOCO transfers
+  imperfectly. #54 was expected to gain +0.0015–0.002 and gained +0.00038. To limit public-LB overfitting, a France
+  change was adopted only when LOCO and the public LB agreed. The one LB-tuned value is France's threshold level, where
+  the public curve is flat (0.88 → 0.95: +0.00012). The public and private splits come from the same test files.
+- **Small parts near the noise floor.** Some kept parts are within 2 SE on their own: the zoo columns
+  (+0.000025 ± 0.000029) and the trace / anchor columns (1.4–1.9 SE). They were kept because the bundle they shipped
+  in gained on the public LB. Individually a few may be neutral.
+- **Recorded change sets.** The last steps apply recorded rows rather than `run.py` stages. The scripts that made them
+  ship in `src/experiments/`, and four merges ran without a saved script (listed in `experiments/INDEX.md`).
+- **Compute.** Retraining the cross-encoders needs a ≥ 16 GB GPU. Trained artefacts are not in the zip (size).
+- **Third-party rules.** 16,118 France pairs come from a public repository's rules. They are credited and were
+  filtered by our own holdout-checked rule (§7).
+
+### 6.2 Next steps
+
+- Port each recorded change set into a `run.py` recipe step, so that one command writes `sub90u` without recorded rows.
+- India stage-C owner re-decision: its fold-0 blend passed on both halves, but its test CE scores were not ready in time.
+- Re-implement the third-party ADD rules in our own code.
+- Ship a later-stage candidate set (the pairs the final decision stage actually compares) to shrink
+  `candidate_pairs.tsv` below 4.43 per S1.
+
 ---
 
 ## 7. Compliance and fair play
@@ -562,17 +608,30 @@ unlabelled test rows, which the organisers allow):
   - The scripts that produced them are in `src/experiments/`, and `experiments/INDEX.md` maps each change set to its
     script.
   - Recording them keeps the final file exactly reproducible without re-running those GPU jobs.
-- **Hardware.**
-  - One laptop (16 cores, 15 GB RAM, RTX 3050 6 GB); every step fits a 3 GB memory cap.
-  - Rented AWS SageMaker instances: GPUs (mainly A10G) to fine-tune and score the cross-encoders, and CPUs for two
-    large LightGBM fits.
-- **Runtimes.**
-  - A cold test run with trained models and cached CE scores takes ~2.5 h: blocking ~36 min, features ~50 min, matcher
-    scoring ~30 min.
-  - Scoring the bge band fresh adds ~20 min on an A10G.
-  - Rebuilding every LightGBM from the training data takes ~5.5–6 h.
-- **Tests.** `test_pipeline.py` runs end to end, including an injected unseen country. Each module has a self-check
-  (`python src/<module>.py`). `package.py --selftest` checks the zip layout.
+- **Compute and cost** (laptop: 16 cores, 15 GB RAM, RTX 3050 6 GB; GPU jobs on AWS SageMaker):
+
+  | stage | where | wall time | peak RAM |
+  |---|---|---|---|
+  | test blocking: text prep + France / India / US | laptop CPU | 6.5 + 5 / 18 / 6 min | 2.7 GB |
+  | test record + pair features | laptop CPU | ~20 + 3 / 20 / 9 min | 2.8 GB |
+  | pruner + matcher scoring (27.5M → 8.37M pairs) | laptop CPU | 3 / 18 / 5 min | 1.8 GB |
+  | cross-encoder band scoring (1.24M pairs) | 1× A10G (laptop GPU: ~2 h) | ~20 min | — |
+  | France chain | laptop | ~8 min | 2.6 GB |
+  | decision + writing + validator | laptop | 2.5 min | 2.3 GB |
+  | recorded change sets + `verify_outputs.py` | laptop | < 1.5 min | — |
+  | training: train-side blocking + features | laptop CPU | ~105 min | 2.9 GB |
+  | training: pruner / m2_big | laptop CPU | 74 s / ~45 min | 2.3 / 3.7 GB |
+  | training: bge fine-tuning (778k pairs × 2 epochs) | 1× A10G | 76 min, $4.70 | 24 GB GPU |
+  | **all AWS usage over the challenge** (~90 experiments, including the Qwen / electra / cross-fit jobs) | SageMaker | — | **$179.85**, covered by the challenge credits |
+
+  A cold test run with trained models and cached CE scores takes ~2.5 h. Rebuilding every LightGBM from the training
+  data takes ~5.5–6 h.
+- **Tests (run 29 Sep 2026):**
+  - All 17 module self-checks pass: metric, verify_outputs, final_build, package, stack, a10, prune, features, block,
+    normalize, translit, france, rerank, io_tsv, worlds, test_rules, test_rules_cands.
+  - `test_rules.py` on its holdout world: F0.5 0.8201, pair precision 0.9937.
+  - The end-to-end `test_pipeline.py` (every label, including an injected unseen country) needs the CE checkpoint and
+    a GPU. Its last recorded pass was 26 Sep, with the `--cap` / `--drop-sibling-cands` stages.
 
 ## Appendix
 

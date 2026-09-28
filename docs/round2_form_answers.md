@@ -60,5 +60,8 @@ leave-one-country-out proxies (US→India, India→US) and France-only leaderboa
 - **Reproducibility:** `run.py` regenerates the base submission from the raw TSVs; `final_build.py` and `final_patch.py`
   apply the recorded change sets and rebuild the uploaded files byte for byte (md5 a8ad38b5… / f311dc4d…); the scripts
   behind every recorded change set ship in `src/experiments/`.
-- **Hardware:** one laptop (16 cores, 15 GB RAM, RTX 3050), every step under 3 GB RAM; cross-encoder fine-tuning on one
-  A10G (76 min, $4.70).
+- **Hardware and cost:** one laptop (16 cores, 15 GB RAM, RTX 3050), every scoring step under 3 GB RAM; cross-encoder
+  fine-tuning on one A10G (76 min, $4.70); all AWS usage over the challenge $179.85, covered by the challenge credits.
+- **Limitations we state openly:** several signals exploit this dataset's generator (sibling house-number offsets,
+  synthetic brands, noise words), learned from the data itself; France gains rest on LOCO proxies and public-LB deltas;
+  the last change sets ship as recorded rows with their generating scripts.
