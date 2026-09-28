@@ -1,6 +1,7 @@
 # Business entity resolution: Team Yeti, Amazon ML Challenge 2026
 
-This folder is a self-contained copy of our pipeline. From the raw TSVs it regenerates both submission files,
+This folder is a self-contained copy of our pipeline. From the raw TSVs, given the trained artefacts listed in §2 (not
+zipped for size), it regenerates both submission files,
 `output/matching_results.tsv` and `output/candidate_pairs.tsv` (public LB **0.989382**, submission `sub90u`).
 - It uses no external data and calls no API. Every model runs locally and is MIT or Apache-2.0, ≤ 8B parameters.
 - The methodology, the numbers behind every design decision and the compliance notes are in `Documentation_template.md`
@@ -25,7 +26,7 @@ This folder is a self-contained copy of our pipeline. From the raw TSVs it regen
 | `src/france.py` | the unseen-country chain (rebuild, house-number matcher, rules, decision-time additions) |
 | `src/submit_probs.py`, `metric.py` | scored pairs → TSVs; macro F0.5 |
 | `src/final_build.py` + `final_changes.parquet` | applies the recorded France change sets of 27 Sep afternoon → `sub77` |
-| `src/final_patch.py` + `final_patch.parquet` | applies the recorded evening change sets → `sub90u` (the final) |
+| `src/final_patch.py` + `final_patch.parquet` | applies the evening change sets, every changed pair attributed to its step (`--summary`) → `sub90u` (the final) |
 | `src/experiments/` | the experiment scripts that produced those recorded change sets (`INDEX.md` maps each one) |
 | `src/reproduce.sh` | **one command**: the three steps of §2, then `verify_outputs.py`, the md5 check and the official validator |
 | `src/verify_outputs.py` | recomputes the headline numbers from the two TSVs and checks the invariants: one line per test S1, every match inside the candidate set, one owner per S2/S3 (15 s, stdlib only) |
@@ -82,8 +83,12 @@ decides and writes.
   - a Qwen gate;
   - word-role combiners;
   - a cross-fitted stage C for the US.
-- Their outputs ship as change sets: `final_changes.parquet` (22,562 (step, s1, sx) rows) and `final_patch.parquet`
-  (every line of the two TSVs that differs from `sub77`). The two steps rebuild the uploaded files byte for byte.
+- Their outputs ship as attributed change rows, and the two steps rebuild the uploaded files byte for byte:
+  - `final_changes.parquet`: 25,634 (step, s1, sx) rows; `--upto 41` applies the first 22,562.
+  - `final_patch.parquet`: one row per id on every line that differs from `sub77`, as (file, s1, pos, sx, step, op).
+    op is keep / add / remove, and step names the change set.
+  - `final_patch.py --summary` prints each step's experiment and its net pairs added / removed; Documentation §8 has
+    the table.
 - The code that produced each change set is in `src/experiments/`, and `src/experiments/INDEX.md` maps step →
   experiment → script. Those scripts read intermediate files under `data/work/` written by `run.py` and by the GPU
   scoring jobs.
@@ -172,7 +177,7 @@ byte; `--drop-sibling-cands` gives the small candidate set (7,660,700 pairs, 4.4
   normalised name equals its S1's, a name and an S1 core no other S1 of the country carries, p ≥ 0.30, free SX, caps
   5 S2 / 6 S3; fit on the final lines, P64 conflicts skipped) + P54's duplicate step once more; `sub66` =
   `sub_iu54_frgc70` + the same adds.
-- **`final_build.py` (27 Sep evening, the final #76; P78):** it takes `sub66_final --drop-sibling-cands` output and
+- **`final_build.py` (27 Sep evening, #76 / #77; P78):** it takes `sub66_final --drop-sibling-cands` output and
   applies the unseen country's add-on change sets in order: P67q (a bge CE tuned on synthetic pairs from the country's own
   S1 records, used as a column of P55's combiner; adds gated by Qwen r ≥ .5), P70a (word-role combiner adds, c > .98),
   P69 t975ce (t .975's extra pairs with bge r ≥ .99), then N54's removals (`france.decoy_mask`, s > .25: org-word
@@ -180,9 +185,9 @@ byte; `--drop-sibling-cands` gives the small candidate set (7,660,700 pairs, 4.4
   house number). `--upto 41` adds P41's brand rule too (#77). An add keeps one owner per SX and caps 5 S2 / 6 S3, and
   skips a pair sub66_final or an earlier step already holds (so N54's removals are not re-added). A removal drops the
   pair. The candidate list gets any missing match appended after each add step. It rebuilds #76 / #77 byte for byte
-  (md5 a7b2cfe0… / 9e4fb898…) in 21 s. Its change sets are 22,562 rows in `final_changes.parquet`, which ships in the
-  zip beside `src/`, or comes from `data/work/p78/`. They were extracted from the probes' staged folders
-  (`experiments/P78-final-pkg2/extract.py`), because each came from a probe's own GPU model or frame, not from run.py.
+  (md5 a7b2cfe0… / 9e4fb898…) in 21 s. Its change sets are 25,634 rows in `final_changes.parquet` (`--upto 41` applies the first
+  22,562), which ships in the zip beside `src/`. They were extracted from the experiments' staged folders
+  (`experiments/P78-final-pkg2/extract.py`), because each came from an experiment's own GPU model or frame, not from run.py.
 - `--recipe sub_clean_iu34` keeps #34's India / US (the a10 stacker); `--recipe sub54` is the uploaded #54 (LB
   0.986685): the same chain with P40's address-less names (0.70) and P46's noise-word tier, in #54's order, no P55.
 - Reproduction: `sub66_final`, `sub_iu54_frgc70`, `sub_iu54_best`, `sub_iu54_fr38_55n` and `sub_clean` rebuild their folders' matching
@@ -259,7 +264,7 @@ The blend refit on holdout half 0 returns [0.678, 0.715, 0.337] for m2_big (CFG 
 
 | check | result | time |
 |---|---|---|
-| module self-checks: metric, verify_outputs, final_build, package, stack, a10, prune, features, block, normalize, translit, france, rerank, io_tsv, worlds | 15 / 15 ok | ≤ 48 s each |
+| module self-checks: metric, verify_outputs, final_build, package, stack, a10, prune, features, block, normalize, translit, france, rerank, io_tsv, worlds | 15 / 15 ok (with the 2 rule tests below: 17 / 17) | ≤ 48 s each |
 | `test_rules.py` (holdout world) | ok: F0.5 0.8201, pair precision 0.9937 | 297 s |
 | `test_rules_cands.py` (state-partitioned rules) | ok: F0.5 0.8215, pair precision 0.9940 | 73 s |
 | `verify_outputs.py output/sub90u` | ok: 7,668,008 candidates (4.426 per S1), 5,848,223 matches, every match a candidate, one owner per S2/S3 | 15 s |
@@ -298,7 +303,6 @@ Runtimes and memory (measured, 3 GB cap):
 
 The zip holds `output/`, `code/business_entity_resolution/` (src, this README, requirements) and the filled
 `Documentation_template.md`. The script checks its structure and that both TSVs have one row per test S1.
-The model files are artefacts, not source, so they are not in the zip:
 The trained model files are artefacts, not source, so they are not in the zip (§2).
 
 
@@ -346,8 +350,8 @@ features take 4.5 / 1.6 min for India / US).
 
 | recipe / flag | what changes | staged | LB |
 |---|---|---|---|
-| **`sub37`** (default) | all of the above | `output/sub37_gc70` | **0.986304** |
-| **`sub37_small`** (final zip) | `sub37`'s matching; the sibling-decoy candidate stage (`--drop-sibling-cands`, below) on all three countries: 8.37M → **7,658,102 candidate pairs, 4.42 per S1** (France 5.13 → 4.48, India 4.90 → 4.75, US 4.63 → 4.00) | `output/sub37_final_small` | = `sub37` |
+| **`sub37`** | all of the above | `output/sub37_gc70` | **0.986304** |
+| **`sub37_small`** (26 Sep zip) | `sub37`'s matching; the sibling-decoy candidate stage (`--drop-sibling-cands`, below) on all three countries: 8.37M → **7,658,102 candidate pairs, 4.42 per S1** (France 5.13 → 4.48, India 4.90 → 4.75, US 4.63 → 4.00) | `output/sub37_final_small` | = `sub37` |
 | `sub37_hn90` (`--hn-extra 0.9`) | + two-sided extras: a free argmax non-sibling SX with p ≥ 0.90 and the S1's house number joins a group that has both sources | `output/sub37_gc70_hn90` | slot (27 Sep) |
 | `sub37 --rescue 0.7` | the rescue at p ≥ 0.70 | `output/sub37_gc70_r70` | slot (27 Sep) |
 | `sub41` (= `sub37 --brand 0.3`), `sub41_hn90` | + P41's synthetic-brand recovery: a free argmax non-sibling SX whose name is one bare generator brand (a single token spelled by ≥ 2 of the 44 syllables P36 learns label-free from the test names) joins a non-empty group of the only S1 with its exact hn + street + city key, p ≥ 0.30 (+5,742 pairs to 5,641 S1) | `output/sub41`, `output/sub41_hn90` | slot (27 Sep) |
@@ -410,7 +414,7 @@ an earlier submission. Each recipe reproduces its staged files byte for byte, an
 
 | recipe | M2 booster (train folds) | CE | blend w (India / US) | stacker | t (India / US) | France | pruner τ → cands / S1 |
 |---|---|---|---|---|---|---|---|
-| `sub37` (default), `sub37_*`, `sub34*` | `p4/m2_big.txt` (2–5; France `fr31`: `p31/c_hn.txt`) | `p13/ckpt/ce_bge_pool.pt` (bge) | [0.59015, 0.63194, 0.29732] | US: `p17/stack_sup-bge-l21.0_US.txt`, then India + US: `p34/a10_h0.txt` | 0.71 | see above | 0.03 → 4.83 (`_small`: 4.42) |
+| `sub37`, `sub37_*`, `sub34*` | `p4/m2_big.txt` (2–5; France `fr31`: `p31/c_hn.txt`) | `p13/ckpt/ce_bge_pool.pt` (bge) | [0.59015, 0.63194, 0.29732] | US: `p17/stack_sup-bge-l21.0_US.txt`, then India + US: `p34/a10_h0.txt` | 0.71 | see above | 0.03 → 4.83 (`_small`: 4.42) |
 | `sub31`, `sub31_*`, `sub9ab`, `sub8c`, `sub9*` | `p4/m2_big.txt` (2–5; France `fr31`: `p31/c_hn.txt`) | `p13/ckpt/ce_bge_pool.pt` (bge) | [0.59015, 0.63194, 0.29732] | US: `p17/stack_sup-bge-l21.0_US.txt` | 0.71 | see above | 0.03 → 4.83 |
 | `sub7` | `p4/m2_big.txt` (2–5) | `p11/ce_s2P.pt` (e5, 2 epochs) | [0.617, 0.666, 0.261] | — | 0.71 | m2, 0.95 | 0.03 → 4.83 |
 | `sub6` | `p4/m2_big.txt` (2–5) | `p4b/ce.pt` (e5, 1 epoch) | [0.678, 0.715, 0.338] | — | 0.69 | m2, P6 rule: 0.78 | 0.03 → 4.83 |

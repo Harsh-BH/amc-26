@@ -43,9 +43,9 @@ def files(out: Path, code: Path, documentation: Path | None):
                 for p in sorted((code / "src" / "experiments").rglob("*")) if p.suffix in (".py", ".sh", ".md"))
     yield from ((code / n, f"code/business_entity_resolution/{n}") for n in ("README.md", "requirements.txt",
                                                                            "bge_train_requirements.txt") if (code / n).exists())
-    if CHANGES:   # final_build.py's add-on change sets (#76 / #77)
+    if CHANGES:   # final_build.py's add-on change sets (sub66_final -> sub77)
         yield CHANGES, "code/business_entity_resolution/src/final_changes.parquet"
-    if (code / "src" / "final_patch.parquet").exists():   # final_patch.py's evening lines (#84)
+    if (code / "src" / "final_patch.parquet").exists():   # final_patch.py's attributed evening change rows (sub77 -> sub90u)
         yield code / "src" / "final_patch.parquet", "code/business_entity_resolution/src/final_patch.parquet"
     if documentation:
         yield documentation, documentation.name

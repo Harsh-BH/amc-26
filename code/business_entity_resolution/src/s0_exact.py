@@ -11,7 +11,11 @@ SRC = Path(__file__).resolve().parent
 sys.path[:0] = [str(SRC), str(SRC.parents[2])]          # src/ and the repo root (ledger.py, the submission log)
 from worlds import WORK, load_world
 from metric import score
-from ledger import log
+try:
+    from ledger import log   # the repo-root experiment log; absent from the zip
+except ImportError:
+    def log(*a, **k):
+        """No-op stand-in when the experiment log is not installed."""
 
 PUNCT = r"[\s,.;:'\"()\[\]{}\-&/|#!?*+_@%$~`^<>=]+"    # explicit class: RE2's \w would eat Indic/accents
 

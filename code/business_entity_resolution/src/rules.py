@@ -212,7 +212,10 @@ if __name__ == "__main__":
     if sys.argv[1] == "test":
         run_test()
     else:
-        from ledger import log
+        try:
+            from ledger import log   # the repo-root experiment log; absent from the zip
+        except ImportError:
+            log = print
         dense = "dense" in sys.argv
         m = evaluate(sys.argv[1], dense)
         print({k: round(v, 4) if isinstance(v, float) else v for k, v in m.items()})

@@ -1,7 +1,7 @@
 """End-to-end pipeline: raw TSVs -> matching_results.tsv + candidate_pairs.tsv. Run from the repo root.
 
-    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # the final (27 Sep): sub_iu54_frgc70
-        --drop-sibling-cands (the final zip: same matches, 4.42 candidates per S1) | --recipe sub_clean | sub54 | sub37 | … | sub4
+    python code/business_entity_resolution/src/run.py --split test --stage model --out output/   # default recipe sub66_final, the base of sub90u
+        --drop-sibling-cands (the zip's candidate set: same matches, 4.42 candidates per S1) | --recipe sub_clean | sub54 | sub37 | … | sub4
         --rescue T / --gc T / --hn-extra T / --veto TAU / --t-country France=T: the unseen country's bars (0 = off)
     python code/business_entity_resolution/src/run.py --split holdout --stage model   # dense F0.5 -> the submission log
     python code/business_entity_resolution/src/run.py --split dev --stage model       # the small dev world
@@ -75,7 +75,7 @@ T_FRANCE_OVERRIDE = 0.95   # France's t (#7, LB-validated: D4 0.981142 vs 0.9800
 T_COUNTRY = {}             # more per-country t overrides (--t-country C=t); any other unseen label keeps P6's rule
 # submission -> booster (+ its train folds), blend w, T, T_M2, pruner tau, CE (+ family, epochs, cached-score seed),
 # stacked countries, France's scorer (m2 | idf144 | idfdom | bge | sib) and t (None = P6 rule). --recipe switches
-# them all; each recipe reproduces its staged files byte for byte. The default is sub8c (use() at the module end).
+# them all; each recipe reproduces its staged files byte for byte. The default is RECIPE below (use() at the module end).
 _E5 = dict(ce_base="e5", r_seed={}, stack={}, france="m2", w_france=None, w_stack_fit=None)
 _P4B = dict(ce="p4b/ce.pt", ce_epochs=1, t_france=None, **_E5)
 _BIG = dict(booster="m2_big.txt", folds=(2, 3, 4, 5), t_m2=0.69, tau=0.03)
@@ -162,7 +162,7 @@ RECIPES["sub66_final_n54"] = dict(RECIPES["sub66_final"], decoy=0.25)
 # P40 address-less (both on the gc70-style lists, unioned) -> P46 tier -> P48 veto -> P47 class -> P54 rescue; no P55
 RECIPES["sub54"] = dict(RECIPES["sub_clean"], chain=dict(_CHAIN, xf=0.70, swap=0.05, p55=None,
                                                          order=("brand", "xf", "swap", "veto54", "cls", "u54")))
-RECIPE = "sub66_final"   # the final (LB 0.987391); #37_gc70 = sub37 (0.986304), #54 = sub54 (0.986685)
+RECIPE = "sub66_final"   # the pipeline base of the final sub90u (LB 0.987391); #37_gc70 = sub37 (0.986304), #54 = sub54 (0.986685)
 CHN = WORK / "p31" / "c_hn.txt"   # P26's hn-aware matcher (trained on AWS in experiment P26; see README), for fr31
 CAP = None                  # --cap 5,6: at most 5 S2 and 6 S3 matches per S1 (the train truth never exceeds them)
 DROP_SIB_CANDS = False      # --drop-sibling-cands: unaccepted decoy-offset pairs leave candidate_pairs.tsv

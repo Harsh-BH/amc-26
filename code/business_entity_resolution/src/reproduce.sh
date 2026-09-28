@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# One command: raw TSVs -> the final submission (sub90u, public LB 0.989382), then every check.
+# One command: raw TSVs -> the final submission (sub90u, public LB 0.989382), then every check. Needs the trained
+# artefacts of README §2 (run.py retrains 4 of them from the training data; the others come from the GPU /
+# experiment jobs listed there).
 #   bash code/business_entity_resolution/src/reproduce.sh [PYTHON]        (run from the repository root)
 # Needs the setup of README §1 (data under data/student_resource/, trained artefacts or time to rebuild them).
 set -euo pipefail

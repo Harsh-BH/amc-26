@@ -49,7 +49,7 @@ lines. The intermediate submissions sub78g … sub89 were each built from sub77 
 |---|---|---|---|---|
 | xlf | P70-fr-roles | `xlf_build.py sub77 sub77_xlf` (imports P66 `loco66.py` / `prof.py`, P68 `fr_key.py`, P64 `lf.py`) | address-less SX whose name core equals a unique France S1 core, and whose full name differs only by the legal form | +2,019 |
 | groupe | P71-fr-noiseword | `build71.py b` → sub71b; its groupe swaps grafted on #77 (sub78g), then on sub77_xlf (sub80) | one S1 word swapped for "groupe" at the identical house number | +4,062 |
-| P73 #79q | P73 / P79 | the 73v / 73q rows above, grafted on sub80 (sub81) | France-independent CE vetoes plus Qwen-gated adds | −159 / +166 |
+| P73 #79q | P73 / P79 | the 73v / 73q rows above, grafted on sub80 (sub81) | France-independent CE vetoes plus Qwen-gated adds | −159 / +166 (of 167; 1 was already present) |
 | P76 R3 | P76-segment-hill | `build_r3.py output/sub81 output/sub81_r3` (reads the `p69.py 0.9868` chain frame) | S1 with exactly 2 SX-argmax pairs lose base-stage pairs with p in [.9868, .9925), unless the pair is its source's last member | −263 |
 | P80 (legal form kept) | P80-twin-research | `frcount.py output/sub81_r3` → `build_lf.py … p80_lfkept` → `P75-combine/combine.py sub81_r3 sub82 +p80_lfkept` | address-less SX that keeps its legal form and whose full name matches exactly one France S1 | +1,473 |
 | broad type-word veto | P70-fr-roles | `tw_audit.py sub81` → `data/work/p70/tw_sub81.parquet` (words compagnie / institut / pharmacie taken) | SX adds a type word unrelated to the S1's words | −132 |
@@ -85,6 +85,9 @@ lines. The intermediate submissions sub78g … sub89 were each built from sub77 
 - Modules imported only inside functions the chain does not call: P4-match, P5-decide, P6-france, P28, and P15
   `hn_test_mix`.
 - The third-party repository's own scripts. Get them from the URL above.
+- Modules a few scripts import that are not in the zip: `sm_launch` (repo-root SageMaker launcher), `ber` (the
+  third-party repository's package, needed by P81 `mkworld.py`), and P37 `ho`, P13 `big`, P4b `bench` (benchmark
+  helpers the chain does not call). The third-party scripts also need `polars`, which is not in `requirements.txt`.
 
 **Merges without a saved script.** Four steps ran as one-off merge commands with the same rule as `combine.py` /
 `apply_cs.py`:
@@ -97,7 +100,9 @@ script was saved for them.
   pairs with P31 p ≥ .9868 or owned by the same S1 in sub77 / sub66_final, and drop the `street_fr` classes
   different-street and typo-street.
 
-`final_patch.parquet` is the line diff sub90u vs sub77.
+`final_patch.parquet` holds the sub77 → sub90u difference as attributed rows (file, s1, pos, sx, step, op). They
+were derived from the staged chain by `P91-patch-provenance/provenance.py`, and `final_patch.py --summary` prints
+the per-step counts.
 
 ## Redactions in the copies
 

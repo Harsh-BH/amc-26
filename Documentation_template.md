@@ -16,6 +16,16 @@
 - **LOCO** means leave-one-country-out: train on the US, test on India, and the reverse. It stands in for the unlabelled,
   unseen country (France).
 - Every Δ is a paired per-S1 difference ± 1 standard error.
+- **S1 / S2 / S3** are Source 1 / 2 / 3; **SX** is a Source 2 or Source 3 record. **CE** is a cross-encoder (a
+  transformer that reads both records together). The **band** is the matcher's uncertain range 0.02 < p < 0.98.
+  **r** is a CE score, and **r_all** is the CE scored on every record's best (argmax) pair.
+- **D1 / D2 / D4** are diagnostic uploads that changed only France (§4.5). **N54** is a teammate's experiment, like a Pnn.
+  A **lens** is a label-free word statistic over a country's own argmax pairs: how often pairs that swap a word sit at a
+  sibling house-number offset, or keep the house number.
+- **LB-eq weights** are the test S1 shares of India (0.468) and the US (0.383). France (0.150) has no holdout, so it
+  contributes 0 and the weights do not sum to 1.
+- A Pnn without a folder in `src/experiments/` is a research-log entry: its numbers are reported here, but its code
+  did not produce lines of the final file.
 
 ---
 
@@ -24,14 +34,14 @@
 | criterion | what we deliver | where to verify |
 |---|---|---|
 | Leaderboard score | public F0.5 **0.989382** (`sub90u`); +0.0094 over our first upload, every step measured (§5.2) | §5.1–5.2 |
-| Candidate-set size and efficiency | **4.43 candidates per Source 1** (7,668,008 pairs), cut from 15.87 by a learned pruner for −0.00024 F0.5; recall 0.9917 → 0.9872; blocking in ~36 min at 2.7 GB RAM on a laptop | §3; `src/block.py`, `src/prune.py`; `src/verify_outputs.py` recomputes the count |
-| Soundness of the approach | one-parent structure used end to end; every change passed a paired full-corpus holdout test (+0.0002 at ≥ 3 SE); failed ideas reported with their numbers | §2, §4, §5.4 |
-| Unseen country (France) | label-free chain, chosen on LOCO proxies and France-only uploads; France found as "test label absent from train", never named in code | §4.5; `run.unseen()`, `src/france.py` |
+| Candidate-set size and efficiency | the matcher and CE score **4.83 candidates per Source 1** (8,370,573 pairs), cut from 15.87 by a learned pruner for −0.00024 F0.5 (recall 0.9917 → 0.9874); the shipped file holds **4.43** (7,668,008): sibling-offset pairs the decision cannot accept removed, pairs matched by later rule stages appended; blocking in ~36 min at 2.7 GB RAM on a laptop | §3; `src/block.py`, `src/prune.py`; `src/verify_outputs.py` recomputes the count |
+| Soundness of the approach | one-parent structure used end to end; every India / US change measured on a paired full-corpus holdout test (bar +0.0002 at ≥ 3 SE; three noise-level parts kept and flagged, §6.1; the pruner kept for size); France changes gated on both LOCO directions and the public LB; failed ideas reported with their numbers | §2, §4, §5.4 |
+| Unseen country (France) | label-free chain, chosen on LOCO proxies and France-only uploads; France found as "test label absent from train" (`run.unseen()`), which every decision branch keys on | §4.5; `run.unseen()`, `src/france.py` |
 | Model licences / size | every model MIT or Apache-2.0, ≤ 8B (largest 4.02B), run locally, fine-tuned on the provided data only | §7 table; `requirements.txt` header |
 | No external data / fair play | no APIs, geocoding, registries, postal or city tables; hand-written lists only of the allowed kinds; third-party code credited | §7 |
 | Output validity | one line per test S1 (all three countries); every match inside the candidate set; one owner per S2/S3; official validator `--check-ids` PASS | `src/verify_outputs.py`, `src/reproduce.sh` |
-| Reproducibility | one command rebuilds both files and checks their md5 against the leaderboard upload; the recorded change sets rebuild byte for byte; their generating scripts ship in `src/experiments/` | §8; `src/reproduce.sh`; `src/experiments/INDEX.md` |
-| Code quality | every module, function and class has a docstring; 17 / 17 module self-checks pass (run 29 Sep); end-to-end test with an injected unseen country | §8 test log; `python src/<module>.py`; README §6 |
+| Reproducibility | one command rebuilds both files **given the trained artefacts of README §2** (not zipped for size; `run.py` retrains 4 of the 9 from the training data, the rest come from the listed GPU / experiment jobs) and checks their md5 against the leaderboard upload; the last two steps apply change sets in which every changed pair is attributed to a named step and script (`final_patch.py --summary`) | §8; `src/reproduce.sh`; `src/experiments/INDEX.md` |
+| Code quality | every module, function and class in `src/*.py` has a docstring (`src/experiments/` are research copies); 17 / 17 checks pass (15 module self-checks + 2 rule tests, run 29 Sep); end-to-end test with an injected unseen country | §8 test log; `python src/<module>.py`; README §6 |
 | Self-evaluation | contributions tied to measured gains; limitations and risks stated openly; seven costed future improvements with stages, led by a 7× larger cross-fitted second stage | §2.3, §6.1–6.2 |
 | Cost | laptop-scale pipeline (every scoring step ≤ 3 GB RAM); $179.85 of AWS usage for the whole challenge, covered by credits | §8 compute table |
 
@@ -53,9 +63,9 @@
 | key figure | value |
 |---|---|
 | **Public leaderboard F0.5 (final entry `sub90u`)** | **0.989382** (first upload 0.980017; 17 uploads in all, §5.2) |
-| Holdout F0.5, India + US, report half | 0.98984 at #34 (India 0.99020, US 0.98960); the final combiner adds **+0.000656 ± 0.000062** LB-eq on top (§4.3) |
+| Holdout F0.5, India + US | 0.98984 at #34 (report half; India 0.99020, US 0.98960). The shipped combiner's decision scores **India 0.991369 / US 0.990507** on fold 0 with scores cross-fitted by half (§5) |
 | Rule baseline on the same holdout (exact keys) | 0.7708 |
-| Candidate set fed to the matcher | **7,668,008 pairs = 4.43 per Source 1** (France 4.51 / India 4.75 / US 4.00), down from 15.87 after blocking. Holdout pair recall is 0.9917 after blocking and 0.9872 in the final set |
+| Candidate set | the matcher scores **8,370,573 pairs = 4.83 per Source 1**, down from 15.87 after blocking (holdout pair recall 0.9917 → 0.9874). The shipped `candidate_pairs.tsv` holds **7,668,008 = 4.43 per Source 1** (France 4.51 / India 4.75 / US 4.00; recall 0.9872) |
 | Matches written | 5,848,223 pairs; 3.38 per Source 1 (France 3.31, India 3.38, US 3.39); 5.8% of Source 1 empty in each country |
 | Models | LightGBM (MIT) throughout; cross-encoders bge-reranker-v2-m3 (Apache-2.0, 568M), Qwen3-Reranker-4B + LoRA (Apache-2.0, 4.02B), ms-marco-electra-base (Apache-2.0, 109M). All run locally, all ≤ 8B, all fine-tuned only on the provided data (§7) |
 | Compute | one laptop (16 cores, 15 GB RAM, RTX 3050 6 GB; every scoring step ≤ 3 GB RAM) plus rented AWS SageMaker instances for cross-encoder fine-tuning / scoring; all AWS usage over the challenge $179.85, covered by the challenge credits (§8) |
@@ -72,8 +82,8 @@
     more than 5 Source 2 or 6 Source 3 matches per Source 1.
   - True pairs always share the country label.
 - **Look-alike chains.**
-  - 50.6% of Source 1 entities share their normalised name core with another Source 1 of the same country (France
-    54.5%).
+  - 50.6% of training Source 1 entities share their normalised name core with another Source 1 of the same country
+    (test: 48.8%; test France 54.5%).
   - So names alone cannot decide a match. Name-only exact matching drops from 0.684 F0.5 on a small world to 0.431 at
     test density.
   - Address evidence (house number, street, city, state) is required.
@@ -118,8 +128,9 @@ label-free rules on top.
   Source 1). The decision is exclusive: each record goes to its best Source 1.
 - **Generator-aware house-number reasoning.** A signed house-number delta, plus support counts among the Source 1's
   other records, separates the generator's sibling distractors from noisy true pairs.
-- **Honest measurement, then keep only what moves the number.** Every change passed a paired test on the full-corpus
-  holdout with a bar of about +0.0002 at ≥ 3 SE. Many ideas failed it (§5.4).
+- **Honest measurement, then keep only what moves the number.** Every India / US change was measured with a paired test
+  on the full-corpus holdout against a bar of about +0.0002 at ≥ 3 SE. Three parts at noise level were kept and are
+  flagged in §6.1; the pruner was kept for candidate-set size at a measured cost. Many ideas failed the bar (§5.4).
 - **Unseen-country handling without labels.**
   - LOCO proxies (US→India, India→US) choose each France recipe.
   - Label-free profiles (predicted empty-S1 rate, matches per S1, the share of accepted pairs at a sibling offset) set
@@ -160,7 +171,7 @@ raw TSVs ──► transliteration (learned Indic→Latin word table) ──► 
 | learned pruner (meta-blocking) | candidates −70% (15.87 → 4.83 per S1) for −0.00024 ± 0.00003 | holdout; LB −0.00019 |
 | generator-aware house-number stacker (signed sibling offsets + support counts) | US **+0.00055 ± 0.00009** | holdout, report half |
 | re-scoring each record's best pair from its competition (a10 stacker → bagged combiner with the CE on every argmax pair) | **+0.000656 ± 0.000062** LB-eq over the a10 stacker, which gave +0.00021 ± 0.00006 | holdout, report half |
-| cross-fitted stage-C owner re-decision (US) | **+0.000287 ± 0.000033** | US fold 0 |
+| cross-fitted stage-C owner re-decision (US) | **+0.000216 ± 0.000072 / +0.000301 ± 0.000048** (t tuned on the other half); +0.000287 ± 0.000033 with t tuned on fold 0 itself | US fold 0 |
 | label-free stricter threshold for the unseen country | 0.980017 → 0.981142 | public LB, France-only uploads |
 | France chain: own-text IDF, rebuilt records, house-number-aware matcher, CE blend with out-of-domain weights, rules | 0.981142 → 0.9856 (+0.0045, with the India/US CE upgrade in between) | public LB |
 | structural completion (empty-S1 rescue, one-sided-group completion) | +0.00031, +0.00034 | public LB |
@@ -185,13 +196,14 @@ raw TSVs ──► transliteration (learned Indic→Latin word table) ──► 
     number and city. It adds 2,638 candidates.
 - **Learned pruner** (meta-blocking; added after the organisers' note that smaller candidate sets rank higher).
   - A 300-tree, 31-leaf LightGBM on 30 of the 65 pair features: blocking signals plus name/address similarities.
-  - Trained on train folds 2–3 (6.3M pairs). It takes 74 s to train and 2–3 min to score all test pairs.
+  - Trained on train folds 2–3 (6.3M pairs). It takes 74 s to train; the pruner and m2_big together score the test pairs in 3 / 18 / 5 min (France / India / US).
   - A pair reaches the matcher only if its pruner score q ≥ 0.03 or the rules accepted it.
   - The context features stay computed over the full blocking list, so a kept pair's matcher score is unchanged. The
     pruner only removes pairs.
-- **Sibling-decoy stage** (the last cascade stage before the decision).
+- **Sibling-decoy stage** (after scoring, before the file is written).
   - A pair at a generator sibling offset (hn_x − hn_1 ∈ {3, 4, 5, 7, 9, 11, 13, 21}) survives only if it is its
-    record's best pair above t.
+    record's best pair above t. It uses the decision, so it is a filter of pairs that cannot be accepted, not a model
+    input: the set every model scored is the 4.83-per-S1 list above.
   - Matching is unchanged by construction.
 - **Candidate pairs generated** (test, all three countries):
 
@@ -199,8 +211,8 @@ raw TSVs ──► transliteration (learned Indic→Latin word table) ──► 
   |---|---|---|---|
   | blocking ∪ rule pairs | 27.5M | 15.87 (16.76 / 15.71 / 15.72) | 0.9917 (14.2 / S1 on the holdout) |
   | after the pruner (what the matcher and the cross-encoder score) | 8,370,573 | 4.83 (5.14 / 4.90 / 4.63) | 0.9874 (4.30 / S1) |
-  | after the sibling-decoy stage | 7,658,102 | 4.42 (4.48 / 4.75 / 4.00) | 0.9872 |
-  | **final `candidate_pairs.tsv`** (the above + the acronym block + every matched pair a later stage added) | **7,668,008** | **4.43 (4.51 / 4.75 / 4.00)** | — |
+  | after the sibling-decoy stage, on the final base (`sub66_final --drop-sibling-cands`: also the acronym block's 2,638 and the duplicate step's candidates) | 7,660,700 | 4.42 (4.48 / 4.75 / 4.00) | 0.9872 |
+  | **final `candidate_pairs.tsv`** (the above + 7,308 pairs that later rule / change-set stages matched, appended so every match is a candidate; they were not scored by the matcher) | **7,668,008** | **4.43 (4.51 / 4.75 / 4.00)** | — |
 
   - Every pair in `matching_results.tsv` is also in `candidate_pairs.tsv`.
   - The file is 121 MB; the unpruned list would be 377 MB.
@@ -226,7 +238,7 @@ raw TSVs ──► transliteration (learned Indic→Latin word table) ──► 
 
 ## 4. Matching Model
 
-**Features used** (65, all label-free, computed identically on train and test; `features.py`):
+**Features used** (65, all label-free, computed identically on train and test; `features.py`; every name is in Appendix C):
 - **Name features:**
   - normalised-core equality, token Jaccard, TF-IDF cosine;
   - Jaro–Winkler and token-sort / token-set ratios (rapidfuzz), acronym match;
@@ -318,8 +330,8 @@ raw TSVs ──► transliteration (learned Indic→Latin word table) ──► 
    - **Decision.** The shipped combiner p is kept on the argmax pairs (blend weight 1.0). Stage C scores only the pairs
      the combiner does not cover (non-argmax pairs and rivals). Each record then goes to its best Source 1, t 0.72, caps
      5 / 6.
-   - **Holdout (US fold 0, 132,190 S1):** **+0.000287 ± 0.000033** (half 0 +0.000301, half 1 +0.000274; tuned on one
-     half and reported on the other: +0.000216 / +0.000301).
+   - **Holdout (US fold 0, 132,190 S1):** with t tuned on one half and reported on the other, **+0.000216 ± 0.000072 /
+     +0.000301 ± 0.000048**. With t tuned on fold 0 itself: +0.000287 ± 0.000033 (half 0 +0.000301, half 1 +0.000274).
    - **Test:** 2,706 US Source 1 change (+2,326 / −424 pairs).
 6. **Duplicates (P54, last).** An unassigned content-identical copy (case-folded name + address + country) of an accepted
    record goes to the same Source 1. In training truth all 60,319 such groups have a single owner.
@@ -328,12 +340,15 @@ raw TSVs ──► transliteration (learned Indic→Latin word table) ──► 
 - Each Source 2/3 record goes to its argmax Source 1 among its kept candidates, and the pair is kept if p ≥ t.
 - India / US: t = 0.71 on the combiner's p. It was swept for F0.5 on holdout half 0 and reported on half 1. The curve is
   flat within 0.001 over t ∈ [0.57, 0.83]. The US re-decision uses t 0.72 (above).
-- Caps: at most 5 Source 2 / 6 Source 3 matches per Source 1, highest p first (the training maximum).
+- Caps: at most 5 Source 2 / 6 Source 3 matches per Source 1, highest p first (the training maximum). 11 test S1
+  exceed it, only through content-identical duplicates that follow their copy (§4.3).
 - A richer decision layer (P5: a stacked per-S1 decision, top-k rules) gained +0.0010 on the bare matcher but only
   +0.0001 after the cross-encoder, so plain argmax + t stayed until the combiner (§4.3) replaced it.
 - **France:** a fixed stricter t, set label-free and validated on the leaderboard (§4.5). The organisers allow "a
   stricter threshold for countries unseen in training". The code defines the unseen countries that way: `run.unseen()`
-  returns the test Source 1 labels absent from train Source 1. No country name appears in a branch.
+  returns the test Source 1 labels absent from train Source 1, and every decision branch of `run.py` keys on that set.
+  The name France appears only in the France-specific région learner (`normalize.fr_departements`), in cache file
+  names and in the experiment scripts.
 
 ### 4.5 France: the unseen country
 
@@ -395,7 +410,7 @@ That is `sub66_final` (public LB 0.987391). The remaining France gains came from
 | type-word veto, never-candidate keys, never-candidate swaps | −132 broad type-word swaps (compagnie / institut / pharmacie); +814 (core, house number, city)-unique pairs the blocker never proposed; +661 same-house-number noise-suffix swaps the blocker never proposed | −132 / +814 / +661 | lens + India analogue 0.85 |
 | narrow CE veto (P73) | +1/+2 / sibling-step house-number pairs with a France-only electra CE logit < −4.5, never emptying a line | −65 | LOCO +0.00210 / +0.00001 |
 | → `sub84` | | | **LB 0.988475 (+0.000183)** |
-| same-site ADD rules (P81 → P88, passes 1–2) | post-hoc ADD rules from a public MIT repository (§7), run on our file; **our filter** kept only adds at the same street or with an address-less record, and dropped re-adds of pairs our own vetoes had removed and different/typo-street pairs (that class had measured ≈ 0.3 precise on the LB with `sub77_hnst`) | +10,689 (same street 7,895, address-less 2,537, type-only 179, street-less S1 78) | with #86: **LB 0.989023 (+0.000548)**, i.e. the kept adds are ≈ 0.95 precise |
+| same-site ADD rules (P81 → P88, passes 1–2) | post-hoc ADD rules from a public MIT repository (§7), run on our file; **our filter** kept only adds at the same street or with an address-less record, and dropped re-adds of pairs our own vetoes had removed and different/typo-street pairs (that class had measured ≈ 0.3 precise on the LB with `sub77_hnst`) | +10,689 (same street 7,895, address-less 2,537, type-only 179, street-less S1 78) | with #86: **LB 0.989023 (+0.000548)**. Their effect was never isolated on the LB; if #86 gave its holdout-predicted ≈ +0.00005, the kept adds are ≈ 0.95 precise |
 | same filter, pass 3 | the repository's third pass, same filter | +5,429 | with #90u: LB 0.989382 |
 
 Final France profile: 3.31 matches per Source 1, 5.82% empty. India / US: 3.38 / 3.39 and 5.8%.
@@ -403,10 +418,15 @@ Final France profile: 3.31 matches per Source 1, 5.82% empty. India / US: 3.38 /
 ## 5. Results & Error Analysis
 
 - **F_0.5 Score (macro), full-corpus holdout, report half: 0.98984** (India 0.99020, US 0.98960) at #34.
-  - The shipped combiner adds +0.000656 ± 0.000062 LB-eq on top, and the US owner re-decision +0.000287 ± 0.000033 on US
-    fold 0. The final boosters were refit on the whole holdout, so the report-half figure is the last clean one.
-  - Without the stackers (#8c): 0.98990 on all 220,358 Source 1; precision 0.9983, recall 0.9726.
-  - Two independent audits found no label leakage. The threshold-tuning optimism is at most 0.00003.
+  - **The shipped India / US decision** (the combiner, #54 / `sub66_final`), with every score cross-fitted by half, scores
+    **India 0.991369 / US 0.990507 on fold 0** (P80). On top of it, the trace / anchor columns add ≈ +0.00005, and the
+    US owner re-decision +0.000216 / +0.000301 (t tuned on the other half).
+  - The combiner was fitted on the full holdout for shipping, so its report-half gain (+0.000656 ± 0.000062 LB-eq over
+    #34) comes from the half-0 fit.
+  - Before the a10 stacker and the combiner (#8c): 0.98990 on all 220,358 Source 1; precision 0.9983, recall 0.9726.
+  - **Leakage.** P45's check found no holdout S1 in any CE training fold or text. One caveat: holdout pairs share the
+    train S2/S3 corpus with the CE's training pairs. Memorising an SX's label from another S1 would push holdout pairs the
+    *wrong* way, so the estimate is, if anything, conservative. The threshold-tuning optimism is at most 0.00003.
 - **Public leaderboard: 0.989382** (final entry `sub90u`).
 
 ### 5.1 Ablation: every step on the same full-corpus holdout
@@ -438,6 +458,9 @@ on the leaderboard.
 
 ### 5.2 Every leaderboard upload (17)
 
+The delta in the last column is against the previous best upload.
+
+
 | upload (IST) | what it is | public LB F0.5 | reading |
 |---|---|---|---|
 | #5, 25 Sep 18:34 | m2_big + e5 CE; France t 0.78 | 0.980017 (rank 33) | holdout 0.9885, so a 0.0085 gap |
@@ -458,7 +481,8 @@ on the leaderboard.
 | `sub88`, 22:32 | + trace/anchor combiner (India / US) + 10,689 filtered France same-site adds | 0.989023 | +0.000548 |
 | **`sub90u`, 23:40** | + 5,429 pass-3 France adds + US owner re-decision | **0.989382** | **+0.000359, the final entry** |
 
-Every France test sat on unchanged India/US files, so each of those leaderboard deltas measures one France change.
+D1–D4, #34v_r90, #37_gc70, `sub77`, `sub77_hnst` and `sub84` changed only France lines; `sub77` and `sub84` bundle
+6 and 9 France change sets. #9ab, #34_veto, #54, `sub88` and `sub90u` also changed India / US lines.
 
 ### 5.3 Errors
 - **Common false positives (wrong merges):**
@@ -473,6 +497,15 @@ Every France test sat on unchanged India/US files, so each of those leaderboard 
   - Heavy word-subset or DBA name changes, and records with no address.
   - True pairs with house-number noise that a strict threshold rejects. France's accepted house-number-mismatch share is
     1.7%, against 8.8% in the US, so recall is what France pays for its strict t.
+**Illustrative cases** (constructed to show each pattern; not rows of the dataset):
+
+| case | Source 1 | Source 2/3 | what happens |
+|---|---|---|---|
+| false positive: generator sibling | Blue Harbor Dental LLC, 120 Pine St, Austin, TX | Blue Harbor Dental, 123 Pine St, Austin, TX | same name core and city, house number +3, a sibling offset; the matcher alone accepts it, the US stacker's signed delta rejects it |
+| false positive: same name, other site | Boulangerie Martin SARL, 14 Rue Victor Hugo, Lyon | Boulangerie Martin, 3 Avenue Foch, Lyon | name and city agree, the street differs; ≈ 0.3 precise in France (`sub77_hnst`), so never added |
+| false negative: rename | Sunrise Holdings Inc, 55 Main St, Dayton, OH | Morning Brew Cafe, 55 Main St, Dayton, OH | only the address agrees; the name evidence is too weak for t 0.71 |
+| false negative: strict unseen-country t | Atelier Durand SAS, 8 Rue de la Paix, Nantes | Atelier Durand, 8 rue de la paix, NULL | a true pair that scores just below France's t 0.9868; this is the recall France pays for its precision |
+
 - **Transfer to an unseen country** (LOCO, tuned thresholds):
   - US → India scores 0.905 and India → US 0.930, against ~0.98 in-country.
   - At the source country's threshold, US → India loses another 4 points. That is why France's threshold matters more
@@ -483,7 +516,7 @@ Every France test sat on unchanged India/US files, so each of those leaderboard 
 | idea | result | why dropped |
 |---|---|---|
 | Fellegi–Sunter EM, label-free (P4) | 0.2695 | far below a trained model |
-| neural transliterator IndicXlit / multilingual embeddings for Indic names (P2) | 93% / 69% exact vs the learned table's 99.6% | worse and slower |
+| neural transliterator IndicXlit / multilingual embeddings for Indic names (P2) | r@5 0.933 / 0.693 vs the learned table's 0.996 | worse and slower |
 | two-stage matcher, stage-1 competition as stage-2 features (P4) | +0.0008 before the CE | the CE absorbs most of it |
 | stacked decision layer (P5) | +0.0010 on the bare matcher, +0.0001 after the CE | too small once the CE was in |
 | cross-encoder with in-domain blend weights for France (P4b, P13) | LOCO −0.0016 | over-trusts the CE on an unseen country; out-of-domain weights fix it |
@@ -526,7 +559,7 @@ Every France test sat on unchanged India/US files, so each of those leaderboard 
   decoy patterns of the data from its own statistics.
 - **France has no labels.** Every France gain rests on LOCO proxies and public-LB deltas, and LOCO transfers
   imperfectly. #54 was expected to gain +0.0015–0.002 and gained +0.00038. To limit public-LB overfitting, a France
-  change was adopted only when LOCO and the public LB agreed. The one LB-tuned value is France's threshold level, where
+  change was adopted only when its LOCO test was positive and the upload that contained it gained on the public LB. The one LB-tuned value is France's threshold level, where
   the public curve is flat (0.88 → 0.95: +0.00012). The public and private splits come from the same test files.
 - **Small parts near the noise floor.** Some kept parts are within 2 SE on their own: the zoo columns
   (+0.000025 ± 0.000029) and the trace / anchor columns (1.4–1.9 SE). They were kept because the bundle they shipped
@@ -552,7 +585,7 @@ Ordered by expected value. The first idea is the main one. Each lists its eviden
 - **Evidence it pays.**
   - Our own learning curve still rises: the full-holdout refit gained +0.000039 ± 0.000019 for 1.5× the data (P50).
   - Our partial cross-fit (P80) was US only, with two m2 halves, a cross-fitted CE and stage C re-deciding only the
-    non-argmax pairs. It still gained **+0.000287 ± 0.000033** on US fold 0.
+    non-argmax pairs. It still gained **+0.000216 / +0.000301** on the two halves of US fold 0 (t tuned on the other half).
   - The public repository credited in §7 uses this design at full scale: 1.6M Source 1, 3.9M pairs. On its own
     India / US validation it reports stage C at 0.9922 vs 0.9888 for its stage B, and 0.99182 vs 0.98963 with vs
     without the cross-encoder columns. Its validation differs from ours, so the numbers are not directly comparable,
@@ -658,13 +691,17 @@ unlabelled test rows, which the organisers allow):
 - **Pretrained weights** were downloaded once from Hugging Face. After that the pipeline runs with `HF_HUB_OFFLINE=1`.
 - **Test-side use** is limited to the kinds the organisers allow: unsupervised statistics (IDF, word-role shares,
   generator syllables), synthetic pairs built from the provided France records, and pseudo-labels from our own models.
-- **Unseen country.** France is found as "a test label absent from train" (`run.unseen()`). Every France rule keys on
-  that set, never on the name.
-- **Compute.** AWS SageMaker was used only as rented compute for our own code and data. The bge fine-tuning cost $4.70.
+- **Unseen country.** France is found as "a test label absent from train" (`run.unseen()`), and every decision branch
+  keys on that set. The name appears only in the région learner, in cache file names and in experiment scripts.
+- **Compute.** AWS SageMaker was used only as rented compute for our own code and data. The 76-min bge fine-tune costs about $2.2; P13's two jobs, including scoring, cost $4.70.
   No hosted model or API is in the resolution path.
 - **Third-party code, credited.**
-  - The France same-site ADD rules of §4.5 (+16,118 pairs) come from the public, MIT-licensed repository
+  - The France same-site ADD rules of §4.5 (+16,118 pairs) come from the public, MIT-licensed repository of another
+    participant in this challenge,
     [PundarikakshNTripathi/present-day-ber-amlc-2026](https://github.com/PundarikakshNTripathi/present-day-ber-amlc-2026).
+    Their scripts are not in the zip; `chainA.sh` runs them from a checkout of that URL.
+  - Their leaderboard effect was measured only together with other changes: with #86 in `sub88` (+0.000548), and with
+    the US re-decision in `sub90u` (+0.000359).
   - We ran its post-hoc passes on our own submission file, with the scripts unmodified and the rule subsets chosen on
     our holdout (`experiments/P81-rival-posthoc/chain.sh`). We kept only the ADD changes that passed our P88 filter
     (`experiments/P88-p81-graft/`). Its DROP rules failed our holdout and were not used.
@@ -689,8 +726,30 @@ unlabelled test rows, which the organisers allow):
   post-model steps rebuild it exactly.
 - **What is code and what is recorded.**
   - `run.py` regenerates `sub66_final` from the raw TSVs.
-  - The later change sets ship as their recorded rows: `src/final_changes.parquet` (22,562 rows) and
-    `src/final_patch.parquet` (lines that differ from `sub77`). Each came from an experiment's own GPU model or frame.
+  - The later change sets ship as attributed change rows. `src/final_changes.parquet` has 25,634 (step, s1, sx) rows,
+    and `--upto 41` applies the first 22,562. `src/final_patch.parquet` has one row per id on every line that
+    differs from `sub77`: (file, s1, pos, sx, step, op), where op is keep / add / remove and step names the change set.
+    Each came from an experiment's own GPU model or frame.
+  - `final_patch.py --summary` prints what each step did (net pairs):
+
+    | step | experiment | matches + | matches − | candidates + |
+    |---|---|---|---|---|
+    | xlf | P70 `xlf_build.py` | 2,019 | 0 | 0 |
+    | groupe | P71 `build71.py b` | 4,062 | 0 | 0 |
+    | p79q_ce | P73 / P79 `build79.py` | 164 | 159 | 0 |
+    | p76_r3 | P76 `build_r3.py` | 0 | 262 | 0 |
+    | p80_lf_kept | P80 `build_lf.py` | 1,473 | 0 | 0 |
+    | type_word_veto | P70 `tw_audit.py` | 0 | 131 | 0 |
+    | sub68fr_keys | P68 `fr_key.py` | 814 | 0 | 814 |
+    | nc_noise_swaps | P70 `tw_audit.py` | 661 | 0 | 661 |
+    | p73_narrow_veto | P73 `vt73.py` | 0 | 65 | 0 |
+    | iu_trace_anchor | P70 `ta_ship.py` | 1,050 | 970 | 0 |
+    | p88_rules_pass12 | P81 `chainA.sh` + P88 `profile.py` | 10,689 | 0 | 2,039 |
+    | p88_rules_pass3 | P81 + P88 | 5,429 | 0 | 1,762 |
+    | p80_us_redecision | P80 `stagec.py` + `build_sub.py` | 2,326 | 272 | 1,999 |
+
+    Counts are net, and they differ slightly from the per-step logs where a later step undid an earlier one.
+    `experiments/P91-patch-provenance/provenance.py` derived the rows from the staged chain.
   - The scripts that produced them are in `src/experiments/`, and `experiments/INDEX.md` maps each change set to its
     script.
   - Recording them keeps the final file exactly reproducible without re-running those GPU jobs.
@@ -707,13 +766,13 @@ unlabelled test rows, which the organisers allow):
   | recorded change sets + `verify_outputs.py` | laptop | < 1.5 min | — |
   | training: train-side blocking + features | laptop CPU | ~105 min | 2.9 GB |
   | training: pruner / m2_big | laptop CPU | 74 s / ~45 min | 2.3 / 3.7 GB |
-  | training: bge fine-tuning (778k pairs × 2 epochs) | 1× A10G | 76 min, $4.70 | 24 GB GPU |
-  | **all AWS usage over the challenge** (~90 experiments, including the Qwen / electra / cross-fit jobs) | SageMaker | — | **$179.85**, covered by the challenge credits |
+  | training: bge fine-tuning (778k pairs × 2 epochs) | 1× A10G | 76 min, ≈ $2.2 | 24 GB GPU |
+  | **all AWS usage over the challenge** (~90 experiments, including the Qwen / electra / cross-fit jobs) | SageMaker | — | **$179.85** (AWS Cost Explorer, record type Usage, 20–29 Sep; SageMaker $177.96), covered by the challenge credits |
 
   A cold test run with trained models and cached CE scores takes ~2.5 h. Rebuilding every LightGBM from the training
   data takes ~5.5–6 h.
 - **Tests (run 29 Sep 2026):**
-  - All 17 module self-checks pass: metric, verify_outputs, final_build, package, stack, a10, prune, features, block,
+  - All 17 checks pass (15 module self-checks + 2 rule tests): metric, verify_outputs, final_build, package, stack, a10, prune, features, block,
     normalize, translit, france, rerank, io_tsv, worlds, test_rules, test_rules_cands.
   - `test_rules.py` on its holdout world: F0.5 0.8201, pair precision 0.9937.
   - The end-to-end `test_pipeline.py` (every label, including an injected unseen country) needs the CE checkpoint and
@@ -751,6 +810,37 @@ versions; every library is MIT / Apache-2.0 / BSD / ISC), `src/`.
   - the cached CE scores.
   - The LightGBM models are rebuilt from the training data when absent. The CE checkpoints come from `bge_train.py` on a
     GPU. We can provide every file on request.
+
+### C. Feature lists
+
+**m2_big's 65 pair features** (`features.py`; suffix `_1` = the Source 1 side, `_x` = the S2/S3 side; `_tset` / `_tsort` /
+`_partial` / `_ratio` / `_jw` = rapidfuzz token-set / token-sort / partial / plain ratio / Jaro–Winkler; `core` = the
+name without its legal form and noise words; `_cos` = hashed TF-IDF cosine):
+
+| group | n | features |
+|---|---|---|
+| context: blocking and the competition among candidates | 16 | `s1_n`, `s1_gap`, `s1_margin`, `block_score`, `block_rank_s1`, `block_rank_sx`, `via_r`, `via_f`, `blocked`, `sx_n`, `sx_gap`, `sx_margin`, `chain_1`, `chain_x`, `is_s3`, `rule_acc` |
+| name | 24 | `name_ratio`, `name_partial`, `name_tset`, `name_tsort`, `name_jw`, `name_len_1`, `name_len_x`, `core_ratio`, `core_partial`, `core_tset`, `core_tsort`, `core_jw`, `core_eq`, `core_jacc`, `core_inter`, `core_ntok_1`, `core_ntok_x`, `core_first_eq`, `core_len_1`, `core_len_x`, `name_cos`, `sq_eq`, `acro`, `indic_x` |
+| address | 19 | `addr_cos`, `addr_tset`, `addr_ratio`, `addr_jacc`, `addr_empty_1`, `addr_empty_x`, `hn_eq`, `hn_both`, `hn_diff`, `city_eq`, `city_both`, `city_diff`, `state_eq`, `state_both`, `state_diff`, `place_n_1`, `place_n_x`, `place_inter`, `addr_rule` |
+| website | 6 | `web_x`, `is_web_x`, `web_eq`, `web_in`, `web_ratio`, `web_partial` |
+
+**The pruner's 30** (`prune.py`, a subset that is cheap and available before the heavy features):
+`block_score`, `block_rank_s1`, `block_rank_sx`, `via_r`, `via_f`, `s1_n`, `sx_n`, `s1_margin`, `sx_margin`, `sx_gap`, `core_eq`, `core_jacc`, `hn_eq`, `hn_diff`, `city_eq`, `state_eq`, `rule_acc`, `name_tsort`, `name_tset`, `name_cos`, `core_tset`, `addr_cos`, `addr_jacc`, `addr_empty_x`, `core_ntok_x`, `core_tsort`, `addr_tset`, `is_web_x`, `web_eq`, `indic_x`.
+
+**c_hn's 5 extra house-number features** (France, `france.HN`): `hn_cls` (equal / sibling offset / digit drop-add / small
+/ far), `hn_d` (signed delta), `hn_nsame` (other records of the S1 sharing this record's number), `hn_nssame` (their best
+name cosine), `hn_ns1hn` (other records carrying the S1's own number).
+
+**Stage C's 34 columns** (P80, `experiments/P80-crossfit/stagec.py`):
+- within the S1: rank, size, gaps above and below, the best other p, the p-mass of the others;
+- within the S1 and source: rank, size, and the size of the other source;
+- within the record: the rank of this S1, the number of S1, the best competitor's p, the margin to it, competitors with
+  p ≥ 0.5, competitor mass;
+- the rival pair (the record's best other S1): its rank inside the rival S1, the rival's size and anchor count, the
+  rival pair's anchor similarities, and own-minus-rival differences of four pair features and of the anchor name
+  similarity;
+- plus 6 CE columns: logit r, its rank in the S1 and in the record, the gap to the S1's best, and the margins to the
+  p-rival and to the record's best other r.
 
 ### B. Additional Results
 

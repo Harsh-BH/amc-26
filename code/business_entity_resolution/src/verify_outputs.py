@@ -6,7 +6,8 @@
 
 Checks (any failure exits non-zero):
   - exact headers; one line per test S1 in both files, no S1 twice; every country present (France included)
-  - every matched pair is inside the candidate list (candidate_pairs.tsv is the set the matcher scored)
+  - every matched pair is inside the candidate list (the set the matcher scored, minus sibling pairs the decision
+    rejected, plus pairs later rule stages matched)
   - one owner: no S2/S3 id is matched to two S1 (the one-parent decision)
 Reports: candidate pairs and matches per S1, overall and per country; empty-S1 shares; S1 over the 5 S2 / 6 S3 cap
 (content-identical duplicates may follow their copy past it); md5 of both files. Standard library only.

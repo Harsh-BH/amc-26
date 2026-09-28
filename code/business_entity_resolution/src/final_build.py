@@ -1,4 +1,4 @@
-"""The final submission: run.py's sub66_final + the unseen country's add-on change sets -> #76 / #77 (LB 0.988292).
+"""France change sets on run.py's sub66_final -> #76 / #77 (LB 0.988292); final_patch.py then gives the final #90u.
 
     python code/business_entity_resolution/src/run.py --split test --stage model --recipe sub66_final \
         --drop-sibling-cands --out output/sub66_final_small
