@@ -1,0 +1,1 @@
+AWS_PROFILE=harsh rclone copy s3:sagemaker-114872709824-ap-south-1/amc26-offload/wt/p11-ce-big/output ../amc-26-wt/p11-ce-big/output
