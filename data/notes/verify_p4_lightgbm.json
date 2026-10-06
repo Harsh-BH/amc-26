@@ -1,0 +1,139 @@
+{
+  "summary": "Adversarially verify P4 LightGBM full-corpus F0.5 0.981 for leakage and evaluation flaws",
+  "agentCount": 2,
+  "logs": [],
+  "result": [
+    {
+      "verdict": "clean",
+      "findings": [
+        {
+          "issue": "t_all=0.71 is chosen on the holdout itself, and 'f05_fold' is not a threshold picked on training folds",
+          "evidence": "train.py:95-104: evaluate() runs M.sweep on d = S[S.fold == 0] (fold=0 from ladder, train.py:139), and model.py:62,77 picks r.f05.idxmax() over 97 thresholds on those same rows. f05_fold (train.py:79-82) only limits the argmax to fold-0 S1; its threshold is also swept on fold 0. I re-scored fold 1 (the early-stop fold) and fold 3 (never touched by m2_ladder) with m2_ladder.txt, taking the argmax per SX over all train S1. Threshold picked on fold 1 is 0.71, which gives holdout F0.5 0.98141. Threshold picked on fold 3 is 0.70 (fold-3 F0.5 0.98153), which gives holdout F0.5 0.98139. The holdout curve is flat: every t from 0.57 to 0.83 is within 0.001 of the best.",
+          "impact": "Negligible. The optimism is at most 0.00003 F0.5, so the honest number is 0.9814. The report should still say the threshold was tuned on the holdout."
+        },
+        {
+          "issue": "Argmax 'all' on the holdout lets in-sample fold-2 S1 compete for each SX",
+          "evidence": "train.py:72: argmax_sx runs over every S1 in the X file, including the fold-2 training S1. I took holdout negative pairs and grouped them by the fold of the SX's true parent (scratch p4_cross.py). When the parent is in fold 2, the fold-0 S1 wins the argmax less often: 0.00185, against 0.0051-0.0057 for folds 0,1,3-9. But the false-positive rate at t=0.71 is 0.00037, against 0.00028-0.00043 for the other folds. Also f05_fold (no cross-fold competitors at all) is 0.9813, against f05_all 0.9814.",
+          "impact": "No measurable inflation. In-sample confidence changes argmax winners only below the threshold."
+        },
+        {
+          "issue": "The same S2/S3 record appears in both training and holdout rows, paired with different S1",
+          "evidence": "131,589 SX that are positives for fold-2 S1 are also holdout candidates, where they are negatives. 132,757 of 757,392 holdout-positive SX appear as fold-2 training negatives. No feature carries SX identity or a label; all features are pair or candidate-list statistics (features.py:86-219). Holdout negatives whose SX was a training positive score slightly higher: mean p 0.00634, against about 0.0049 for other folds.",
+          "impact": "Not leakage. Any small memorisation effect pushes holdout scores down (pessimistic), and test SX are never seen in training. Every candidate of an SX is in one X file (featrun.py:143-146), and folds are assigned per pair from the S1 (cands.py:119, featrun.py:204)."
+        },
+        {
+          "issue": "No feature uses labels; the training and holdout splits are correct",
+          "evidence": "is_true and gt_pairs are used only for the target (cands.py:101-119, featrun.py:158-208) and for evaluation (train.py:48-58). true_share goes only into the meta json (cands.py:122). model.py:12 DROP removes q1, qx, is_true, fold and country, and the booster's 65 feature names contain none of them. Candidates come from the label-free P3 rule over all train S1 and SX, with no truth filter (cands.py:45-61, block.finalize). rule_acc comes from rules.match on record fields only (rules.py:96-113). Ranks, via, s1_*/sx_* context and chain counts are label-free and built the same way on test (featrun.py:113-146). The ledger's M2 n_train is 3,142,744, exactly the fold-2 row count I counted in the X files; validation is fold 1 (train.py:120,127); the holdout has 3,126,256 fold-0 rows, the size of S_ladder_m2.",
+          "impact": "Clean for questions 1-3. Training is fold 2 only (a subset of folds >= 2), early stopping uses fold 1, and scoring uses fold 0."
+        },
+        {
+          "issue": "Label-free statistics are fitted on data that includes holdout records; a few upstream hyperparameters were picked on holdout",
+          "evidence": "TF-IDF (vecs_hash.pkl) is fitted on a 1M sample of all train S2/S3 (full.py:131-136). place_freq is fitted on all train S1 (rules.py:28-38). pool_counts covers the full S1 pool (featrun.py:176). These use no labels, and test reproduces them (train-fitted IDF, test-pool counts). The transliteration table does use labels, but only from folds >= 2 (translit.py:107-115). P3's w_name was tuned on the true children of holdout S1 (revtune.py:1-3,25; r@2 was 0.9818 at w=0.5 against 0.9760/0.9723 nearby), and the rule integers were 'validated on dense holdout'.",
+          "impact": "Minor. These are transductive, unsupervised fits plus a few coarse hyperparameter choices, each worth well under 0.001 F0.5."
+        },
+        {
+          "issue": "Not leakage, but a risk that the result won't carry over to test: most holdout false positives come from SX with no true parent among the candidates",
+          "evidence": "At t=0.71, 3,835 of the 4,393 holdout false positives (87%) are on SX whose true pair is not in the candidates, almost all of them orphans. The train corpus has 10.32M India+US SX but only 7.64M gt SX (about 26% orphans; SX/S1 = 4.68). Test has SX/S1 of 5.82 (India) and 5.76 (US).",
+          "impact": "If the test corpus has more orphan SX per S1, test precision (holdout 0.994) and F0.5 could fall somewhat below the holdout. P5/P6 should keep this in view. It is not a leakage flaw."
+        }
+      ],
+      "recomputed_f05": 0.98139,
+      "summary": "Verdict: clean. The P4 holdout F0.5 of 0.9814 holds up.\n\nNo feature uses labels, directly or indirectly. Candidates, ranks, via, the context features, rule_acc and chain counts are all label-free and built the same way on train and test. The model trains on fold 2 only (n_train 3,142,744, exactly the fold-2 row count), early-stops on fold 1 and is scored on fold 0.\n\nThe threshold 0.71 was tuned on the holdout, and 'f05_fold' is not a threshold picked on training folds: it only restricts the argmax to fold-0 S1. I re-scored folds 1 and 3 with m2_ladder.txt and picked the threshold there. Fold 1 picks 0.71 (holdout F0.5 0.98141) and fold 3 picks 0.70 (holdout F0.5 0.98139), so the optimism is at most 0.00003. The holdout curve is flat within 0.001 from t=0.57 to 0.83.\n\nTwo things look like leaks but are not:\n- **In-sample competitors:** fold-2 S1 do win the argmax on holdout SX more often, but the false-positive rate at t=0.71 does not change (0.00037 vs 0.00028-0.00043 for other folds).\n- **Shared SX:** about 132k S2/S3 records appear on both sides, but only as negatives on one side, and no feature carries SX identity.\n\nUpstream, the vectoriser, place frequencies and pool counts are fitted without labels on data that includes holdout records, the same way test does it. The P3 name weight was tuned on holdout true pairs. Both effects are negligible.\n\nThe one real caveat is not leakage: 87% of holdout false positives come from SX with no true parent among the candidates. Test has a higher SX/S1 density (5.8 vs 4.68), so if it also has more orphan SX, test precision may come in below the holdout.\n\nEverything is in /tmp/claude-1001/-home-harsh1-github-repos-amc-26/b9a894ea-d7e4-441a-9f08-e7799e3d80b9/scratchpad/verify/: scripts p4_leak_curve.py, p4_cross.py, p4_fold_thr.py and p4_thr_eval.py, plus the fold 1/3 scores in p4_fold13_scores.parquet."
+    },
+    {
+      "verdict": "clean",
+      "recomputed_f05": 0.9814132220308951,
+      "findings": [
+        {
+          "issue": "Recomputed holdout F0.5 exactly matches the claim",
+          "evidence": "recompute.py uses metric.score with truth = all 220,358 fold-0 S1 from s1_folds.parquet and their full gt_pairs sets (763,735 pairs, 12,112 singletons). Decision uses the file's `am` column plus p >= t. F0.5 by threshold: t=0.5 0.97948, 0.6 0.98082, 0.71 0.981413 (prec 0.9940, rec 0.9588, singleton acc 0.9743, India 0.98034, US 0.98213), 0.8 0.98093, 0.9 0.97861. Best is t=0.71 at 0.9814132220, the same number as ladder.json M2 f05_all. If the argmax is taken only among the file's own rows (holdout S1 only), the best is 0.98133, which matches the claimed f05_fold of 0.9813. With no argmax at all, t=0.71 gives 0.98131.",
+          "impact": "None. The headline number is arithmetically correct under the stated yardstick."
+        },
+        {
+          "issue": "The file's coverage and labels are complete and consistent",
+          "evidence": "All 220,358 holdout S1 appear in prob_holdout.parquet. There are 0 S1 from outside fold 0 and 0 duplicate (s1,sx) rows. is_true disagrees with gt_pairs on 0 rows, and with worlds/holdout/truth.parquet on 0 rows; the world S1 set equals fold 0. The file holds 757,392 of the 763,735 true pairs (candidate recall 0.99169). The other 6,343 are counted as recall losses because truth is the full set. Predicting nothing for every S1 scores 0.054965, which is exactly the singleton share. The file is row-aligned with S_ladder_m2.parquet (identical p and am), and re-predicting 37,858 rows with m2_ladder.txt gives max |dp| = 0. The recomputed all-S1 argmax matches `am` on 100% of rows, and the recomputed sx_best_p matches the file exactly.",
+          "impact": "None. Recall losses and singletons are handled correctly."
+        },
+        {
+          "issue": "Holdout probabilities are genuinely out-of-sample (no perfect separation)",
+          "evidence": "Positives: 1,162 have p < 0.01 and 7.9% (60k) have p < 0.9. Negatives: 41 have p > 0.999 and 4,511 have p >= 0.71. AUC is 0.99932. Calibration is close (for example bin 0.5-0.6: mean p 0.549 vs observed rate 0.511). Symmetric test (sym.py): take SX that have candidates in both fold 0 and fold b, and compare the two sides. The fold-0 side matches every out-of-sample fold (b = 1, 3-9): logloss 0.039-0.040, AUC 0.9969, positives with p < .5 about 7.3%. The training fold 2 side is clearly in-sample: logloss 0.020, AUC 0.99966, positives with p < .5 4.6%, negatives with p >= .71 0.030% vs about 0.14%. The model's 65 features include none of is_true, fold, q1 or qx. Training uses fold 2 only, with early stopping on fold 1 (train.py:116, 120, 127). No truth is used in cands.py, features.py or featrun.py feature building, except for the is_true label itself.",
+          "impact": "None. There is no label leakage into the holdout scores."
+        },
+        {
+          "issue": "Minor: `am` and `sx_best_p` include in-sample predictions for competing S1 from the training fold",
+          "evidence": "train.py:72 (and predict_split am) takes the argmax over every S1 in the X file, including fold-2 S1 that the booster was trained on. I re-predicted all 8.42M competing pairs for the holdout SX (compete.py). Dropping the fold-2 competitors lowers F0.5@0.71 by 0.00003 (32 extra false positives are kept). Dropping any other single fold changes it by 0.00000-0.00001.",
+          "impact": "Negligible (+0.00003 optimism). P5 should know that `am` and `sx_best_p` in prob_holdout are slightly optimistic for SX whose competing S1 come from fold 2."
+        },
+        {
+          "issue": "Minor: the threshold is chosen on the holdout itself",
+          "evidence": "train.py evaluate() sweeps t on fold 0. Choosing t on India (0.72) and applying it to US gives 0.98206 vs US's own best 0.98208. Choosing on US (0.70) and applying to India gives 0.98034 vs 0.98036. The curve is flat between 0.65 and 0.75 (0.98116-0.98141).",
+          "impact": "Optimism of about 0.00002. Negligible."
+        },
+        {
+          "issue": "Caveat (not a computation error): the holdout has fewer distractor SX per S1 than test, and most false positives come from distractors",
+          "evidence": "Train pools have 4.68 SX per S1 (India 4.13M/0.88M, US 6.19M/1.32M). Test pools have 5.53-5.82. At t=0.71, 3,644 of the 4,393 false positives (83%) are orphan SX with no S1 parent anywhere. Train has 1.22 orphan SX per S1. RESULT.md Risks mentions only the S1-pool density difference.",
+          "impact": "If test's extra SX are mostly orphans, the test false-positive count could roughly double and test F0.5 could come in below 0.981. This cannot be checked without test truth. It concerns how well the holdout represents test, not the correctness of 0.9814."
+        },
+        {
+          "issue": "The rule baseline reproduces",
+          "evidence": "Predicting only the rule_acc==1 pairs, with rule_acc read from the X files for fold-0 rows (row-aligned with prob_holdout, is_true equal), gives F0.5 0.7708 (prec 0.912, rec 0.639, singleton acc 0.710). With the argmax added it gives 0.7745.",
+          "impact": "None. This confirms the claimed rule figure of 0.771 on the same yardstick."
+        }
+      ],
+      "summary": "I recomputed the full-corpus holdout macro F0.5 independently with metric.score() and get 0.9814132 at t=0.71, which is the claimed 0.9814 to every digit. Truth was all 220,358 fold-0 S1 with their full gt_pairs sets: 12,112 singletons included, and the 6,343 true pairs missing from candidates counted as recall losses (candidate recall 0.9917). Checks that came back clean:\n- The file covers every holdout S1, with 0 duplicates, 0 S1 from outside fold 0, and 0 label mismatches against gt_pairs or the holdout world's truth.\n- Predicting nothing scores 0.054965, as expected.\n- Predicting only rule-accepted pairs scores 0.7708, matching the claimed rule figure.\n- The probabilities are genuinely out-of-sample: separation is not perfect (1,162 positives below 0.01, 41 negatives above 0.999) and calibration is good. In a symmetric test, fold 0 behaves exactly like the untouched folds (logloss 0.039-0.040, AUC 0.9969), while the training fold 2 is clearly in-sample (logloss 0.020, AUC 0.99966).\n- I found no label leakage in the feature, candidate or rule code.\n\nTwo small optimisms, both negligible:\n- The `am` and `sx_best_p` columns use in-sample predictions for competing fold-2 S1 (train.py:72). Removing them lowers F0.5 by 0.00003.\n- The threshold is picked on the holdout itself. Picking it on the other country instead costs about 0.00002.\n\nOne caveat about how well the holdout represents test, not about the arithmetic: train has 4.68 SX per S1 vs 5.5-5.8 on test, and 83% of false positives come from SX with no parent. If test's extra SX are distractors, test F0.5 may land below 0.981.\n\nScratch scripts are in /tmp/claude-1001/-home-harsh1-github-repos-amc-26/b9a894ea-d7e4-441a-9f08-e7799e3d80b9/scratchpad/verify/: recompute.py, dist.py, compete.py, analyze.py, sym.py, orphan.py, tcross.py and world.py."
+    }
+  ],
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Audit"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "audit:leakage",
+      "phaseIndex": 1,
+      "phaseTitle": "Audit",
+      "agentId": "a4802aee3b964d3cf",
+      "model": "claude-opus-5-5[1m]",
+      "state": "done",
+      "startedAt": 1790324414590,
+      "queuedAt": 1790324414533,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "clean",
+      "promptPreview": "Context: Amazon ML Challenge 2026 entity resolution (macro F0.5 per Source-1 entity). Probe P4-match (code in /home/harsh1/github-repos/amc-26-wt/p4-match/probes/P4-match/, data in /home/harsh1/github-repos/amc-26/data/work/p4/ and data/work/p3/) reports a LightGBM matcher with full-corpus holdout F0.5 = 0.9814 (precision 0.994, recall 0.959, AUC 0.9993), vs logistic regression 0.933 and a rule sy…",
+      "promptFramed": true,
+      "lastProgressAt": 1790326162164,
+      "tokens": 154574,
+      "toolCalls": 43,
+      "durationMs": 1747570,
+      "resultPreview": "{\"verdict\":\"clean\",\"findings\":[{\"issue\":\"t_all=0.71 is chosen on the holdout itself, and 'f05_fold' is not a threshold picked on training folds\",\"evidence\":\"train.py:95-104: evaluate() runs M.sweep on d = S[S.fold == 0] (fold=0 from ladder, train.py:139), and model.py:62,77 picks r.f05.idxmax() over 97 thresholds on those same rows. f05_fold (train.py:79-82) only limits the argmax to fold-0 S1; it…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "audit:evaluation",
+      "phaseIndex": 1,
+      "phaseTitle": "Audit",
+      "agentId": "a0bd4aca03ecf2607",
+      "model": "claude-opus-5-5[1m]",
+      "state": "done",
+      "startedAt": 1790324414593,
+      "queuedAt": 1790324414534,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "clean",
+      "promptPreview": "Context: Amazon ML Challenge 2026 entity resolution (macro F0.5 per Source-1 entity). Probe P4-match (code in /home/harsh1/github-repos/amc-26-wt/p4-match/probes/P4-match/, data in /home/harsh1/github-repos/amc-26/data/work/p4/ and data/work/p3/) reports a LightGBM matcher with full-corpus holdout F0.5 = 0.9814 (precision 0.994, recall 0.959, AUC 0.9993), vs logistic regression 0.933 and a rule sy…",
+      "promptFramed": true,
+      "lastProgressAt": 1790326119715,
+      "tokens": 125753,
+      "toolCalls": 39,
+      "durationMs": 1702520,
+      "resultPreview": "{\"verdict\":\"clean\",\"recomputed_f05\":0.9814132220308951,\"findings\":[{\"issue\":\"Recomputed holdout F0.5 exactly matches the claim\",\"evidence\":\"recompute.py uses metric.score with truth = all 220,358 fold-0 S1 from s1_folds.parquet and their full gt_pairs sets (763,735 pairs, 12,112 singletons). Decision uses the file's `am` column plus p >= t. F0.5 by threshold: t=0.5 0.97948, 0.6 0.98082, 0.71 0.981…"
+    }
+  ],
+  "totalTokens": 280327,
+  "totalToolCalls": 82
+}

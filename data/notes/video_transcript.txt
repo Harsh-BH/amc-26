@@ -1,0 +1,120 @@
+[   0.00 -    3.12] Welcome to the Amazon ML Challenge 2026.
+[   3.12 -    6.40] This year's problem is business entity resolution,
+[   6.40 -   10.24] a fundamental and widely encountered problem in real-world data.
+[  10.24 -   14.32] You will be given business records that arrive from three independent sources,
+[  14.32 -   16.48] each noisy and inconsistent.
+[  16.48 -   20.96] And the goal is to determine which of them describe the same real-world business.
+[  20.96 -   24.08] In this video, I will walk you through the problem statement,
+[  24.08 -   28.72] the data set, the scoring, the submission format, and how entries are judged.
+[  29.68 -   32.08] Let's start with where this data comes from.
+[  32.08 -   35.12] Consider a business signing up on Amazon Business.
+[  35.12 -   39.84] At Signup we capture its core details, such as the business name and address.
+[  39.84 -   42.40] To build a richer picture of that same business,
+[  42.40 -   45.60] we pull in additional information from other data providers.
+[  45.60 -   48.96] Each of these sources typically comes from a different data vendor,
+[  48.96 -   51.36] with its own formats and conventions.
+[  51.36 -   56.08] The difficulty is that these external sources share no common identifier with ours.
+[  56.08 -   59.76] So the only fields we can rely on are the business name and address.
+[  59.76 -   63.92] For this challenge, we have deliberately limited the data to names and addresses.
+[  64.88 -   66.56] Here is the core difficulty.
+[  66.56 -   70.48] The same real-world business is described differently by each source.
+[  70.48 -   73.52] One vendor may write ACME Robotics Incorporated,
+[  73.52 -   78.16] another abbreviates the address, and a third references a nearby landmark.
+[  78.16 -   81.44] Source 1 is our clean to duplicated reference list.
+[  81.44 -   86.08] Sources 2 and 3 are the noisy fragments that must be reconciled against it,
+[  86.08 -   88.48] and there is no shared identifier linking them.
+[  89.52 -   93.44] Entity resolution is the task of linking these records together,
+[  93.44 -   97.60] establishing that differently written records all refer to the same business.
+[  97.60 -   99.52] For every entity in source 1,
+[  99.52 -  103.84] the goal is to find all of its matching records in sources 2 and 3.
+[ 103.84 -  108.40] A source 1 entity may match many records, exactly one, or none at all.
+[ 109.36 -  114.00] Comparing every source 1 record against every source 2 and source 3 record
+[ 114.00 -  116.24] would be far too expensive at scale.
+[ 116.24 -  120.72] So we first apply blocking, sorting records into buckets using a cheap key
+[ 120.72 -  123.04] built from both the name and the address,
+[ 123.04 -  126.16] so that records likely to match land in the same bucket.
+[ 126.16 -  128.48] Each color here is one such block.
+[ 128.48 -  132.96] Notice that every record carries its own id, a noisy name, and an address,
+[ 132.96 -  137.04] and records can group either through a similar name or through a shared address.
+[ 137.04 -  140.72] We follow the orange block, built around Acme Robotics,
+[ 140.72 -  144.08] and the records in it become the candidate matches for that entity.
+[ 144.08 -  148.48] Blocking favors recall, so the bucket also pulls in lookalikes,
+[ 148.48 -  151.20] a business with a similar name at a different address,
+[ 151.20 -  154.00] and a different business that happens to share an address.
+[ 154.00 -  156.88] The matching model removes those in the next step.
+[ 156.88 -  160.32] Blocking narrows an enormous number of possible comparisons
+[ 160.32 -  162.64] down to a manageable set of candidate pairs.
+[ 163.60 -  167.04] Finally, a matching model scores each candidate pair
+[ 167.04 -  170.24] and keeps only the true matches, discarding the rest.
+[ 170.24 -  172.96] That produces the two outputs of this challenge,
+[ 172.96 -  175.52] the candidate pairs from your blocking stage,
+[ 175.52 -  179.44] and the final matching results, which is the file scored on the leaderboard.
+[ 180.40 -  182.72] You are provided with two data sets.
+[ 182.72 -  186.16] The training set contains records across all three sources,
+[ 186.16 -  188.24] together with the ground truth labels,
+[ 188.24 -  191.28] a file that specifies for each source 1 business,
+[ 191.28 -  194.88] exactly which source 2 and source 3 records it matches.
+[ 194.88 -  198.48] The test set contains the same three sources, but no labels,
+[ 198.48 -  200.88] and this is what you generate predictions for.
+[ 200.88 -  202.80] A note on the label format.
+[ 202.80 -  206.40] The ground truth is stored as 1 row per source 1 entity.
+[ 206.40 -  210.64] Its ID may tee to a comma-separated list of all of its matching id,
+[ 210.64 -  214.16] so a single row carries that entity's complete match set,
+[ 214.16 -  217.36] and the list is empty when the entity matches nothing.
+[ 217.36 -  219.76] This mirrors exactly what you submit.
+[ 219.76 -  221.36] One practical reminder.
+[ 221.36 -  223.28] All files are tab separated,
+[ 223.28 -  225.76] so read them with an explicit tab separator,
+[ 225.76 -  228.16] otherwise the columns will not parse correctly.
+[ 229.12 -  230.72] There are two deliverables.
+[ 230.72 -  233.68] Throughout the challenge, you upload a single file,
+[ 233.68 -  236.32] matching underscore results.tsv,
+[ 236.32 -  240.32] containing one row per source 1 entity with its predicted matches.
+[ 240.32 -  242.80] This is the only file scored on the leaderboard.
+[ 242.80 -  244.40] At the close of the challenge,
+[ 244.40 -  247.04] every team also submits a single archive.
+[ 247.04 -  248.88] It contains the final matches,
+[ 248.88 -  251.92] along with candidate underscore pairs.tsv.
+[ 251.92 -  254.08] The candidate set your blocking stage produced
+[ 254.08 -  256.08] before the model narrowed it down.
+[ 256.08 -  257.84] This file is not scored,
+[ 257.84 -  260.72] but it is used to audit the quality of your blocking.
+[ 260.72 -  264.00] The archive also includes your complete runnable pipeline
+[ 264.00 -  266.96] and a methodology document describing your approach.
+[ 266.96 -  269.68] The packages of the top teams are reviewed in detail
+[ 269.68 -  271.84] before final rankings are confirmed.
+[ 271.84 -  272.96] One reminder.
+[ 272.96 -  275.84] Run the provided validation script before submitting,
+[ 275.84 -  278.80] so a simple formatting error does not cost you a submission.
+[ 279.84 -  281.92] Finally, how entries are judged.
+[ 281.92 -  285.84] Submissions are scored using the macro f0.5 metric,
+[ 285.84 -  288.80] which weights precision twice as heavily as recall.
+[ 288.80 -  290.16] In practical terms,
+[ 290.16 -  292.48] incorrectly merging two different businesses
+[ 292.48 -  295.84] is penalized roughly twice as much as missing a true match.
+[ 295.84 -  298.56] So when in doubt, it is safer not to merge.
+[ 298.56 -  300.16] A few recommendations.
+[ 300.16 -  302.48] First, understand singletons.
+[ 302.48 -  304.48] A singleton is a source one entity
+[ 304.48 -  307.92] that has no matching record in source two or source three.
+[ 307.92 -  310.56] If you correctly predict an empty list for it,
+[ 310.56 -  313.04] you earn a full score of one on that entity.
+[ 313.04 -  315.68] If you predict any match, you score zero.
+[ 315.68 -  318.32] So identifying the businesses with no match
+[ 318.32 -  321.44] is just as important as finding the ones that do match.
+[ 321.44 -  324.24] Second, your blocking strategy sets the ceiling
+[ 324.24 -  325.92] on the recall you can achieve.
+[ 325.92 -  327.36] So invest in it first,
+[ 327.36 -  330.08] because you cannot match a record you never consider.
+[ 330.16 -  333.44] And third, pay attention to region-specific patterns
+[ 333.44 -  335.52] in both names and addresses.
+[ 335.52 -  336.72] One firm rule.
+[ 336.72 -  338.88] This is a pure machine learning challenge,
+[ 338.88 -  342.48] so external databases, APIs, and lookups
+[ 342.48 -  343.92] are strictly prohibited.
+[ 343.92 -  345.52] Use only the provided data.
+[ 346.48 -  347.84] That is the challenge.
+[ 347.84 -  349.52] Build something you are proud of.
+[ 349.52 -  352.48] Resolve those entities and enjoy the process.
+[ 352.48 -  354.80] We are excited to see what you create.
+[ 354.80 -  355.60] All the best.

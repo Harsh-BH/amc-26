@@ -1,0 +1,70 @@
+# P76 raw error examples (gitignored: quotes Amazon rows)
+
+- **twin=5+** India FP p54=0.964 | S1 `Premier Foundation Private Limited` / `No- 135/707, Ayyappa Temple Street, Bangalore North, Bangalore, Karnataka` | SX S3-349152867 `Pbpremier.Com` / `Bangalore North, KA, A-135`
+- **twin=5+** India FP p54=0.719 | S1 `Yamuiya India Pvt. Ltd.` / `Shop No 86 Swati Complex, Nehru Colony, Chittorgarh, Rajasthan` | SX S3-212502050 `Yamuiya Pvt. Ltd. Partners` / ``
+- **twin=5+** India FN_below p54=0.210 | S1 `KG Energy Private Limited` / `2-168, Main Veedi, Regidi Village Post R A Valasa Mandalam, Srikakulam, Andhra Pradesh` | SX S2-514043535 `KG Energy Prviate Limited` / ``
+- **twin=5+** India FN_below p54=0.493 | S1 `Bangalore Digital Limited` / `3C 976 3Rd Cross 1St Block Hrbr Layout Kalyan Nagar, Bangalore, Karnataka` | SX S2-320732004 `BANGALORE  DIGITAL LIMITED` / ``
+- **twin=5+** India FN_up p54=nan | S1 `Ghaziabad Solutions Private Limited` / `G31C, Ground Floor, Gulmohar Greens, Ghaziabad, Uttar Pradesh` | SX S2-908846735 `Ghaziabad Solutions Private Ltd` / ``
+- **twin=5+** India FN_up p54=nan | S1 `Sai Memorial Trust` / `Delhi, Second Floor East Of Kailash, South Delhi, E-238, New Delhi` | SX S3-584581506 `Sai Memorial Trúst` / ``
+- **gsize=0** India FN_below p54=0.184 | S1 `North Consulting Private Limited` / `160-Madhav Darshan, Waghavadi Road, Bhavnagar, Gujarat` | SX S3-507400012 `north consulting private limited` / `#304 Darshan, Bhavnagar, GJ`
+- **gsize=0** India FN_below p54=0.538 | S1 `East Logistics Private Limited` / `1, Shilp-2, Nr, Nilkanth Flat, Nikol Naroda Road Nava Naroda, Ahmedabad, Gujarat` | SX S3-485753711 `Smt East Logistics Private Ltd` / `D/1, Ahmedabad, GJ`
+- **gsize=0** India FN_up p54=nan | S1 `All Marketing` / `Door No.13, South Street K R Puram. Avarampalayam, Coimbatore, Tamil Nadu` | SX S3-858133145 `All Services` / `No 13, Coimbotore, Coimbatore, TN`
+- **gsize=0** India FN_up p54=nan | S1 `Darshan Institute of Technology` / `12, 5Th Block, Near Bhasyam Circle, Rajajinagar Bangalore, Bangalore, Karnataka` | SX S2-709259930 `-- GILDORBI` / `12, RAJAJINAGAR BANGALORE, BANGALORE, Karnataka`
+- **gsize=1** India FP p54=0.896 | S1 `Lotus Producer Private Limited` / `H.No.458, Gawalipura, Nr Gopal Pahalwan House, Nagpur, Maharashtra` | SX S3-904004092 `Sri Lotus Producer` / `40, Nagpur, Nagaur, MH`
+- **gsize=1** India FP p54=0.918 | S1 `Great Builders Private Limited` / `E-61, E Block Rajendra Nagar, Bareilly, Uttar Pradesh` | SX S3-55741278 `ग्रेट बिल्डर्स प्राइवेट लिमिटेड` / `E 21, Ghaziabad, UP`
+- **gsize=1** India FN_below p54=0.529 | S1 `Fortune Consultants Private Limited` / `35, Chittaranjan Avenue, Ground. Fioor Room-6/4, Kolkata, Kolkata, Howrah, West Bengal` | SX S3-825388093 `Fortune Consultants  Private Limited` / `3-5, Howrah, Kolkata, পশ্চিমবঙ্গ`
+- **gsize=1** India FN_below p54=0.565 | S1 `Hyderabad World Ltd` / `D.No 1-1-700/B/1, New Bakaram Gandhi Nagar, Hyderabad, Telangana` | SX S3-26415457 `Hyderabad World Limited` / ``
+- **gsize=1** India FN_up p54=nan | S1 `Pramod Industries Partners` / `607, Annasalai, Chennai, Tamil Nadu` | SX S2-646350904 `M/s Pramod Industries` / ``
+- **gsize=1** India FN_up p54=nan | S1 `Galaxy Investment Private Limited` / `No 118 1&2Nd Floor Pjr Towers 8Th Cross Road 1St Main Road, Near Tin Factory, Bangalore North, Bangalore, Karnataka` | SX S3-512354044 `Galaxy Investment Pivtae Limited` / ``
+- **n_am=1** India FP p54=0.929 | S1 `Jaipur Estate Ltd` / `121/127, Vijay Path, Mansarovar, Rajasthan, Co Heera Lal, Jaipur` | SX S2-585158418 `Jaipur Areca [Ltd]` / `#56 CO HEERA LAL, 121/127, VIJAY PATH, MANSAROVAR, JAIPUR, N/A, Rajasthan`
+- **n_am=1** India FP p54=0.961 | S1 `Digital Foundation Limited` / `D- 8, Gf, Pandav Nagar, East Delhi, Delhi` | SX S3-709336016 `Digital Foundation Limited` / `DL, East Delhi, D-2-0, Delhi`
+- **n_am=1** India FN_below p54=0.371 | S1 `As Polytechnic` / `Maharashtra, Mumbai City, Mumbai, Dev Deep, 44B Tagore Tilak Road, Nr Asha Parekh Hospital, Santacruz West, 301` | SX S2-116401910 `As Polytechnic Ltd` / ``
+- **n_am=1** India FN_below p54=0.184 | S1 `North Consulting Private Limited` / `160-Madhav Darshan, Waghavadi Road, Bhavnagar, Gujarat` | SX S3-507400012 `north consulting private limited` / `#304 Darshan, Bhavnagar, GJ`
+- **n_am=1** India FN_up p54=nan | S1 `Southern Industries` / `2Nd Floor, Lotus Tower, No. 85/86, Mount Road, Guindy, Chennai City Corporation, Chennai, Tamil Nadu` | SX S3-346893996 `Southern [Service]` / `No 02Nd Floor, Chennai City Region, Chennai, TN`
+- **n_am=1** India FN_up p54=nan | S1 `Devaya Samaj Pvt Ltd` / `530, 3Rd Main, Bhuvanagiri, Ombr Layout, Bansavadi, Bangalore, Karnataka` | SX S2-270041387 `Wexnex` / `30, BANGALORE, Karnataka`
+- **twin=2-4** India FP p54=0.866 | S1 `Vaayuika Services Private Limited` / `C/O Vitthal Korde, Talni Sengaon Hingoli, Sengaon, Hingoli, Maharashtra` | SX S3-840679221 `Vaayuika Services` / ``
+- **twin=2-4** India FP p54=0.711 | S1 `Kolkata Micro Private Limited` / `3 Merlin Park, Kolkata, Calcutta, West Bengal` | SX S2-209541867 `Kolkata Mico Private Limited` / ``
+- **twin=2-4** India FN_below p54=0.211 | S1 `Media Starway Producer Private Limited` / `Akshay Garden Sambhaji Nagar Dhanakwadi, Pune, Maharashtra` | SX S2-476940404 `Media Stotcday Producer Private Limited` / ``
+- **twin=2-4** India FN_below p54=0.546 | S1 `Jubilant Traders Private Limited` / `No.23, Palace Orchard Apartments, 9Th Main, 6Th Cross, Raj Mahal, Vilas Extension, Bangalore, Karnataka` | SX S2-960453544 `JUBILANT TRADERS PERAE LIMITED` / ``
+- **twin=2-4** India FN_up p54=nan | S1 `Altavista (India) Botanics` / `D1/49, Mansa Ram Park Uttam Nagar, New Delhi, Delhi` | SX S2-305182075 `Altavista (India) Botanics Corp` / ``
+- **twin=2-4** India FN_up p54=nan | S1 `Peaceful Agro Private Limited` / `Plot No-36, Guru Nanak Colony Ashaganj, Ajmer, Rajasthan` | SX S2-196097257 `TAVOSOL` / `PLOT NO-36/1, MUMBAI, AJMER, Rajasthan`
+- **n_am=2** India FP p54=1.000 | S1 `Zeal Group of Companies` / `No. 109, Ferns Meadows, Avalahalli Main Road, Bileshivale, Bangalore North, Bangalore, Karnataka` | SX S2-637259714 `ZEAL GROUP OF COMPANIES` / `NO. 130, FERNS MEADOWS, AVALAHALLI MAIN ROAD, BILESHIVALE, BANGALORE NORTH, ಕರ್ನಾಟಕ`
+- **n_am=2** India FP p54=0.771 | S1 `Thomson Capital Limited` / `Beside Pillalamarri Kaman Hyderabad Road, Pillalamarri, Suryapet, D.No: 12-76/1, Telangana, Nalgonda` | SX S2-382864898 `Thomson Capital Limited` / ``
+- **n_am=2** India FN_below p54=0.371 | S1 `Vac Housings Private Limited` / `4 Sital Sagar Sital Baug, Walkeshwar Road, Mumbai, Maharashtra` | SX S3-867564652 `Dr Nexveo` / `Door No D/4 Sital Sagar Sital Baug, Mumbai, महाराष्ट्र, Mumbai`
+- **n_am=2** India FN_below p54=0.565 | S1 `Hyderabad World Ltd` / `D.No 1-1-700/B/1, New Bakaram Gandhi Nagar, Hyderabad, Telangana` | SX S3-26415457 `Hyderabad World Limited` / ``
+- **n_am=2** India FN_up p54=nan | S1 `Splendor Financiers Co` / `104, Banas Kantha, Gujarat, Deesa, Rajiv Gandhi Complex, Near Fuvara` | SX S2-623226792 `Shri Gildmira` / `ગુજરાત, BANAS KANTHA, 104, DEESA`
+- **n_am=2** India FN_up p54=nan | S1 `Balaji Logistics LLP` / `No.221, 12Th Cross, Pavamana Nagar, Gottigere Village, Bhanneragatta Road, Bangalore, Karnataka` | SX S2-767832795 `Balaji Logistics Enterprises` / ``
+- **twin=5+** US FP p54=0.861 | S1 `Continental Alliance` / `182 24th Street, Long View, NC` | SX S2-730415387 `Continental Alliance (Co)` / `18 24TH ST, LONG VIEW, NC`
+- **twin=5+** US FP p54=0.859 | S1 `Physical Therapy Partners Inc` / `10200 Dry Creek Road, Unit APT 308, Inverness, CO` | SX S2-519885599 `Halozephvera` / `010200 DRY CREEK ROAD, ENGLEOOD, CO`
+- **twin=5+** US FN_below p54=0.138 | S1 `Valley Fellowship LLC` / `46 Main Street, Porter, ME` | SX S3-622916030 `Valley  Fellowship LLC` / ``
+- **twin=5+** US FN_below p54=0.188 | S1 `Patriot Enterprises LLC` / `3300 Commercial Avenue, Fl 2, Anacortes, WA` | SX S3-517033279 `Patriot Enterprises L.L.C.` / ``
+- **twin=5+** US FN_up p54=nan | S1 `Animal Welfare Center` / `5011 Stephan Dr, Louisville, KY` | SX S3-590819414 `Animal-Welfare Center` / ``
+- **twin=5+** US FN_up p54=nan | S1 `Birch Inc.` / `8414 Bronco Lane, Leander, TX` | SX S2-994345521 `BIRCH INC. 5ERVICES` / ``
+- **gsize=0** US FN_below p54=0.287 | S1 `Carlson Dental Associates` / `1228 Union Avenue, Kansas City, MO` | SX S3-253472141 `Carlson Dental` / ``
+- **gsize=0** US FN_below p54=0.510 | S1 `Vision Sterling Specialists Inc` / `322 Laurelhurst Drive, Fl 1, Tumwater, WA` | SX S3-965540521 `vision sterling specialists inc` / ``
+- **gsize=0** US FN_up p54=nan | S1 `Quantial View LLC` / `11915 Railroad Circle, Spokane Valley, WA` | SX S3-744102594 `Quantial LLC Service` / ``
+- **gsize=0** US FN_up p54=nan | S1 `Mountain Partners Inc` / `517 Wedgewood Drive, Hillsboro, IL` | SX S2-494756875 `Mountain Patrnrrs Inc` / ``
+- **gsize=1** US FP p54=0.755 | S1 `Metropolitan Charter, Inc` / `9512 72nd Street, Vancouver, WA` | SX S3-75978825 `Metropolitan Charter` / ``
+- **gsize=1** US FP p54=0.954 | S1 `Merilyn N. Banes, DDS, DDS PC Forney` / `1514 Maidenstone Drive, Forney, TX` | SX S3-178052549 `MERILYN N. BANES, DD, DDS PC FORNEY` / `1514 Maidenstone Dr, Forney, Texas`
+- **gsize=1** US FN_below p54=0.253 | S1 `Pioneer Financial, LLC` / `511 Longhorn Road, Unit 1, County, WY` | SX S2-828857863 `PIONEER FINANCIAL` / ``
+- **gsize=1** US FN_below p54=0.477 | S1 `News` / `Sherman, 1508 Highland Avenue, TX` | SX S2-726027814 `news` / ``
+- **gsize=1** US FN_up p54=nan | S1 `Mahan & Mendenhall LLC` / `WI, City Of Sun Prairie, 210 Legacy Way` | SX S3-242013920 `Mahan & Mendenhall` / ``
+- **gsize=1** US FN_up p54=nan | S1 `Primary Care Golden Clinic Inc` / `14239 34th Avenue, Bldg 3, Tukwila, WA` | SX S2-84047839 `primary care golden clinic inc` / ``
+- **noaddr=>=.5** US FP p54=0.755 | S1 `Safe Technical Advisors Inc` / `37 Hoyt Street, Danbury, CT` | SX S3-570435230 `Safe Technical Advisors Advisors` / ``
+- **noaddr=>=.5** US FP p54=0.890 | S1 `Interstate Assets LLC` / `3128 17th Avenue, OH, Unit I, Columbus` | SX S2-406951375 `INTERSTATE ASSETS LLC` / ``
+- **noaddr=>=.5** US FN_below p54=0.366 | S1 `Mutual Staffing Laboratories` / `TN, Elmwood, 641 Cookeville Highway` | SX S3-384746764 `Mutual Staffing Laobitories` / ``
+- **noaddr=>=.5** US FN_below p54=0.186 | S1 `Johnson Superior Integrated Inc.` / `724 Stribling Street, Seneca, SC` | SX S2-426462830 `Johnson Sudelrior Integrated Inc.` / ``
+- **noaddr=>=.5** US FN_up p54=nan | S1 `Summit Dental Associates` / `1011 Adrift Court, Crosby, TX` | SX S3-927621002 `Summit Dental` / ``
+- **noaddr=>=.5** US FN_up p54=nan | S1 `Sweet Seafood LLC` / `2059 Dutch Ridge Road, Carbondale, IL` | SX S3-907984972 `Sweet Seafood & Co` / ``
+- **twin=2-4** US FP p54=0.928 | S1 `Classic Suisse LLC` / `Phoenix, 15801 48th Street, AZ, Unit 1216` | SX S3-697508841 `Classic Suisse LLC` / ``
+- **twin=2-4** US FP p54=0.912 | S1 `Blackwood & Rackley High` / `9100 Bay View Drive, Lillian, AL` | SX S3-705595034 `Blackwood & Rackley High Inc` / `910 Bay View Dr, Lillian, Alabama`
+- **twin=2-4** US FN_below p54=0.508 | S1 `Allen Merchants Inc` / `MD, 1188 Heathfield Road, Sykesville` | SX S3-71015102 `Allen  Merchants` / ``
+- **twin=2-4** US FN_below p54=0.323 | S1 `United Energy` / `2150 Walden Avenue, Cheektowaga, NY` | SX S2-583346420 `United Energy` / ``
+- **twin=2-4** US FN_up p54=nan | S1 `Zephis Eagle Inc` / `162 Heritage Village, Unit Unit E, Southbury, CT` | SX S2-522408715 `Zephis Inc Partners` / ``
+- **twin=2-4** US FN_up p54=nan | S1 `Ear Nose & Throat Pioneer Physicians` / `6516 Revere Drive, Kansas City, MO` | SX S3-538895965 `Ear Nose & Throat Plioenrr Physicians` / ``
+- **noaddr=<.5** US FP p54=0.952 | S1 `Baker Harbor Chimera Inc` / `104 George Kimble Cove, Bastrop, TX` | SX S2-607370093 `BAKER HFGBRAR CHIMERA INC` / ``
+- **noaddr=<.5** US FP p54=0.802 | S1 `Classic Robotics Inc` / `203 Village Drive, Unit Suite 126, Sheffield, AL` | SX S3-549748132 `Classic Robotics ínc` / ``
+- **noaddr=<.5** US FN_below p54=0.277 | S1 `Midwest Income LLC` / `NC, Charlotte, 4000 Lakeview Drive` | SX S2-342002044 `Midwest  Income` / ``
+- **noaddr=<.5** US FN_below p54=0.488 | S1 `902 Seventh Ave Realty Inc` / `308 Green Oak Street, Carter County, OK` | SX S2-796620081 `The 902 Seventh Ave Realty Inc` / ``
+- **noaddr=<.5** US FN_up p54=nan | S1 `Marisa Caceres Brown PC` / `218 6th Street, Terre Haute, IN` | SX S2-144322807 `Irimira` / `00218 SIXTH STREET, TERRE HAUTE, IN`
+- **noaddr=<.5** US FN_up p54=nan | S1 `Teo` / `34 1/2 Beacon Street, Unit 4N, Boston, MA` | SX S2-78424867 `Teo Enterprises` / ``

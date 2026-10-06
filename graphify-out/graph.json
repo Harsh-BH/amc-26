@@ -1,0 +1,3062 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {
+    "hyperedges": [
+      {
+        "id": "sagemaker_training_pipeline",
+        "label": "Laptop-to-container SageMaker training pipeline",
+        "nodes": [
+          "amc_26_sm_launch_pack_source",
+          "amc_26_sm_launch_build_request",
+          "amc_26_sm_train_main",
+          "amc_26_sm_train_load_params"
+        ],
+        "relation": "form",
+        "confidence": "INFERRED",
+        "confidence_score": 0.85,
+        "source_file": "sm_launch.py"
+      },
+      {
+        "id": "quota_zero_awareness",
+        "label": "SageMaker quota-zero problem documented and preflighted across code and docs",
+        "nodes": [
+          "amc_26_sm_launch_quota_advice",
+          "claim_credits_md",
+          "sagemaker_md"
+        ],
+        "relation": "participate_in",
+        "confidence": "INFERRED",
+        "confidence_score": 0.85,
+        "source_file": "sm_launch.py"
+      },
+      {
+        "id": "hour_zero_checklist",
+        "label": "Hour-0 workflow: baseline signal then submission preflight",
+        "nodes": [
+          "readme_md",
+          "amc_26_baseline_run",
+          "amc_26_submit_main"
+        ],
+        "relation": "form",
+        "confidence": "INFERRED",
+        "confidence_score": 0.8,
+        "source_file": "README.md"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "label": "sm_launch.py",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L1",
+      "id": "sm_launch_py",
+      "community": 3,
+      "norm_label": "sm_launch.py"
+    },
+    {
+      "label": "is_cpu()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L33",
+      "id": "amc_26_sm_launch_is_cpu",
+      "community": 6,
+      "norm_label": "is_cpu()"
+    },
+    {
+      "label": "image_uri()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L37",
+      "id": "amc_26_sm_launch_image_uri",
+      "community": 6,
+      "norm_label": "image_uri()"
+    },
+    {
+      "label": "create_role()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L50",
+      "id": "amc_26_sm_launch_create_role",
+      "community": 3,
+      "norm_label": "create_role()"
+    },
+    {
+      "label": "role_arn()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L68",
+      "id": "amc_26_sm_launch_role_arn",
+      "community": 3,
+      "norm_label": "role_arn()"
+    },
+    {
+      "label": "quota()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L77",
+      "id": "amc_26_sm_launch_quota",
+      "community": 3,
+      "norm_label": "quota()"
+    },
+    {
+      "label": "quota_advice()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L88",
+      "id": "amc_26_sm_launch_quota_advice",
+      "community": 3,
+      "norm_label": "quota_advice()"
+    },
+    {
+      "label": "ensure_bucket()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L106",
+      "id": "amc_26_sm_launch_ensure_bucket",
+      "community": 3,
+      "norm_label": "ensure_bucket()"
+    },
+    {
+      "label": "pack_source()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L120",
+      "id": "amc_26_sm_launch_pack_source",
+      "community": 7,
+      "norm_label": "pack_source()"
+    },
+    {
+      "label": "upload_dir()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L139",
+      "id": "amc_26_sm_launch_upload_dir",
+      "community": 3,
+      "norm_label": "upload_dir()"
+    },
+    {
+      "label": "channel()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L155",
+      "id": "amc_26_sm_launch_channel",
+      "community": 2,
+      "norm_label": "channel()"
+    },
+    {
+      "label": "build_request()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L160",
+      "id": "amc_26_sm_launch_build_request",
+      "community": 2,
+      "norm_label": "build_request()"
+    },
+    {
+      "label": "validate()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L185",
+      "id": "amc_26_sm_launch_validate",
+      "community": 10,
+      "norm_label": "validate()"
+    },
+    {
+      "label": "submit()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L195",
+      "id": "amc_26_sm_launch_submit",
+      "community": 9,
+      "norm_label": "submit()"
+    },
+    {
+      "label": "logs()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L211",
+      "id": "amc_26_sm_launch_logs",
+      "community": 8,
+      "norm_label": "logs()"
+    },
+    {
+      "label": "summary()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L230",
+      "id": "amc_26_sm_launch_summary",
+      "community": 8,
+      "norm_label": "summary()"
+    },
+    {
+      "label": "wait()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L241",
+      "id": "amc_26_sm_launch_wait",
+      "community": 8,
+      "norm_label": "wait()"
+    },
+    {
+      "label": "fetch()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L259",
+      "id": "amc_26_sm_launch_fetch",
+      "community": 11,
+      "norm_label": "fetch()"
+    },
+    {
+      "label": "sess_ecr_token()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L284",
+      "id": "amc_26_sm_launch_sess_ecr_token",
+      "community": 6,
+      "norm_label": "sess_ecr_token()"
+    },
+    {
+      "label": "run_local()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L289",
+      "id": "amc_26_sm_launch_run_local",
+      "community": 6,
+      "norm_label": "run_local()"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "sm_launch.py",
+      "source_location": "L340",
+      "id": "amc_26_sm_launch_main",
+      "community": 3,
+      "norm_label": "main()"
+    },
+    {
+      "label": "Submit and manage SageMaker training jobs. boto3 builds and submits the request;",
+      "file_type": "rationale",
+      "source_file": "sm_launch.py",
+      "source_location": "L1",
+      "id": "amc_26_sm_launch_rationale_1",
+      "community": 3,
+      "norm_label": "submit and manage sagemaker training jobs. boto3 builds and submits the request;"
+    },
+    {
+      "label": "(value, code) for '<instance> for [spot ]training job usage'. New accounts are o",
+      "file_type": "rationale",
+      "source_file": "sm_launch.py",
+      "source_location": "L78",
+      "id": "amc_26_sm_launch_rationale_78",
+      "community": 3,
+      "norm_label": "(value, code) for '<instance> for [spot ]training job usage'. new accounts are o"
+    },
+    {
+      "label": "Return (tar.gz bytes, member names). Top-level *.py, solution override, requirem",
+      "file_type": "rationale",
+      "source_file": "sm_launch.py",
+      "source_location": "L121",
+      "id": "amc_26_sm_launch_rationale_121",
+      "community": 7,
+      "norm_label": "return (tar.gz bytes, member names). top-level *.py, solution override, requirem"
+    },
+    {
+      "label": "Check against botocore's own schema - catches typos before anything is spent.",
+      "file_type": "rationale",
+      "source_file": "sm_launch.py",
+      "source_location": "L186",
+      "id": "amc_26_sm_launch_rationale_186",
+      "community": 10,
+      "norm_label": "check against botocore's own schema - catches typos before anything is spent."
+    },
+    {
+      "label": "A role created seconds ago is not assumable yet (IAM is eventually consistent).",
+      "file_type": "rationale",
+      "source_file": "sm_launch.py",
+      "source_location": "L196",
+      "id": "amc_26_sm_launch_rationale_196",
+      "community": 9,
+      "norm_label": "a role created seconds ago is not assumable yet (iam is eventually consistent)."
+    },
+    {
+      "label": "model.tar.gz and output.tar.gz both land next to each other; extract both.",
+      "file_type": "rationale",
+      "source_file": "sm_launch.py",
+      "source_location": "L260",
+      "id": "amc_26_sm_launch_rationale_260",
+      "community": 11,
+      "norm_label": "model.tar.gz and output.tar.gz both land next to each other; extract both."
+    },
+    {
+      "label": "Run the job in the real SageMaker container via Docker, with the same /opt/ml la",
+      "file_type": "rationale",
+      "source_file": "sm_launch.py",
+      "source_location": "L290",
+      "id": "amc_26_sm_launch_rationale_290",
+      "community": 6,
+      "norm_label": "run the job in the real sagemaker container via docker, with the same /opt/ml la"
+    },
+    {
+      "label": "sm_train.py",
+      "file_type": "code",
+      "source_file": "sm_train.py",
+      "source_location": "L1",
+      "id": "sm_train_py",
+      "community": 2,
+      "norm_label": "sm_train.py"
+    },
+    {
+      "label": "parse_params()",
+      "file_type": "code",
+      "source_file": "sm_train.py",
+      "source_location": "L34",
+      "id": "amc_26_sm_train_parse_params",
+      "community": 2,
+      "norm_label": "parse_params()"
+    },
+    {
+      "label": "load_params()",
+      "file_type": "code",
+      "source_file": "sm_train.py",
+      "source_location": "L53",
+      "id": "amc_26_sm_train_load_params",
+      "community": 2,
+      "norm_label": "load_params()"
+    },
+    {
+      "label": "_ls()",
+      "file_type": "code",
+      "source_file": "sm_train.py",
+      "source_location": "L70",
+      "id": "amc_26_sm_train_ls",
+      "community": 2,
+      "norm_label": "_ls()"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "sm_train.py",
+      "source_location": "L77",
+      "id": "amc_26_sm_train_main",
+      "community": 2,
+      "norm_label": "main()"
+    },
+    {
+      "label": "SageMaker entry point. Problem-agnostic: it owns the SageMaker filesystem contra",
+      "file_type": "rationale",
+      "source_file": "sm_train.py",
+      "source_location": "L1",
+      "id": "amc_26_sm_train_rationale_1",
+      "community": 2,
+      "norm_label": "sagemaker entry point. problem-agnostic: it owns the sagemaker filesystem contra"
+    },
+    {
+      "label": "--key value pairs; values JSON-decoded so '3' -> 3, 'true' -> True. Bare --flag",
+      "file_type": "rationale",
+      "source_file": "sm_train.py",
+      "source_location": "L35",
+      "id": "amc_26_sm_train_rationale_35",
+      "community": 2,
+      "norm_label": "--key value pairs; values json-decoded so '3' -> 3, 'true' -> true. bare --flag"
+    },
+    {
+      "label": "On SageMaker read hyperparameters.json, never argv. The toolkit rebuilds argv wi",
+      "file_type": "rationale",
+      "source_file": "sm_train.py",
+      "source_location": "L54",
+      "id": "amc_26_sm_train_rationale_54",
+      "community": 2,
+      "norm_label": "on sagemaker read hyperparameters.json, never argv. the toolkit rebuilds argv wi"
+    },
+    {
+      "label": "baseline.py",
+      "file_type": "code",
+      "source_file": "baseline.py",
+      "source_location": "L1",
+      "id": "baseline_py",
+      "community": 4,
+      "norm_label": "baseline.py"
+    },
+    {
+      "label": "pick_target()",
+      "file_type": "code",
+      "source_file": "baseline.py",
+      "source_location": "L23",
+      "id": "amc_26_baseline_pick_target",
+      "community": 4,
+      "norm_label": "pick_target()"
+    },
+    {
+      "label": "pick_text()",
+      "file_type": "code",
+      "source_file": "baseline.py",
+      "source_location": "L35",
+      "id": "amc_26_baseline_pick_text",
+      "community": 4,
+      "norm_label": "pick_text()"
+    },
+    {
+      "label": "featurize()",
+      "file_type": "code",
+      "source_file": "baseline.py",
+      "source_location": "L48",
+      "id": "amc_26_baseline_featurize",
+      "community": 4,
+      "norm_label": "featurize()"
+    },
+    {
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "baseline.py",
+      "source_location": "L55",
+      "id": "amc_26_baseline_run",
+      "community": 4,
+      "norm_label": "run()"
+    },
+    {
+      "label": "demo()",
+      "file_type": "code",
+      "source_file": "baseline.py",
+      "source_location": "L103",
+      "id": "amc_26_baseline_demo",
+      "community": 4,
+      "norm_label": "demo()"
+    },
+    {
+      "label": "Text -> numeric-target baseline: TF-IDF (word + char) into LightGBM, scored with",
+      "file_type": "rationale",
+      "source_file": "baseline.py",
+      "source_location": "L1",
+      "id": "amc_26_baseline_rationale_1",
+      "community": 4,
+      "norm_label": "text -> numeric-target baseline: tf-idf (word + char) into lightgbm, scored with"
+    },
+    {
+      "label": "Object columns that look like prose, longest average first. Skips ids and urls.",
+      "file_type": "rationale",
+      "source_file": "baseline.py",
+      "source_location": "L36",
+      "id": "amc_26_baseline_rationale_36",
+      "community": 4,
+      "norm_label": "object columns that look like prose, longest average first. skips ids and urls."
+    },
+    {
+      "label": "Synthetic sanity check: the model must beat a median guess on a learnable signal",
+      "file_type": "rationale",
+      "source_file": "baseline.py",
+      "source_location": "L104",
+      "id": "amc_26_baseline_rationale_104",
+      "community": 4,
+      "norm_label": "synthetic sanity check: the model must beat a median guess on a learnable signal"
+    },
+    {
+      "label": "submit.py",
+      "file_type": "code",
+      "source_file": "submit.py",
+      "source_location": "L1",
+      "id": "submit_py",
+      "community": 5,
+      "norm_label": "submit.py"
+    },
+    {
+      "label": "page_count()",
+      "file_type": "code",
+      "source_file": "submit.py",
+      "source_location": "L15",
+      "id": "amc_26_submit_page_count",
+      "community": 5,
+      "norm_label": "page_count()"
+    },
+    {
+      "label": "check_doc()",
+      "file_type": "code",
+      "source_file": "submit.py",
+      "source_location": "L25",
+      "id": "amc_26_submit_check_doc",
+      "community": 5,
+      "norm_label": "check_doc()"
+    },
+    {
+      "label": "check_preds()",
+      "file_type": "code",
+      "source_file": "submit.py",
+      "source_location": "L37",
+      "id": "amc_26_submit_check_preds",
+      "community": 5,
+      "norm_label": "check_preds()"
+    },
+    {
+      "label": "collect()",
+      "file_type": "code",
+      "source_file": "submit.py",
+      "source_location": "L57",
+      "id": "amc_26_submit_collect",
+      "community": 5,
+      "norm_label": "collect()"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "submit.py",
+      "source_location": "L63",
+      "id": "amc_26_submit_main",
+      "community": 5,
+      "norm_label": "main()"
+    },
+    {
+      "label": "Pack + pre-flight the Round 1 submission.  Rules (Unstop, Stage 2): a 1-2 page a",
+      "file_type": "rationale",
+      "source_file": "submit.py",
+      "source_location": "L1",
+      "id": "amc_26_submit_rationale_1",
+      "community": 5,
+      "norm_label": "pack + pre-flight the round 1 submission.  rules (unstop, stage 2): a 1-2 page a"
+    },
+    {
+      "label": "Pages via poppler; None if we cannot tell (then a human must check).",
+      "file_type": "rationale",
+      "source_file": "submit.py",
+      "source_location": "L16",
+      "id": "amc_26_submit_rationale_16",
+      "community": 5,
+      "norm_label": "pages via poppler; none if we cannot tell (then a human must check)."
+    },
+    {
+      "label": "test_sm.py",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L1",
+      "id": "test_sm_py",
+      "community": 1,
+      "norm_label": "test_sm.py"
+    },
+    {
+      "label": "check()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L16",
+      "id": "amc_26_test_sm_check",
+      "community": 1,
+      "norm_label": "check()"
+    },
+    {
+      "label": "run_train()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L22",
+      "id": "amc_26_test_sm_run_train",
+      "community": 1,
+      "norm_label": "run_train()"
+    },
+    {
+      "label": "args()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L59",
+      "id": "amc_26_test_sm_args",
+      "community": 1,
+      "norm_label": "args()"
+    },
+    {
+      "label": "_()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L74",
+      "id": "amc_26_test_sm",
+      "community": 1,
+      "norm_label": "_()"
+    },
+    {
+      "label": "FakeQuotas",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L269",
+      "id": "amc_26_test_sm_fakequotas",
+      "community": 1,
+      "norm_label": "fakequotas"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L270",
+      "id": "amc_26_test_sm_fakequotas_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".get_paginator()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L272",
+      "id": "amc_26_test_sm_fakequotas_get_paginator",
+      "community": 1,
+      "norm_label": ".get_paginator()"
+    },
+    {
+      "label": ".get_aws_default_service_quota()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L277",
+      "id": "amc_26_test_sm_fakequotas_get_aws_default_service_quota",
+      "community": 1,
+      "norm_label": ".get_aws_default_service_quota()"
+    },
+    {
+      "label": "_describe()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L325",
+      "id": "amc_26_test_sm_describe",
+      "community": 1,
+      "norm_label": "_describe()"
+    },
+    {
+      "label": "FakeLogs",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L334",
+      "id": "amc_26_test_sm_fakelogs",
+      "community": 1,
+      "norm_label": "fakelogs"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L336",
+      "id": "amc_26_test_sm_fakelogs_init",
+      "community": 1,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".describe_log_streams()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L338",
+      "id": "amc_26_test_sm_fakelogs_describe_log_streams",
+      "community": 1,
+      "norm_label": ".describe_log_streams()"
+    },
+    {
+      "label": ".get_log_events()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L340",
+      "id": "amc_26_test_sm_fakelogs_get_log_events",
+      "community": 1,
+      "norm_label": ".get_log_events()"
+    },
+    {
+      "label": "_tgz()",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": "L386",
+      "id": "amc_26_test_sm_tgz",
+      "community": 1,
+      "norm_label": "_tgz()"
+    },
+    {
+      "label": "Offline tests for sm_train.py / sm_launch.py. No AWS calls, no framework: `pytho",
+      "file_type": "rationale",
+      "source_file": "test_sm.py",
+      "source_location": "L1",
+      "id": "amc_26_test_sm_rationale_1",
+      "community": 1,
+      "norm_label": "offline tests for sm_train.py / sm_launch.py. no aws calls, no framework: `pytho"
+    },
+    {
+      "label": "Run sm_train.py in a subprocess inside a fake /opt/ml, exactly as the container",
+      "file_type": "rationale",
+      "source_file": "test_sm.py",
+      "source_location": "L23",
+      "id": "amc_26_test_sm_rationale_23",
+      "community": 1,
+      "norm_label": "run sm_train.py in a subprocess inside a fake /opt/ml, exactly as the container"
+    },
+    {
+      "label": "Two pages of events, then CloudWatch's end-of-stream: empty page, same token.",
+      "file_type": "rationale",
+      "source_file": "test_sm.py",
+      "source_location": "L335",
+      "id": "amc_26_test_sm_rationale_335",
+      "community": 1,
+      "norm_label": "two pages of events, then cloudwatch's end-of-stream: empty page, same token."
+    },
+    {
+      "label": "metrics.py",
+      "file_type": "code",
+      "source_file": "metrics.py",
+      "source_location": "L1",
+      "id": "metrics_py",
+      "community": 0,
+      "norm_label": "metrics.py"
+    },
+    {
+      "label": "smape()",
+      "file_type": "code",
+      "source_file": "metrics.py",
+      "source_location": "L10",
+      "id": "amc_26_metrics_smape",
+      "community": 0,
+      "norm_label": "smape()"
+    },
+    {
+      "label": "demo()",
+      "file_type": "code",
+      "source_file": "metrics.py",
+      "source_location": "L24",
+      "id": "amc_26_metrics_demo",
+      "community": 0,
+      "norm_label": "demo()"
+    },
+    {
+      "label": "Competition metric. AMC 2025 scored on SMAPE; confirm against the 2026 problem P",
+      "file_type": "rationale",
+      "source_file": "metrics.py",
+      "source_location": "L1",
+      "id": "amc_26_metrics_rationale_1",
+      "community": 0,
+      "norm_label": "competition metric. amc 2025 scored on smape; confirm against the 2026 problem p"
+    },
+    {
+      "label": "SMAPE as a percentage, 0..200. Lower is better.",
+      "file_type": "rationale",
+      "source_file": "metrics.py",
+      "source_location": "L11",
+      "id": "amc_26_metrics_rationale_11",
+      "community": 0,
+      "norm_label": "smape as a percentage, 0..200. lower is better."
+    },
+    {
+      "label": "_ls (directory listing helper for logging)",
+      "file_type": "code",
+      "source_file": "sm_train.py",
+      "source_location": "L70",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sm_train__ls",
+      "community": 2,
+      "norm_label": "_ls (directory listing helper for logging)"
+    },
+    {
+      "label": "test_sm.py offline framework test suite (29 tests)",
+      "file_type": "code",
+      "source_file": "test_sm.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "test_sm_suite",
+      "community": 8,
+      "norm_label": "test_sm.py offline framework test suite (29 tests)"
+    },
+    {
+      "label": "README.md (AMC 2026 project overview)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "readme_md",
+      "community": 0,
+      "norm_label": "readme.md (amc 2026 project overview)"
+    },
+    {
+      "label": "CLAUDE.md (project rules for agents)",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claude_md",
+      "community": 0,
+      "norm_label": "claude.md (project rules for agents)"
+    },
+    {
+      "label": "CLAIM_CREDITS.md (AWS Free Tier credit guide)",
+      "file_type": "document",
+      "source_file": "docs/CLAIM_CREDITS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "claim_credits_md",
+      "community": 0,
+      "norm_label": "claim_credits.md (aws free tier credit guide)"
+    },
+    {
+      "label": "EMBEDDINGS.md (embedding model selection guide)",
+      "file_type": "document",
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "embeddings_md",
+      "community": 0,
+      "norm_label": "embeddings.md (embedding model selection guide)"
+    },
+    {
+      "label": "SAGEMAKER.md (training framework guide)",
+      "file_type": "document",
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sagemaker_md",
+      "community": 7,
+      "norm_label": "sagemaker.md (training framework guide)"
+    },
+    {
+      "label": "sm_requirements.txt (container pip requirements)",
+      "file_type": "document",
+      "source_file": "sm_requirements.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sm_requirements_txt",
+      "community": 7,
+      "norm_label": "sm_requirements.txt (container pip requirements)"
+    },
+    {
+      "label": "Compute plan: AWS for data/orchestration, Kaggle/Colab for training loop",
+      "file_type": "rationale",
+      "source_file": "README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "readme_compute_plan_split",
+      "community": 0,
+      "norm_label": "compute plan: aws for data/orchestration, kaggle/colab for training loop"
+    },
+    {
+      "label": "SageMaker training quota starts at 0 on new accounts",
+      "file_type": "rationale",
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sagemaker_quota_zero",
+      "community": 7,
+      "norm_label": "sagemaker training quota starts at 0 on new accounts"
+    },
+    {
+      "label": "Spot training on by default, with checkpointing",
+      "file_type": "rationale",
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sagemaker_spot_training",
+      "community": 0,
+      "norm_label": "spot training on by default, with checkpointing"
+    },
+    {
+      "label": "Hyperparameters read from JSON file, never argv",
+      "file_type": "rationale",
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sagemaker_hyperparameter_json_contract",
+      "community": 2,
+      "norm_label": "hyperparameters read from json file, never argv"
+    },
+    {
+      "label": "--local: free rehearsal in the real DLC container",
+      "file_type": "rationale",
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sagemaker_local_rehearsal",
+      "community": 7,
+      "norm_label": "--local: free rehearsal in the real dlc container"
+    },
+    {
+      "label": "boto3 submits jobs; sagemaker SDK only resolves the DLC image URI",
+      "file_type": "rationale",
+      "source_file": "CLAUDE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "amc26_dlc_image_resolution",
+      "community": 6,
+      "norm_label": "boto3 submits jobs; sagemaker sdk only resolves the dlc image uri"
+    },
+    {
+      "label": "Freeze backbone, cache embeddings, iterate on the head",
+      "file_type": "rationale",
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "embeddings_freeze_cache_iterate",
+      "community": 0,
+      "norm_label": "freeze backbone, cache embeddings, iterate on the head"
+    },
+    {
+      "label": "Cross-modal (CLIP/SigLIP) vs vision-only (DINO) selection rule",
+      "file_type": "rationale",
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "embeddings_crossmodal_vision_rule",
+      "community": 0,
+      "norm_label": "cross-modal (clip/siglip) vs vision-only (dino) selection rule"
+    },
+    {
+      "label": "SMAPE competition metric (2025 formula)",
+      "file_type": "rationale",
+      "source_file": "metrics.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "smape_metric",
+      "community": 0,
+      "norm_label": "smape competition metric (2025 formula)"
+    },
+    {
+      "label": "AMC 2023 problem: product length from tabular features",
+      "file_type": "rationale",
+      "source_file": "README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "amc_2023_problem",
+      "community": 0,
+      "norm_label": "amc 2023 problem: product length from tabular features"
+    },
+    {
+      "label": "AMC 2024 problem: entity value extraction from product images",
+      "file_type": "rationale",
+      "source_file": "README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "amc_2024_problem",
+      "community": 0,
+      "norm_label": "amc 2024 problem: entity value extraction from product images"
+    },
+    {
+      "label": "AMC 2025 problem: Smart Product Pricing (multimodal, SMAPE)",
+      "file_type": "rationale",
+      "source_file": "README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "amc_2025_problem",
+      "community": 0,
+      "norm_label": "amc 2025 problem: smart product pricing (multimodal, smape)"
+    },
+    {
+      "label": "AWS Free Tier $200 credit program (signup + 5 activities)",
+      "file_type": "rationale",
+      "source_file": "docs/CLAIM_CREDITS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "aws_free_tier_credits",
+      "community": 0,
+      "norm_label": "aws free tier $200 credit program (signup + 5 activities)"
+    },
+    {
+      "label": "TF-IDF + LightGBM baseline in log-space",
+      "file_type": "rationale",
+      "source_file": "baseline.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "baseline_tfidf_lightgbm_approach",
+      "community": 0,
+      "norm_label": "tf-idf + lightgbm baseline in log-space"
+    },
+    {
+      "label": "BAAI/bge-m3 text embedding model",
+      "file_type": "rationale",
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "embeddings_bge_m3",
+      "community": 0,
+      "norm_label": "baai/bge-m3 text embedding model"
+    },
+    {
+      "label": "Alibaba-NLP/gte-multilingual-base text embedding model",
+      "file_type": "rationale",
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "embeddings_gte_multilingual_base",
+      "community": 0,
+      "norm_label": "alibaba-nlp/gte-multilingual-base text embedding model"
+    },
+    {
+      "label": "facebook/dinov2-base vision-only embedding model",
+      "file_type": "rationale",
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "embeddings_dinov2",
+      "community": 0,
+      "norm_label": "facebook/dinov2-base vision-only embedding model"
+    },
+    {
+      "label": "google/siglip2-base-patch16-224 text+image embedding model",
+      "file_type": "rationale",
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "embeddings_siglip2",
+      "community": 0,
+      "norm_label": "google/siglip2-base-patch16-224 text+image embedding model"
+    },
+    {
+      "label": "Amazon Titan embedding models via Bedrock",
+      "file_type": "rationale",
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "embeddings_titan_bedrock",
+      "community": 0,
+      "norm_label": "amazon titan embedding models via bedrock"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_is_cpu",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_image_uri",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_create_role",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_role_arn",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_quota",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_quota_advice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_ensure_bucket",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_pack_source",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L139",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_upload_dir",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L155",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_channel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_build_request",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L185",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_validate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L195",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_submit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L211",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_logs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L230",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_summary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L241",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_wait",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L259",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_fetch",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L284",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_sess_ecr_token",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L289",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_run_local",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L340",
+      "weight": 1.0,
+      "source": "sm_launch_py",
+      "target": "amc_26_sm_launch_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_rationale_1",
+      "target": "sm_launch_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L44",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_image_uri",
+      "target": "amc_26_sm_launch_is_cpu"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L169",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_build_request",
+      "target": "amc_26_sm_launch_image_uri"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L310",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_run_local",
+      "target": "amc_26_sm_launch_image_uri"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L253",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_image_uri"
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_launch.py",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_image_uri",
+      "target": "amc26_dlc_image_resolution"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L372",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_create_role"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L389",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_role_arn"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L89",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_quota_advice",
+      "target": "amc_26_sm_launch_quota"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_rationale_78",
+      "target": "amc_26_sm_launch_quota",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L384",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_quota_advice"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L284",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_quota_advice"
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_launch.py",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_quota_advice",
+      "target": "sagemaker_quota_zero"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L434",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_ensure_bucket"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L414",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_pack_source"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L121",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_rationale_121",
+      "target": "amc_26_sm_launch_pack_source",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L171",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_pack_source"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_launch.py",
+      "source_location": "L130",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_pack_source",
+      "target": "sm_requirements_txt"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L439",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_upload_dir"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L172",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_build_request",
+      "target": "amc_26_sm_launch_channel"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L416",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_build_request"
+    },
+    {
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "sm_launch.py",
+      "source_location": "L165",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_build_request",
+      "target": "amc_26_sm_train_main"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L148",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_build_request"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_launch.py",
+      "source_location": "L161",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_build_request",
+      "target": "amc_26_sm_train_load_params"
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_launch.py",
+      "source_location": "L164",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_build_request",
+      "target": "sagemaker_hyperparameter_json_contract"
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_launch.py",
+      "source_location": "L178",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_build_request",
+      "target": "sagemaker_spot_training"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L443",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_validate"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_rationale_186",
+      "target": "amc_26_sm_launch_validate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L212",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_validate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L444",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_submit"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L196",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_rationale_196",
+      "target": "amc_26_sm_launch_submit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L300",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_submit"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L255",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_wait",
+      "target": "amc_26_sm_launch_logs"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L378",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_logs"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L354",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_logs"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L252",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_wait",
+      "target": "amc_26_sm_launch_summary"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L376",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_summary"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L447",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_wait"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L366",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_wait"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L380",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_fetch"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L260",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_rationale_260",
+      "target": "amc_26_sm_launch_fetch",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L405",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_fetch"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L315",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_run_local",
+      "target": "amc_26_sm_launch_sess_ecr_token"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L417",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_launch_main",
+      "target": "amc_26_sm_launch_run_local"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_launch.py",
+      "source_location": "L290",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_rationale_290",
+      "target": "amc_26_sm_launch_run_local",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_launch.py",
+      "source_location": "L299",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_run_local",
+      "target": "amc_26_sm_train_load_params"
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_launch.py",
+      "source_location": "L289",
+      "weight": 1.0,
+      "source": "amc_26_sm_launch_run_local",
+      "target": "sagemaker_local_rehearsal"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L318",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_launch_main"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "amc_26_sm_launch_main"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "claude_md",
+      "target": "amc_26_sm_launch_main"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "sagemaker_md",
+      "target": "amc_26_sm_launch_main"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "sm_train_py",
+      "target": "amc_26_sm_train_parse_params",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "sm_train_py",
+      "target": "amc_26_sm_train_load_params",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "sm_train_py",
+      "target": "amc_26_sm_train_ls",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "sm_train_py",
+      "target": "amc_26_sm_train_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "amc_26_sm_train_rationale_1",
+      "target": "sm_train_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L67",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_train_load_params",
+      "target": "amc_26_sm_train_parse_params"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "amc_26_sm_train_rationale_35",
+      "target": "amc_26_sm_train_parse_params",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "test_sm.py",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "amc_26_test_sm",
+      "target": "amc_26_sm_train_parse_params"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_sm_train_parse_params"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L79",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_sm_train_main",
+      "target": "amc_26_sm_train_load_params"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "amc_26_sm_train_rationale_54",
+      "target": "amc_26_sm_train_load_params",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_run_train",
+      "target": "amc_26_sm_train_load_params"
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_train.py",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "amc_26_sm_train_load_params",
+      "target": "sagemaker_hyperparameter_json_contract"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "sm_train.py",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "amc_26_sm_train_main",
+      "target": "amc_26_sm_train_ls",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sm_train.py",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "amc_26_sm_train_main",
+      "target": "sm_train__ls"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_run_train",
+      "target": "amc_26_sm_train_main"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "amc_26_sm_train_main"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "sagemaker_md",
+      "target": "amc_26_sm_train_main"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "baseline_py",
+      "target": "amc_26_baseline_pick_target",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "baseline_py",
+      "target": "amc_26_baseline_pick_text",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "baseline_py",
+      "target": "amc_26_baseline_featurize",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "baseline_py",
+      "target": "amc_26_baseline_run",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L103",
+      "weight": 1.0,
+      "source": "baseline_py",
+      "target": "amc_26_baseline_demo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "amc_26_baseline_rationale_1",
+      "target": "baseline_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L60",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_baseline_run",
+      "target": "amc_26_baseline_pick_target"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L61",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_baseline_run",
+      "target": "amc_26_baseline_pick_text"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "amc_26_baseline_rationale_36",
+      "target": "amc_26_baseline_pick_text",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L75",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_baseline_run",
+      "target": "amc_26_baseline_featurize"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L114",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_baseline_demo",
+      "target": "amc_26_baseline_run"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "baseline.py",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "amc_26_baseline_run",
+      "target": "amc_26_metrics_smape"
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "baseline.py",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "amc_26_baseline_run",
+      "target": "baseline_tfidf_lightgbm_approach"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "amc_26_baseline_run"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "baseline.py",
+      "source_location": "L104",
+      "weight": 1.0,
+      "source": "amc_26_baseline_rationale_104",
+      "target": "amc_26_baseline_demo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "claude_md",
+      "target": "amc_26_baseline_demo"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "submit_py",
+      "target": "amc_26_submit_page_count",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "submit_py",
+      "target": "amc_26_submit_check_doc",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "submit_py",
+      "target": "amc_26_submit_check_preds",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "submit_py",
+      "target": "amc_26_submit_collect",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "submit_py",
+      "target": "amc_26_submit_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "amc_26_submit_rationale_1",
+      "target": "submit_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L30",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_submit_check_doc",
+      "target": "amc_26_submit_page_count"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "amc_26_submit_rationale_16",
+      "target": "amc_26_submit_page_count",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L72",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_submit_main",
+      "target": "amc_26_submit_check_doc"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L73",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_submit_main",
+      "target": "amc_26_submit_check_preds"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "submit.py",
+      "source_location": "L75",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_submit_main",
+      "target": "amc_26_submit_collect"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "amc_26_submit_main"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "claude_md",
+      "target": "amc_26_submit_main"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "test_sm_py",
+      "target": "amc_26_test_sm_check",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "test_sm_py",
+      "target": "amc_26_test_sm_run_train",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "test_sm_py",
+      "target": "amc_26_test_sm_args",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L414",
+      "weight": 1.0,
+      "source": "test_sm_py",
+      "target": "amc_26_test_sm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L269",
+      "weight": 1.0,
+      "source": "test_sm_py",
+      "target": "amc_26_test_sm_fakequotas",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L325",
+      "weight": 1.0,
+      "source": "test_sm_py",
+      "target": "amc_26_test_sm_describe",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L334",
+      "weight": 1.0,
+      "source": "test_sm_py",
+      "target": "amc_26_test_sm_fakelogs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L386",
+      "weight": 1.0,
+      "source": "test_sm_py",
+      "target": "amc_26_test_sm_tgz",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_rationale_1",
+      "target": "test_sm_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "amc_26_test_sm",
+      "target": "amc_26_test_sm_run_train",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_rationale_23",
+      "target": "amc_26_test_sm_run_train",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test_sm.py",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "test_sm_suite",
+      "target": "amc_26_test_sm_run_train"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L148",
+      "weight": 1.0,
+      "source": "amc_26_test_sm",
+      "target": "amc_26_test_sm_args",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L283",
+      "weight": 1.0,
+      "source": "amc_26_test_sm",
+      "target": "amc_26_test_sm_fakequotas",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L353",
+      "weight": 1.0,
+      "source": "amc_26_test_sm",
+      "target": "amc_26_test_sm_fakelogs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L362",
+      "weight": 1.0,
+      "source": "amc_26_test_sm",
+      "target": "amc_26_test_sm_describe",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L398",
+      "weight": 1.0,
+      "source": "amc_26_test_sm",
+      "target": "amc_26_test_sm_tgz",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L270",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_fakequotas",
+      "target": "amc_26_test_sm_fakequotas_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L272",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_fakequotas",
+      "target": "amc_26_test_sm_fakequotas_get_paginator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L277",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_fakequotas",
+      "target": "amc_26_test_sm_fakequotas_get_aws_default_service_quota",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L336",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_fakelogs",
+      "target": "amc_26_test_sm_fakelogs_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L338",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_fakelogs",
+      "target": "amc_26_test_sm_fakelogs_describe_log_streams",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L340",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_fakelogs",
+      "target": "amc_26_test_sm_fakelogs_get_log_events",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_sm.py",
+      "source_location": "L335",
+      "weight": 1.0,
+      "source": "amc_26_test_sm_rationale_335",
+      "target": "amc_26_test_sm_fakelogs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "metrics.py",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "metrics_py",
+      "target": "amc_26_metrics_smape",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "metrics.py",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "metrics_py",
+      "target": "amc_26_metrics_demo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "metrics.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "amc_26_metrics_rationale_1",
+      "target": "metrics_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "metrics.py",
+      "source_location": "L25",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "amc_26_metrics_demo",
+      "target": "amc_26_metrics_smape"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "metrics.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "amc_26_metrics_rationale_11",
+      "target": "amc_26_metrics_smape",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "metrics.py",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "amc_26_metrics_smape",
+      "target": "smape_metric"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "amc_26_metrics_smape"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "claude_md",
+      "target": "amc_26_metrics_smape"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "test_sm_suite"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "claude_md",
+      "target": "test_sm_suite"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": "L112",
+      "weight": 1.0,
+      "source": "sagemaker_md",
+      "target": "test_sm_suite"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "sm_requirements_txt"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "embeddings_md"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "sagemaker_md"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "amc_2023_problem"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L72",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "amc_2024_problem"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "amc_2025_problem"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "smape_metric"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "readme_compute_plan_split"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "baseline_tfidf_lightgbm_approach"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "claude_md",
+      "target": "sagemaker_hyperparameter_json_contract"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "claude_md",
+      "target": "sagemaker_quota_zero"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "claude_md",
+      "target": "smape_metric"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "claude_md",
+      "target": "amc26_dlc_image_resolution"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/CLAIM_CREDITS.md",
+      "source_location": "L161",
+      "weight": 1.0,
+      "source": "claim_credits_md",
+      "target": "sagemaker_quota_zero"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/CLAIM_CREDITS.md",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "claim_credits_md",
+      "target": "aws_free_tier_credits"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.3,
+      "source_file": "README.md",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "readme_compute_plan_split",
+      "target": "claim_credits_md"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "embeddings_md",
+      "target": "embeddings_freeze_cache_iterate"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "embeddings_md",
+      "target": "embeddings_crossmodal_vision_rule"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "embeddings_md",
+      "target": "embeddings_bge_m3"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "embeddings_md",
+      "target": "embeddings_gte_multilingual_base"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "embeddings_md",
+      "target": "embeddings_dinov2"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "embeddings_md",
+      "target": "embeddings_siglip2"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "embeddings_md",
+      "target": "embeddings_titan_bedrock"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "embeddings_md",
+      "target": "amc_2024_problem"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "embeddings_md",
+      "target": "amc_2025_problem"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "sagemaker_md",
+      "target": "sagemaker_quota_zero"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": "L80",
+      "weight": 1.0,
+      "source": "sagemaker_md",
+      "target": "sagemaker_hyperparameter_json_contract"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "sagemaker_md",
+      "target": "sagemaker_spot_training"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "sagemaker_md",
+      "target": "sagemaker_local_rehearsal"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": "L72",
+      "weight": 1.0,
+      "source": "sagemaker_md",
+      "target": "sm_requirements_txt"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "README.md",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "amc_2024_problem",
+      "target": "readme_compute_plan_split"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "aws_free_tier_credits",
+      "target": "readme_compute_plan_split"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/SAGEMAKER.md",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "sagemaker_quota_zero",
+      "target": "sagemaker_local_rehearsal"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/EMBEDDINGS.md",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "embeddings_freeze_cache_iterate",
+      "target": "sagemaker_spot_training"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "docs/CLAIM_CREDITS.md",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "aws_free_tier_credits",
+      "target": "sagemaker_spot_training"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "baseline.py",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "baseline_tfidf_lightgbm_approach",
+      "target": "embeddings_freeze_cache_iterate"
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "sagemaker_training_pipeline",
+      "label": "Laptop-to-container SageMaker training pipeline",
+      "nodes": [
+        "amc_26_sm_launch_pack_source",
+        "amc_26_sm_launch_build_request",
+        "amc_26_sm_train_main",
+        "amc_26_sm_train_load_params"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "sm_launch.py"
+    },
+    {
+      "id": "quota_zero_awareness",
+      "label": "SageMaker quota-zero problem documented and preflighted across code and docs",
+      "nodes": [
+        "amc_26_sm_launch_quota_advice",
+        "claim_credits_md",
+        "sagemaker_md"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "sm_launch.py"
+    },
+    {
+      "id": "hour_zero_checklist",
+      "label": "Hour-0 workflow: baseline signal then submission preflight",
+      "nodes": [
+        "readme_md",
+        "amc_26_baseline_run",
+        "amc_26_submit_main"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "README.md"
+    }
+  ],
+  "built_at_commit": "0995937413da37b34ffa0f34356792e8d5de8c08"
+}

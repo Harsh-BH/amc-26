@@ -1,0 +1,1 @@
+{"0": "Problem context, metric & docs", "1": "Offline test suite", "2": "Container entrypoint & hyperparameters", "3": "AWS account setup & quota", "4": "TF-IDF baseline", "5": "Submission preflight", "6": "Image resolution & local runs", "7": "Source packaging & container deps", "8": "Job monitoring", "9": "Submission retry", "10": "Request validation", "11": "Artifact fetch"}
