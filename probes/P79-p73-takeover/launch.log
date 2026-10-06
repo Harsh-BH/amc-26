@@ -1,0 +1,293 @@
+== p73d-bgl-0927-1736 ml.g5.xlarge Indian:bgl,USn:bgl
+== p73d-mxl-0927-1736 ml.g6e.xlarge Indian:mxl,USn:mxl
+== p73d-bglfr-0927-1736 ml.g6.xlarge Francen:bgl
+== p73d-mxlfr-0927-1736 ml.g6e.2xlarge Francen:mxl
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/probes/P79-p73-takeover/launch79.py", line 56, in <module>
+    sm_launch.main(["--profile", "harsh", "--instance", inst, "--no-spot", "--prefix", "amc26-p73", "--name", name,
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 384, in main
+    val, advice = quota_advice(sess, a.instance, a.spot, a.region, a.profile)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 89, in quota_advice
+    val, code = quota(sess, instance, spot)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 81, in quota
+    for page in sq.get_paginator('list_service_quotas').paginate(ServiceCode='sagemaker'):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 272, in __iter__
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/probes/P79-p73-takeover/launch79.py", line 56, in <module>
+    sm_launch.main(["--profile", "harsh", "--instance", inst, "--no-spot", "--prefix", "amc26-p73", "--name", name,
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 384, in main
+    val, advice = quota_advice(sess, a.instance, a.spot, a.region, a.profile)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 89, in quota_advice
+    val, code = quota(sess, instance, spot)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 81, in quota
+    for page in sq.get_paginator('list_service_quotas').paginate(ServiceCode='sagemaker'):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 272, in __iter__
+    response = self._make_request(current_kwargs)
+    response = self._make_request(current_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 360, in _make_request
+    return func(*args, **kwargs)
+    return self._method(**current_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 606, in _api_call
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 360, in _make_request
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return self._method(**current_kwargs)
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 606, in _api_call
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+    return self._make_api_call(operation_name, kwargs)
+botocore.errorfactory.TooManyRequestsException: An error occurred (TooManyRequestsException) when calling the ListServiceQuotas operation: The request failed because you exceeded the rate quota for this operation.
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.TooManyRequestsException: An error occurred (TooManyRequestsException) when calling the ListServiceQuotas operation: The request failed because you exceeded the rate quota for this operation.
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/probes/P79-p73-takeover/launch79.py", line 56, in <module>
+    sm_launch.main(["--profile", "harsh", "--instance", inst, "--no-spot", "--prefix", "amc26-p73", "--name", name,
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 384, in main
+    val, advice = quota_advice(sess, a.instance, a.spot, a.region, a.profile)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 89, in quota_advice
+    val, code = quota(sess, instance, spot)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 81, in quota
+    for page in sq.get_paginator('list_service_quotas').paginate(ServiceCode='sagemaker'):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 272, in __iter__
+    response = self._make_request(current_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 360, in _make_request
+    return self._method(**current_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.TooManyRequestsException: An error occurred (TooManyRequestsException) when calling the ListServiceQuotas operation: The request failed because you exceeded the rate quota for this operation.
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/probes/P79-p73-takeover/launch79.py", line 56, in <module>
+    sm_launch.main(["--profile", "harsh", "--instance", inst, "--no-spot", "--prefix", "amc26-p73", "--name", name,
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 384, in main
+    val, advice = quota_advice(sess, a.instance, a.spot, a.region, a.profile)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 89, in quota_advice
+    val, code = quota(sess, instance, spot)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 81, in quota
+    for page in sq.get_paginator('list_service_quotas').paginate(ServiceCode='sagemaker'):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 272, in __iter__
+    response = self._make_request(current_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 360, in _make_request
+    return self._method(**current_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.TooManyRequestsException: An error occurred (TooManyRequestsException) when calling the ListServiceQuotas operation: The request failed because you exceeded the rate quota for this operation.
+== p73d-bgl-0927-1738 ml.g5.xlarge Indian:bgl,USn:bgl
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/probes/P79-p73-takeover/launch79.py", line 56, in <module>
+    sm_launch.main(["--profile", "harsh", "--instance", inst, "--no-spot", "--prefix", "amc26-p73", "--name", name,
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 384, in main
+    val, advice = quota_advice(sess, a.instance, a.spot, a.region, a.profile)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 89, in quota_advice
+    val, code = quota(sess, instance, spot)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 81, in quota
+    for page in sq.get_paginator('list_service_quotas').paginate(ServiceCode='sagemaker'):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 272, in __iter__
+    response = self._make_request(current_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 360, in _make_request
+    return self._method(**current_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.TooManyRequestsException: An error occurred (TooManyRequestsException) when calling the ListServiceQuotas operation: The request failed because you exceeded the rate quota for this operation.
+== p73d-mxl-0927-1738 ml.g6e.xlarge Indian:mxl,USn:mxl
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/probes/P79-p73-takeover/launch79.py", line 56, in <module>
+    sm_launch.main(["--profile", "harsh", "--instance", inst, "--no-spot", "--prefix", "amc26-p73", "--name", name,
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 384, in main
+    val, advice = quota_advice(sess, a.instance, a.spot, a.region, a.profile)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 89, in quota_advice
+    val, code = quota(sess, instance, spot)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 81, in quota
+    for page in sq.get_paginator('list_service_quotas').paginate(ServiceCode='sagemaker'):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 272, in __iter__
+    response = self._make_request(current_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 360, in _make_request
+    return self._method(**current_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.TooManyRequestsException: An error occurred (TooManyRequestsException) when calling the ListServiceQuotas operation: The request failed because you exceeded the rate quota for this operation.
+== p73d-bglfr-0927-1738 ml.g6.xlarge Francen:bgl
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/probes/P79-p73-takeover/launch79.py", line 56, in <module>
+    sm_launch.main(["--profile", "harsh", "--instance", inst, "--no-spot", "--prefix", "amc26-p73", "--name", name,
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 384, in main
+    val, advice = quota_advice(sess, a.instance, a.spot, a.region, a.profile)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 89, in quota_advice
+    val, code = quota(sess, instance, spot)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 81, in quota
+    for page in sq.get_paginator('list_service_quotas').paginate(ServiceCode='sagemaker'):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 272, in __iter__
+    response = self._make_request(current_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 360, in _make_request
+    return self._method(**current_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.TooManyRequestsException: An error occurred (TooManyRequestsException) when calling the ListServiceQuotas operation: The request failed because you exceeded the rate quota for this operation.
+== p73d-mxlfr-0927-1738 ml.g6e.2xlarge Francen:mxl
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/probes/P79-p73-takeover/launch79.py", line 56, in <module>
+    sm_launch.main(["--profile", "harsh", "--instance", inst, "--no-spot", "--prefix", "amc26-p73", "--name", name,
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 384, in main
+    val, advice = quota_advice(sess, a.instance, a.spot, a.region, a.profile)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 89, in quota_advice
+    val, code = quota(sess, instance, spot)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/sm_launch.py", line 81, in quota
+    for page in sq.get_paginator('list_service_quotas').paginate(ServiceCode='sagemaker'):
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 272, in __iter__
+    response = self._make_request(current_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/paginate.py", line 360, in _make_request
+    return self._method(**current_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/botocore/client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.TooManyRequestsException: An error occurred (TooManyRequestsException) when calling the ListServiceQuotas operation: The request failed because you exceeded the rate quota for this operation.
+== p73d-bgl-0927-1740 ml.g5.xlarge Indian:bgl,USn:bgl
+  source ['p13sol.py', 'requirements.txt', 'sm_train.py', 'solution.py'] -> s3://sagemaker-114872709824-ap-south-1/amc26-p73/source/p73d-bgl-0927-1740/sourcedir.tar.gz
+[09/27/26 17:34:29] INFO     Found credentials in shared     credentials.py:1392
+                             credentials file:                                  
+                             ~/.aws/credentials                                 
+sagemaker.config INFO - Not applying SDK defaults from location: /etc/xdg/sagemaker/config.yaml
+sagemaker.config INFO - Not applying SDK defaults from location: /home/harsh1/.config/sagemaker/config.yaml
+submitted p73d-bgl-0927-1740 on ml.g5.xlarge
+  python sm_launch.py --profile harsh --status p73d-bgl-0927-1740
+== p73d-mxl-0927-1740 ml.g6e.xlarge Indian:mxl,USn:mxl
+  source ['p13sol.py', 'requirements.txt', 'sm_train.py', 'solution.py'] -> s3://sagemaker-114872709824-ap-south-1/amc26-p73/source/p73d-mxl-0927-1740/sourcedir.tar.gz
+[09/27/26 17:34:33] INFO     Found credentials in shared     credentials.py:1392
+                             credentials file:                                  
+                             ~/.aws/credentials                                 
+sagemaker.config INFO - Not applying SDK defaults from location: /etc/xdg/sagemaker/config.yaml
+sagemaker.config INFO - Not applying SDK defaults from location: /home/harsh1/.config/sagemaker/config.yaml
+submitted p73d-mxl-0927-1740 on ml.g6e.xlarge
+  python sm_launch.py --profile harsh --status p73d-mxl-0927-1740
+== p73d-bglfr-0927-1740 ml.g6.xlarge Francen:bgl
+  source ['p13sol.py', 'requirements.txt', 'sm_train.py', 'solution.py'] -> s3://sagemaker-114872709824-ap-south-1/amc26-p73/source/p73d-bglfr-0927-1740/sourcedir.tar.gz
+[09/27/26 17:34:38] INFO     Found credentials in shared     credentials.py:1392
+                             credentials file:                                  
+                             ~/.aws/credentials                                 
+sagemaker.config INFO - Not applying SDK defaults from location: /etc/xdg/sagemaker/config.yaml
+sagemaker.config INFO - Not applying SDK defaults from location: /home/harsh1/.config/sagemaker/config.yaml
+submitted p73d-bglfr-0927-1740 on ml.g6.xlarge
+  python sm_launch.py --profile harsh --status p73d-bglfr-0927-1740
+== p73d-mxlfr-0927-1740 ml.g6e.2xlarge Francen:mxl
+  source ['p13sol.py', 'requirements.txt', 'sm_train.py', 'solution.py'] -> s3://sagemaker-114872709824-ap-south-1/amc26-p73/source/p73d-mxlfr-0927-1740/sourcedir.tar.gz
+[09/27/26 17:34:42] INFO     Found credentials in shared     credentials.py:1392
+                             credentials file:                                  
+                             ~/.aws/credentials                                 
+sagemaker.config INFO - Not applying SDK defaults from location: /etc/xdg/sagemaker/config.yaml
+sagemaker.config INFO - Not applying SDK defaults from location: /home/harsh1/.config/sagemaker/config.yaml
+submitted p73d-mxlfr-0927-1740 on ml.g6e.2xlarge
+  python sm_launch.py --profile harsh --status p73d-mxlfr-0927-1740
+== p73e-mxl-0927-1836 ml.g6e.4xlarge Indian:mxl,USn:mxl
+  source ['p13sol.py', 'requirements.txt', 'sm_train.py', 'solution.py'] -> s3://sagemaker-114872709824-ap-south-1/amc26-p73/source/p73e-mxl-0927-1836/sourcedir.tar.gz
+[09/27/26 18:34:05] INFO     Found credentials in shared     credentials.py:1392
+                             credentials file:                                  
+                             ~/.aws/credentials                                 
+sagemaker.config INFO - Not applying SDK defaults from location: /etc/xdg/sagemaker/config.yaml
+sagemaker.config INFO - Not applying SDK defaults from location: /home/harsh1/.config/sagemaker/config.yaml
+submitted p73e-mxl-0927-1836 on ml.g6e.4xlarge
+  python sm_launch.py --profile harsh --status p73e-mxl-0927-1836

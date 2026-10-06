@@ -1,0 +1,46 @@
+{
+ "adds": {
+  "all": {
+   "pairs": 497,
+   "hn_eq": 0.646,
+   "in_frame": 1.0
+  },
+  "q>=.5": {
+   "pairs": 141,
+   "hn_eq": 0.709,
+   "in_frame": 1.0
+  },
+  "q<.5": {
+   "pairs": 330,
+   "hn_eq": 0.597,
+   "in_frame": 1.0
+  },
+  "unscored": {
+   "pairs": 26,
+   "hn_eq": 0.923,
+   "in_frame": 1.0
+  }
+ },
+ "removes": {
+  "all": {
+   "pairs": 159,
+   "hn_eq": 0.522,
+   "in_frame": 1.0
+  },
+  "q>=.5": {
+   "pairs": 120,
+   "hn_eq": 0.517,
+   "in_frame": 1.0
+  },
+  "q<.5": {
+   "pairs": 39,
+   "hn_eq": 0.538,
+   "in_frame": 1.0
+  },
+  "unscored": {
+   "pairs": 0,
+   "hn_eq": null,
+   "in_frame": null
+  }
+ }
+}

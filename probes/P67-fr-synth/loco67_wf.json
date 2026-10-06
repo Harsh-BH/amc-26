@@ -1,0 +1,166 @@
+{
+ "India->US": {
+  "band_auc_tgt": {
+   "lr_shipped": 0.9393
+  },
+  "cover_tgt_band": 0.9999852980093504,
+  "base": {
+   "auc_ref": 0.9649,
+   "auc_band": 0.9768,
+   "ship": {
+    "dF": 0.005268,
+    "se": 0.000163,
+    "dF_h0": 0.005368,
+    "dF_h1": 0.00517,
+    "se_h1": 0.000226,
+    "add": 4116,
+    "add_prec": 0.961,
+    "rm": 2591,
+    "rm_false": 0.738
+   },
+   "veto06": {
+    "dF": 0.002899,
+    "se": 0.000148,
+    "dF_h0": 0.002927,
+    "dF_h1": 0.002872,
+    "se_h1": 0.000205,
+    "add": 0,
+    "add_prec": null,
+    "rm": 2591,
+    "rm_false": 0.738
+   },
+   "imp_new": {}
+  },
+  "wf": {
+   "auc_ref": 0.9683,
+   "auc_band": 0.9759,
+   "ship": {
+    "dF": 0.005335,
+    "se": 0.000167,
+    "dF_h0": 0.005336,
+    "dF_h1": 0.005335,
+    "se_h1": 0.000237,
+    "add": 4064,
+    "add_prec": 0.963,
+    "rm": 2683,
+    "rm_false": 0.703
+   },
+   "veto06": {
+    "dF": 0.002816,
+    "se": 0.000147,
+    "dF_h0": 0.002841,
+    "dF_h1": 0.002791,
+    "se_h1": 0.000208,
+    "add": 0,
+    "add_prec": null,
+    "rm": 2683,
+    "rm_false": 0.703
+   },
+   "imp_new": {
+    "wf_jac": 0.0033,
+    "wf_shared": 0.0014,
+    "wf_sx_miss": 0.0197,
+    "wf_s1_miss": 0.0032
+   }
+  },
+  "wf-base_ship": {
+   "dF": 6.7e-05,
+   "se": 8.7e-05,
+   "dF_h0": -3.2e-05,
+   "dF_h1": 0.000165
+  },
+  "wf-base_veto06": {
+   "dF": -8.4e-05,
+   "se": 6.2e-05,
+   "dF_h0": -8.6e-05,
+   "dF_h1": -8.2e-05
+  }
+ },
+ "US->India": {
+  "band_auc_tgt": {
+   "lr_shipped": 0.956
+  },
+  "cover_tgt_band": 1.0,
+  "base": {
+   "auc_ref": 0.9387,
+   "auc_band": 0.9182,
+   "ship": {
+    "dF": 0.00464,
+    "se": 0.000204,
+    "dF_h0": 0.004648,
+    "dF_h1": 0.004632,
+    "se_h1": 0.000293,
+    "add": 6898,
+    "add_prec": 0.836,
+    "rm": 1739,
+    "rm_false": 0.652
+   },
+   "veto06": {
+    "dF": 0.001869,
+    "se": 0.000145,
+    "dF_h0": 0.001851,
+    "dF_h1": 0.001886,
+    "se_h1": 0.000209,
+    "add": 0,
+    "add_prec": null,
+    "rm": 1739,
+    "rm_false": 0.652
+   },
+   "imp_new": {}
+  },
+  "wf": {
+   "auc_ref": 0.9383,
+   "auc_band": 0.942,
+   "ship": {
+    "dF": 0.005563,
+    "se": 0.000185,
+    "dF_h0": 0.005437,
+    "dF_h1": 0.005688,
+    "se_h1": 0.000263,
+    "add": 5053,
+    "add_prec": 0.9,
+    "rm": 1900,
+    "rm_false": 0.704
+   },
+   "veto06": {
+    "dF": 0.002417,
+    "se": 0.000136,
+    "dF_h0": 0.002289,
+    "dF_h1": 0.002544,
+    "se_h1": 0.000196,
+    "add": 0,
+    "add_prec": null,
+    "rm": 1900,
+    "rm_false": 0.704
+   },
+   "imp_new": {
+    "wf_jac": 0.0046,
+    "wf_shared": 0.001,
+    "wf_sx_miss": 0.0047,
+    "wf_s1_miss": 0.0022
+   }
+  },
+  "wf-base_ship": {
+   "dF": 0.000923,
+   "se": 0.000157,
+   "dF_h0": 0.00079,
+   "dF_h1": 0.001056
+  },
+  "wf-base_veto06": {
+   "dF": 0.000548,
+   "se": 0.000102,
+   "dF_h0": 0.000438,
+   "dF_h1": 0.000658
+  }
+ },
+ "gate": {
+  "rule": "wf-base at the shipped cell: India->US >= +0.0003 and US->India >= 0",
+  "pass": false,
+  "dF": {
+   "India->US": 6.7e-05,
+   "US->India": 0.000923
+  }
+ },
+ "runtime_s": 51,
+ "peak_gb": 0.87
+}

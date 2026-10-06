@@ -1,0 +1,16 @@
+{
+ "pairs": 3302,
+ "by_type": {
+  "empty": 69,
+  "extra": 2903,
+  "missing-src": 330
+ },
+ "qgate_keep": 2793,
+ "p_missing": 0,
+ "overlap_sub66_t975ce": {
+  "their_adds": 5270,
+  "ours_in_theirs": 359,
+  "ours_q_in_theirs": 359,
+  "sx_shared_other_s1": 1
+ }
+}

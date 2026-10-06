@@ -1,0 +1,44 @@
+India: 88,168 S1, 70 state-map keys; 10s
+syn_India: 179,975 pairs, pos 0.499; 90s peak 0.87 GB
+Traceback (most recent call last):
+  File "/home/harsh1/github-repos/amc-26/probes/P67-fr-synth/gen67.py", line 345, in <module>
+    {"gen": gen, "sanity": sanity, "self": _selfcheck}[sys.argv[1]](*sys.argv[2:])
+  File "/home/harsh1/github-repos/amc-26/probes/P67-fr-synth/gen67.py", line 261, in gen
+    R, dept = RATES[c], state_map(c)
+                        ^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/probes/P67-fr-synth/gen67.py", line 206, in state_map
+    ok = ~b(last).isin(regions) & ~last.str.contains(r"\d") & (last.str.len() > 2)
+          ^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/probes/P67-fr-synth/gen67.py", line 205, in <lambda>
+    b = lambda x: x.str.lower().str.replace(r"[\p{P}\s]+", " ", regex=True).str.strip()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/pandas/core/strings/accessor.py", line 142, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/pandas/core/strings/accessor.py", line 1817, in replace
+    result = res_output.array._str_replace(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/harsh1/github-repos/amc-26/.venv/lib/python3.12/site-packages/pandas/core/strings/object_array.py", line 189, in _str_replace
+    pat = re.compile(pat, flags=flags)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/__init__.py", line 228, in compile
+    return _compile(pattern, flags)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/__init__.py", line 307, in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/_compiler.py", line 750, in compile
+    p = _parser.parse(p, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/_parser.py", line 979, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/_parser.py", line 460, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/_parser.py", line 573, in _parse
+    code1 = _class_escape(source, this)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/_parser.py", line 366, in _class_escape
+    raise source.error('bad escape %s' % escape, len(escape))
+re.error: bad escape \p at position 1

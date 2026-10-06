@@ -1,0 +1,158 @@
+{
+ "r0": 11.662671790529538,
+ "pool": 1667,
+ "pool_true": 0.0065986802639472104,
+ "base": 0.989508951447199,
+ "classes": {
+  "sub:smith": {
+   "n": 16,
+   "prec": 0.0,
+   "added": 16,
+   "dF_holdout": -3.1e-05
+  },
+  "sub:johnson": {
+   "n": 11,
+   "prec": 0.0,
+   "added": 11,
+   "dF_holdout": -3.7e-05
+  },
+  "sub:quokor": {
+   "n": 10,
+   "prec": 0.0,
+   "added": 10,
+   "dF_holdout": -2.2e-05
+  },
+  "sub:onyxkor": {
+   "n": 9,
+   "prec": 0.0,
+   "added": 9,
+   "dF_holdout": -3.7e-05
+  },
+  "sub:lumvera": {
+   "n": 9,
+   "prec": 0.0,
+   "added": 9,
+   "dF_holdout": -1.3e-05
+  },
+  "sub:care": {
+   "n": 8,
+   "prec": 0.125,
+   "added": 8,
+   "dF_holdout": -6e-06
+  },
+  "sub:williams": {
+   "n": 8,
+   "prec": 0.0,
+   "added": 8,
+   "dF_holdout": -1.1e-05
+  },
+  "sub:nexlum": {
+   "n": 8,
+   "prec": 0.0,
+   "added": 8,
+   "dF_holdout": -1.3e-05
+  },
+  "sub:nexdelta": {
+   "n": 8,
+   "prec": 0.0,
+   "added": 8,
+   "dF_holdout": -1.9e-05
+  },
+  "sub:gonzalez": {
+   "n": 7,
+   "prec": 0.0,
+   "added": 7,
+   "dF_holdout": -1.2e-05
+  },
+  "sub:avikor": {
+   "n": 7,
+   "prec": 0.0,
+   "added": 7,
+   "dF_holdout": -1.7e-05
+  },
+  "sub:wilson": {
+   "n": 7,
+   "prec": 0.0,
+   "added": 7,
+   "dF_holdout": -1.8e-05
+  },
+  "sub:nexzeta": {
+   "n": 7,
+   "prec": 0.0,
+   "added": 7,
+   "dF_holdout": -1.6e-05
+  },
+  "sub:hernandez": {
+   "n": 7,
+   "prec": 0.0,
+   "added": 7,
+   "dF_holdout": -1.2e-05
+  },
+  "sub:aviquo": {
+   "n": 7,
+   "prec": 0.0,
+   "added": 7,
+   "dF_holdout": -9e-06
+  },
+  "sub:aviavi": {
+   "n": 6,
+   "prec": 0.0,
+   "added": 6,
+   "dF_holdout": -9e-06
+  },
+  "sub:thompson": {
+   "n": 6,
+   "prec": 0.0,
+   "added": 6,
+   "dF_holdout": -8e-06
+  },
+  "ins:group": {
+   "n": 6,
+   "prec": 0.0,
+   "added": 6,
+   "dF_holdout": -1.6e-05
+  },
+  "sub:kornex": {
+   "n": 6,
+   "prec": 0.0,
+   "added": 6,
+   "dF_holdout": -1e-05
+  },
+  "sub:deltaonyx": {
+   "n": 6,
+   "prec": 0.0,
+   "added": 6,
+   "dF_holdout": -1.5e-05
+  },
+  "sub:jones": {
+   "n": 6,
+   "prec": 0.0,
+   "added": 6,
+   "dF_holdout": -1.4e-05
+  },
+  "sub:wright": {
+   "n": 5,
+   "prec": 0.0,
+   "added": 5,
+   "dF_holdout": -8e-06
+  },
+  "sub:koravi": {
+   "n": 5,
+   "prec": 0.0,
+   "added": 5,
+   "dF_holdout": -1.3e-05
+  },
+  "sub:kordelta": {
+   "n": 5,
+   "prec": 0.0,
+   "added": 5,
+   "dF_holdout": -6e-06
+  },
+  "sub:lumdelta": {
+   "n": 5,
+   "prec": 0.0,
+   "added": 5,
+   "dF_holdout": -1.4e-05
+  }
+ }
+}

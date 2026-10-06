@@ -1,0 +1,158 @@
+{
+ "r0": 8.218354784555121,
+ "pool": 2858,
+ "pool_true": 0.00489853044086774,
+ "base": 0.9904205169666382,
+ "classes": {
+  "ins:public": {
+   "n": 158,
+   "prec": 0.0,
+   "added": 155,
+   "dF_holdout": -0.000496
+  },
+  "ins:enterprises": {
+   "n": 164,
+   "prec": 0.0,
+   "added": 163,
+   "dF_holdout": -0.000475
+  },
+  "ins:overseas": {
+   "n": 137,
+   "prec": 0.0,
+   "added": 135,
+   "dF_holdout": -0.000407
+  },
+  "ins:industries": {
+   "n": 133,
+   "prec": 0.0,
+   "added": 133,
+   "dF_holdout": -0.000403
+  },
+  "ins:ventures": {
+   "n": 131,
+   "prec": 0.0,
+   "added": 131,
+   "dF_holdout": -0.000376
+  },
+  "ins:holdings": {
+   "n": 123,
+   "prec": 0.0,
+   "added": 122,
+   "dF_holdout": -0.000405
+  },
+  "ins:infratech": {
+   "n": 121,
+   "prec": 0.0,
+   "added": 121,
+   "dF_holdout": -0.000353
+  },
+  "ins:exports": {
+   "n": 103,
+   "prec": 0.0,
+   "added": 103,
+   "dF_holdout": -0.000344
+  },
+  "ins:group": {
+   "n": 98,
+   "prec": 0.0,
+   "added": 97,
+   "dF_holdout": -0.000284
+  },
+  "sub:center": {
+   "n": 13,
+   "prec": 0.1538,
+   "added": 13,
+   "dF_holdout": -2.1e-05
+  },
+  "sub:services": {
+   "n": 20,
+   "prec": 0.05,
+   "added": 20,
+   "dF_holdout": -5e-05
+  },
+  "sub:solutions": {
+   "n": 21,
+   "prec": 0.0,
+   "added": 21,
+   "dF_holdout": -7.4e-05
+  },
+  "sub:india": {
+   "n": 17,
+   "prec": 0.0,
+   "added": 17,
+   "dF_holdout": -7e-05
+  },
+  "ins:electronics": {
+   "n": 16,
+   "prec": 0.0,
+   "added": 16,
+   "dF_holdout": -4.1e-05
+  },
+  "ins:provision": {
+   "n": 16,
+   "prec": 0.0,
+   "added": 16,
+   "dF_holdout": -5.5e-05
+  },
+  "ins:stores": {
+   "n": 15,
+   "prec": 0.0,
+   "added": 15,
+   "dF_holdout": -4.5e-05
+  },
+  "sub:technologies": {
+   "n": 13,
+   "prec": 0.0,
+   "added": 13,
+   "dF_holdout": -2.7e-05
+  },
+  "ins:jewellers": {
+   "n": 12,
+   "prec": 0.0,
+   "added": 12,
+   "dF_holdout": -3.5e-05
+  },
+  "ins:engineering": {
+   "n": 12,
+   "prec": 0.0,
+   "added": 12,
+   "dF_holdout": -6.1e-05
+  },
+  "sub:infrastructure": {
+   "n": 12,
+   "prec": 0.0,
+   "added": 11,
+   "dF_holdout": -3.7e-05
+  },
+  "sub:agro": {
+   "n": 12,
+   "prec": 0.0,
+   "added": 12,
+   "dF_holdout": -3.6e-05
+  },
+  "ins:restaurant": {
+   "n": 12,
+   "prec": 0.0,
+   "added": 12,
+   "dF_holdout": -3.7e-05
+  },
+  "ins:bakery": {
+   "n": 11,
+   "prec": 0.0,
+   "added": 11,
+   "dF_holdout": -3.5e-05
+  },
+  "sub:marketing": {
+   "n": 11,
+   "prec": 0.0,
+   "added": 11,
+   "dF_holdout": -5e-05
+  },
+  "sub:trading": {
+   "n": 11,
+   "prec": 0.0,
+   "added": 11,
+   "dF_holdout": -3.1e-05
+  }
+ }
+}

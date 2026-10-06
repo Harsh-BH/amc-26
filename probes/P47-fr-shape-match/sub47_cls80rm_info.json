@@ -1,0 +1,44 @@
+{
+ "spec": "cls=0.8,rm12=1",
+ "cfg": {
+  "groups": "empty+one+two",
+  "tgt": "pred_seen",
+  "frac": 1.0,
+  "excl": "",
+  "rm12": 1.0,
+  "cls": 0.8
+ },
+ "base": "sub46_on43",
+ "added": 1888,
+ "removed": 675,
+ "s1_changed": 2421,
+ "empties_filled": 43,
+ "over_cap": 0,
+ "added_p": [
+  0.8,
+  0.9052,
+  0.9649,
+  0.9839,
+  0.99
+ ],
+ "added_hn_rel": {
+  "0": 0,
+  "1": 0,
+  "2": 0,
+  "3": 0,
+  "4": 79,
+  "5": 1809
+ },
+ "shape_before": {
+  "mean": 3.2562,
+  "both": 0.7709,
+  "empty": 0.0599
+ },
+ "shape_after": {
+  "mean": 3.2609,
+  "both": 0.7695,
+  "empty": 0.06
+ },
+ "runtime_s": 7,
+ "peak_gb": 0.9
+}

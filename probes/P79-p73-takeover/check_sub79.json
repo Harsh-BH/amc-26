@@ -1,0 +1,30 @@
+{
+ "base": "sub77",
+ "new": "sub79",
+ "s1_changed": 653,
+ "adds": 497,
+ "removes": 159,
+ "s1_made_empty": 5,
+ "s1_filled": 9,
+ "fr_links_per_s1": {
+  "sub77": 3.2182,
+  "sub79": 3.2195,
+  "truth": 3.46
+ },
+ "matches_total": 5821733,
+ "n54_readded": 0,
+ "qwen": {
+  "adds": {
+   "pairs": 497,
+   "qwen_scored": 471,
+   "qwen_median": 0.328,
+   "qwen_ge_.5": 0.299
+  },
+  "removes": {
+   "pairs": 159,
+   "qwen_scored": 159,
+   "qwen_median": 0.972,
+   "qwen_ge_.5": 0.755
+  }
+ }
+}

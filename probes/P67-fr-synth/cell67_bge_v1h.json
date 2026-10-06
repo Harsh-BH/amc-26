@@ -1,0 +1,122 @@
+{
+ "India->US": {
+  "dF": 0.000789,
+  "se": 8.3e-05,
+  "dF_h0": 0.000728,
+  "dF_h1": 0.000851,
+  "se_h1": 0.00012,
+  "add": 371,
+  "add_prec": 0.655,
+  "rm": 1198,
+  "rm_false": 0.529,
+  "n_s1": 132190,
+  "ref_pairs": 437381,
+  "old_veto": 2444,
+  "new_veto": 3271,
+  "changes_per_ref_pair": 0.00359,
+  "veto+add_base": {
+   "dF": 0.002359,
+   "se": 7e-05,
+   "dF_h0": 0.002441,
+   "dF_h1": 0.002278,
+   "se_h1": 9.8e-05,
+   "add": 4116,
+   "add_prec": 0.961,
+   "rm": 0,
+   "rm_false": null
+  },
+  "oldveto+add_base": {
+   "dF": 0.002359,
+   "se": 7e-05,
+   "dF_h0": 0.002441,
+   "dF_h1": 0.002278,
+   "se_h1": 9.8e-05,
+   "add": 4116,
+   "add_prec": 0.961,
+   "rm": 0,
+   "rm_false": null
+  },
+  "veto+add_syn": {
+   "dF": 0.003465,
+   "se": 0.000116,
+   "dF_h0": 0.003346,
+   "dF_h1": 0.003584,
+   "se_h1": 0.000167,
+   "add": 5306,
+   "add_prec": 0.92,
+   "rm": 1198,
+   "rm_false": 0.529
+  },
+  "oldveto+add_syn": {
+   "dF": 0.002663,
+   "se": 8.2e-05,
+   "dF_h0": 0.002604,
+   "dF_h1": 0.002722,
+   "se_h1": 0.000116,
+   "add": 4935,
+   "add_prec": 0.94,
+   "rm": 0,
+   "rm_false": null
+  }
+ },
+ "US->India": {
+  "dF": 0.000351,
+  "se": 6.1e-05,
+  "dF_h0": 0.000279,
+  "dF_h1": 0.000423,
+  "se_h1": 8.2e-05,
+  "add": 250,
+  "add_prec": 0.212,
+  "rm": 395,
+  "rm_false": 0.881,
+  "n_s1": 88168,
+  "ref_pairs": 286394,
+  "old_veto": 1668,
+  "new_veto": 1813,
+  "changes_per_ref_pair": 0.00225,
+  "veto+add_base": {
+   "dF": 0.002782,
+   "se": 0.000145,
+   "dF_h0": 0.002796,
+   "dF_h1": 0.002769,
+   "se_h1": 0.000208,
+   "add": 6898,
+   "add_prec": 0.836,
+   "rm": 0,
+   "rm_false": null
+  },
+  "oldveto+add_base": {
+   "dF": 0.002782,
+   "se": 0.000145,
+   "dF_h0": 0.002796,
+   "dF_h1": 0.002769,
+   "se_h1": 0.000208,
+   "add": 6898,
+   "add_prec": 0.836,
+   "rm": 0,
+   "rm_false": null
+  },
+  "veto+add_syn": {
+   "dF": 0.003868,
+   "se": 0.000156,
+   "dF_h0": 0.003935,
+   "dF_h1": 0.0038,
+   "se_h1": 0.000227,
+   "add": 6774,
+   "add_prec": 0.851,
+   "rm": 395,
+   "rm_false": 0.881
+  },
+  "oldveto+add_syn": {
+   "dF": 0.00352,
+   "se": 0.000143,
+   "dF_h0": 0.003665,
+   "dF_h1": 0.003375,
+   "se_h1": 0.000212,
+   "add": 6524,
+   "add_prec": 0.876,
+   "rm": 0,
+   "rm_false": null
+  }
+ }
+}

@@ -1,0 +1,28 @@
+feature sets ['base', 'p67', 'ele4n', 'p67+ele4n', 'mmln', 'p67+mmln', 'p67+ele4n+mmln'] 3s peak 0.39 GB
+India->US base {'auc_band': 0.9768, 'ship_vs_ref': {'dF': 0.005268, 'se': 0.000163, 'dF_h0': 0.005368, 'dF_h1': 0.00517, 'se_h1': 0.000226, 'add': 4116, 'add_prec': 0.961, 'rm': 2591, 'rm_false': 0.738}, 'gain_share': {}} 11s
+India->US p67 {'auc_band': 0.9794, 'ship_vs_ref': {'dF': 0.007179, 'se': 0.000164, 'dF_h0': 0.007015, 'dF_h1': 0.007341, 'se_h1': 0.000231, 'add': 5751, 'add_prec': 0.938, 'rm': 2968, 'rm_false': 0.796}, 'gain_share': {'r_p67': 0.0293}} 22s
+India->US ele4n {'auc_band': 0.9815, 'ship_vs_ref': {'dF': 0.007939, 'se': 0.00017, 'dF_h0': 0.007701, 'dF_h1': 0.008176, 'se_h1': 0.000244, 'add': 6775, 'add_prec': 0.943, 'rm': 2870, 'rm_false': 0.82}, 'gain_share': {'r_ele4n': 0.0366}} 31s
+India->US p67+ele4n {'auc_band': 0.9825, 'ship_vs_ref': {'dF': 0.008073, 'se': 0.000171, 'dF_h0': 0.007785, 'dF_h1': 0.008358, 'se_h1': 0.000246, 'add': 6999, 'add_prec': 0.933, 'rm': 2963, 'rm_false': 0.828}, 'gain_share': {'r_p67': 0.0119, 'r_ele4n': 0.0243}} 40s
+India->US mmln {'auc_band': 0.9804, 'ship_vs_ref': {'dF': 0.007437, 'se': 0.000166, 'dF_h0': 0.007368, 'dF_h1': 0.007505, 'se_h1': 0.000237, 'add': 6146, 'add_prec': 0.943, 'rm': 2790, 'rm_false': 0.818}, 'gain_share': {'r_mmln': 0.0343}} 49s
+India->US p67+mmln {'auc_band': 0.9819, 'ship_vs_ref': {'dF': 0.007557, 'se': 0.000164, 'dF_h0': 0.007415, 'dF_h1': 0.007699, 'se_h1': 0.000236, 'add': 6445, 'add_prec': 0.935, 'rm': 2857, 'rm_false': 0.82}, 'gain_share': {'r_p67': 0.0136, 'r_mmln': 0.0212}} 60s
+India->US p67+ele4n+mmln {'auc_band': 0.9828, 'ship_vs_ref': {'dF': 0.008035, 'se': 0.000171, 'dF_h0': 0.007846, 'dF_h1': 0.008222, 'se_h1': 0.000245, 'add': 7042, 'add_prec': 0.932, 'rm': 2929, 'rm_false': 0.832}, 'gain_share': {'r_p67': 0.0112, 'r_ele4n': 0.0154, 'r_mmln': 0.0134}} 77s
+India->US p67-base {'dF': 0.00191, 'se': 0.000126, 'dF_h0': 0.001648, 'dF_h1': 0.002171}
+India->US ele4n-base {'dF': 0.002671, 'se': 0.000134, 'dF_h0': 0.002334, 'dF_h1': 0.003006}
+India->US p67+ele4n-base {'dF': 0.002804, 'se': 0.000141, 'dF_h0': 0.002418, 'dF_h1': 0.003188}
+India->US mmln-base {'dF': 0.002168, 'se': 0.000128, 'dF_h0': 0.002, 'dF_h1': 0.002336}
+India->US p67+mmln-base {'dF': 0.002289, 'se': 0.000133, 'dF_h0': 0.002047, 'dF_h1': 0.002529}
+India->US p67+ele4n+mmln-base {'dF': 0.002766, 'se': 0.00014, 'dF_h0': 0.002478, 'dF_h1': 0.003052}
+US->India base {'auc_band': 0.9182, 'ship_vs_ref': {'dF': 0.00464, 'se': 0.000204, 'dF_h0': 0.004648, 'dF_h1': 0.004632, 'se_h1': 0.000293, 'add': 6898, 'add_prec': 0.836, 'rm': 1739, 'rm_false': 0.652}, 'gain_share': {}} 88s
+US->India p67 {'auc_band': 0.9489, 'ship_vs_ref': {'dF': 0.007001, 'se': 0.000211, 'dF_h0': 0.006861, 'dF_h1': 0.007141, 'se_h1': 0.000305, 'add': 6497, 'add_prec': 0.895, 'rm': 2215, 'rm_false': 0.716}, 'gain_share': {'r_p67': 0.0359}} 104s
+US->India ele4n {'auc_band': 0.9443, 'ship_vs_ref': {'dF': 0.006835, 'se': 0.000218, 'dF_h0': 0.006645, 'dF_h1': 0.007026, 'se_h1': 0.000313, 'add': 6579, 'add_prec': 0.887, 'rm': 2329, 'rm_false': 0.699}, 'gain_share': {'r_ele4n': 0.0558}} 120s
+US->India p67+ele4n {'auc_band': 0.9593, 'ship_vs_ref': {'dF': 0.007698, 'se': 0.000215, 'dF_h0': 0.007349, 'dF_h1': 0.008048, 'se_h1': 0.00031, 'add': 6643, 'add_prec': 0.902, 'rm': 2432, 'rm_false': 0.723}, 'gain_share': {'r_p67': 0.0081, 'r_ele4n': 0.0494}} 153s
+US->India mmln {'auc_band': 0.9338, 'ship_vs_ref': {'dF': 0.006632, 'se': 0.000219, 'dF_h0': 0.006413, 'dF_h1': 0.006851, 'se_h1': 0.000316, 'add': 6957, 'add_prec': 0.876, 'rm': 2209, 'rm_false': 0.687}, 'gain_share': {'r_mmln': 0.0522}} 172s
+US->India p67+mmln {'auc_band': 0.9588, 'ship_vs_ref': {'dF': 0.007943, 'se': 0.000214, 'dF_h0': 0.007665, 'dF_h1': 0.008221, 'se_h1': 0.000311, 'add': 6540, 'add_prec': 0.912, 'rm': 2418, 'rm_false': 0.725}, 'gain_share': {'r_p67': 0.0107, 'r_mmln': 0.0446}} 193s
+US->India p67+ele4n+mmln {'auc_band': 0.9607, 'ship_vs_ref': {'dF': 0.007942, 'se': 0.000218, 'dF_h0': 0.007609, 'dF_h1': 0.008274, 'se_h1': 0.000314, 'add': 6675, 'add_prec': 0.908, 'rm': 2499, 'rm_false': 0.717}, 'gain_share': {'r_p67': 0.0065, 'r_ele4n': 0.0442, 'r_mmln': 0.0138}} 211s
+US->India p67-base {'dF': 0.002361, 'se': 0.000137, 'dF_h0': 0.002213, 'dF_h1': 0.002509}
+US->India ele4n-base {'dF': 0.002196, 'se': 0.000126, 'dF_h0': 0.001997, 'dF_h1': 0.002395}
+US->India p67+ele4n-base {'dF': 0.003059, 'se': 0.000145, 'dF_h0': 0.002701, 'dF_h1': 0.003416}
+US->India mmln-base {'dF': 0.001992, 'se': 0.000126, 'dF_h0': 0.001765, 'dF_h1': 0.00222}
+US->India p67+mmln-base {'dF': 0.003303, 'se': 0.000146, 'dF_h0': 0.003018, 'dF_h1': 0.003589}
+US->India p67+ele4n+mmln-base {'dF': 0.003302, 'se': 0.000149, 'dF_h0': 0.002962, 'dF_h1': 0.003642}
+GATE {"p67": {"dF": {"India->US": 0.00191, "US->India": 0.002361}, "pass": true}, "ele4n": {"dF": {"India->US": 0.002671, "US->India": 0.002196}, "pass": true}, "p67+ele4n": {"dF": {"India->US": 0.002804, "US->India": 0.003059}, "pass": true}, "mmln": {"dF": {"India->US": 0.002168, "US->India": 0.001992}, "pass": true}, "p67+mmln": {"dF": {"India->US": 0.002289, "US->India": 0.003303}, "pass": true}, "p67+ele4n+mmln": {"dF": {"India->US": 0.002766, "US->India": 0.003302}, "pass": true}} 211s peak 0.56 GB

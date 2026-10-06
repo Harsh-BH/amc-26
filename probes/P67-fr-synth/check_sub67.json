@@ -1,0 +1,58 @@
+{
+ "adds": 3302,
+ "sub54_pairs_missing_from_base": 40888,
+ "adds_in_that_set": 2418,
+ "by_type": {
+  "extra": {
+   "pairs": 2903,
+   "in_sub54_rejected": 2232,
+   "qwen_scored": 2646,
+   "qwen_median": 0.994,
+   "qwen_ge_.5": 0.854
+  },
+  "fill_empty": {
+   "pairs": 69,
+   "in_sub54_rejected": 58,
+   "qwen_scored": 63,
+   "qwen_median": 0.993,
+   "qwen_ge_.5": 0.746
+  },
+  "fill_source": {
+   "pairs": 330,
+   "in_sub54_rejected": 128,
+   "qwen_scored": 235,
+   "qwen_median": 0.792,
+   "qwen_ge_.5": 0.54
+  }
+ },
+ "loco": {
+  "India->US": {
+   "extra": {
+    "pairs": 4849,
+    "prec": 0.938
+   },
+   "fill_empty": {
+    "pairs": 85,
+    "prec": 0.953
+   },
+   "fill_source": {
+    "pairs": 817,
+    "prec": 0.94
+   }
+  },
+  "US->India": {
+   "extra": {
+    "pairs": 4938,
+    "prec": 0.912
+   },
+   "fill_empty": {
+    "pairs": 91,
+    "prec": 0.659
+   },
+   "fill_source": {
+    "pairs": 1468,
+    "prec": 0.855
+   }
+  }
+ }
+}

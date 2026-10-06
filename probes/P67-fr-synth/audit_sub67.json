@@ -1,0 +1,16 @@
+{
+ "add": {
+  "pairs": 530,
+  "qwen_scored": 500,
+  "qwen_r_ge_.5": 0.48,
+  "qwen_r_ge_.9": 0.338,
+  "qwen_r_median": 0.424
+ },
+ "rm": {
+  "pairs": 1281,
+  "qwen_scored": 1152,
+  "qwen_r_ge_.5": 0.614,
+  "qwen_r_ge_.9": 0.4,
+  "qwen_r_median": 0.781
+ }
+}
