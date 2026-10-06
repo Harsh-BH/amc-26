@@ -1,0 +1,32 @@
+{
+ "excl": true,
+ "mode": "ef",
+ "t0": 0.5,
+ "cap": 24,
+ "stack": "probes/P5-decide/stack_p4_all.txt",
+ "stack_cols": [
+  "p",
+  "r1",
+  "n1",
+  "max1",
+  "rel1",
+  "gap1",
+  "sum1",
+  "c50",
+  "c20",
+  "prev1",
+  "next1",
+  "rx",
+  "nx",
+  "maxox",
+  "p2",
+  "p3",
+  "p4",
+  "p5"
+ ],
+ "report_f05": 0.9826,
+ "fallback_thresh": {
+  "t": 0.74,
+  "t0": 0.51
+ }
+}

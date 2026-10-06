@@ -1,0 +1,29 @@
+{
+ "excl": true,
+ "mode": "ef",
+ "t0": 0.4,
+ "cap": 24,
+ "stack": "probes/P5-decide/stack_blend_s1only.txt",
+ "stack_cols": [
+  "p",
+  "r1",
+  "n1",
+  "max1",
+  "rel1",
+  "gap1",
+  "sum1",
+  "c50",
+  "c20",
+  "prev1",
+  "next1",
+  "p2",
+  "p3",
+  "p4",
+  "p5"
+ ],
+ "report_f05": 0.9882,
+ "fallback_thresh": {
+  "t": 0.73,
+  "t0": 0.43000000000000005
+ }
+}
