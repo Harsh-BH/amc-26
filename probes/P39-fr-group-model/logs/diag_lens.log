@@ -1,0 +1,15 @@
+                  India target (US>India)  US target (India>US)  France
+below hn:miss                       0.498                 0.200   0.214
+below hn:eq                         0.203                 0.202   0.420
+below hn:sib3                       0.089                 0.379   0.200
+below hn:d12                        0.036                 0.099   0.113
+below hn:neg12                      0.008                 0.005   0.003
+below hn:other                      0.166                 0.115   0.050
+below name:eq                       0.276                 0.567   0.507
+below name:add1                     0.395                 0.042   0.048
+below name:drop1                    0.035                 0.109   0.034
+below name:sub1                     0.182                 0.140   0.268
+below:miss&add1                     0.231                 0.008   0.010
+acc:hn_miss                         0.395                 0.102   0.086
+acc:hn_eq                           0.503                 0.803   0.904
+below_per_acc                       0.209                 0.154   0.222

@@ -1,0 +1,3 @@
+loco US>India: 413,024 argmax rows, 88,168 S1, y 0.726, acc 0.687; 6s peak 1.41 GB
+loco India>US: 617,919 argmax rows, 132,190 S1, y 0.725, acc 0.697; 8s peak 1.71 GB
+france: 1,182,279 argmax rows, 259,452 S1, acc 0.679; 11s peak 1.75 GB

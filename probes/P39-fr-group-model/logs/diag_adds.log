@@ -1,0 +1,6 @@
+added 23,393 prec 0.200; lt quartiles [-2.79 -2.02 -1.32]
+hn_rel {'miss': {'size': 16864, 'mean': 0.072}, 'eq': {'size': 3728, 'mean': 0.208}, 'd12': {'size': 29, 'mean': 1.0}, 'neg12': {'size': 196, 'mean': 0.964}, 'other': {'size': 2576, 'mean': 0.96}}
+kind {'eq': {'size': 3767, 'mean': 0.728}, 'add1': {'size': 14620, 'mean': 0.023}, 'drop1': {'size': 752, 'mean': 0.638}, 'typo': {'size': 699, 'mean': 0.325}, 'sub1': {'size': 2758, 'mean': 0.186}, 'addN': {'size': 119, 'mean': 0.084}, 'dropN': {'size': 3, 'mean': 0.333}, 'subN': {'size': 198, 'mean': 0.005}, 'disjoint': {'size': 364, 'mean': 0.758}, 'web': {'size': 113, 'mean': 0.858}}
+addr_eq x grp_hn {(False, False): {'size': 16925, 'mean': 0.083}, (False, True): {'size': 3259, 'mean': 0.885}, (True, False): {'size': 287, 'mean': 0.108}, (True, True): {'size': 2922, 'mean': 0.125}}
+train frame below-t hn_rel {'miss': {'size': 13236, 'mean': 0.499}, 'eq': {'size': 13378, 'mean': 0.737}, 'sib3': {'size': 25078, 'mean': 0.003}, 'd12': {'size': 6547, 'mean': 0.063}, 'neg12': {'size': 326, 'mean': 0.945}, 'other': {'size': 7624, 'mean': 0.606}}
+India target below-t hn_rel {'miss': {'size': 29609, 'mean': 0.144}, 'eq': {'size': 12050, 'mean': 0.154}, 'sib3': {'size': 5303, 'mean': 0.04}, 'd12': {'size': 2116, 'mean': 0.175}, 'neg12': {'size': 458, 'mean': 0.723}, 'other': {'size': 9890, 'mean': 0.555}}

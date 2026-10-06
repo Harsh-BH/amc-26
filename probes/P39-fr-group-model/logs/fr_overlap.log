@@ -1,0 +1,10 @@
+hn90 extras in frame 18,180; full/India adds at 0.75: 18,336; overlap 10,268 (0.560 of mine, 0.565 of hn90)
+  mine           n 18,336 hn {'miss': 0.316, 'eq': 0.587, 'sib3': 0.008, 'd12': 0.027, 'neg12': 0.003, 'other': 0.058} | name {'eq': 0.465, 'drop1': 0.02, 'typo': 0.028, 'sub1': 0.139, 'disjoint': 0.265, 'web': 0.07} | p q25/50 [0.944 0.972]
+  hn90           n 18,180 hn {'miss': 0.02, 'eq': 0.98} | name {'eq': 0.198, 'add1': 0.025, 'typo': 0.025, 'sub1': 0.326, 'disjoint': 0.347, 'web': 0.054} | p q25/50 [0.946 0.971]
+  mine-not-hn90  n  8,068 hn {'miss': 0.699, 'eq': 0.082, 'sib3': 0.018, 'd12': 0.062, 'neg12': 0.007, 'other': 0.132} | name {'eq': 0.781, 'drop1': 0.025, 'typo': 0.027, 'sub1': 0.068, 'disjoint': 0.047, 'web': 0.043} | p q25/50 [0.886 0.953]
+  base pairs with s < 0.3 (addrm removes): 1,530
+hn90 extras in frame 18,180; full/pool adds at 0.75: 12,950; overlap 7,453 (0.576 of mine, 0.410 of hn90)
+  mine           n 12,950 hn {'miss': 0.327, 'eq': 0.594, 'sib3': 0.007, 'd12': 0.006, 'neg12': 0.004, 'other': 0.062} | name {'eq': 0.501, 'drop1': 0.02, 'typo': 0.026, 'sub1': 0.096, 'disjoint': 0.265, 'web': 0.082} | p q25/50 [0.963 0.981]
+  hn90           n 18,180 hn {'miss': 0.02, 'eq': 0.98} | name {'eq': 0.198, 'add1': 0.025, 'typo': 0.025, 'sub1': 0.326, 'disjoint': 0.347, 'web': 0.054} | p q25/50 [0.946 0.971]
+  mine-not-hn90  n  5,497 hn {'miss': 0.745, 'eq': 0.07, 'sib3': 0.016, 'd12': 0.014, 'neg12': 0.01, 'other': 0.145} | name {'eq': 0.826, 'typo': 0.025, 'sub1': 0.04, 'disjoint': 0.043, 'web': 0.042} | p q25/50 [0.945 0.968]
+  base pairs with s < 0.3 (addrm removes): 2,124

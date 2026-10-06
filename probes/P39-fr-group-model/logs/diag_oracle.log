@@ -1,0 +1,6 @@
+== US>India: base 0.95523; oracle add-only +0.02396, remove-only +0.01425, both +0.03811; complete one-sided S1 only +0.00670
+  S3-missing: 8,708 S1 (0.0988); truth has that source 3,140 (0.361); of those: a true member is argmax below t 0.795, a true member is a candidate 0.907, a candidate but not argmax 0.112, no true member among candidates 0.093
+  S2-missing: 8,433 S1 (0.0956); truth has that source 2,163 (0.256); of those: a true member is argmax below t 0.816, a true member is a candidate 0.936, a candidate but not argmax 0.120, no true member among candidates 0.064
+== India>US: base 0.95616; oracle add-only +0.02080, remove-only +0.01711, both +0.03776; complete one-sided S1 only +0.00545
+  S3-missing: 11,305 S1 (0.0855); truth has that source 3,143 (0.278); of those: a true member is argmax below t 0.778, a true member is a candidate 0.918, a candidate but not argmax 0.140, no true member among candidates 0.082
+  S2-missing: 13,445 S1 (0.1017); truth has that source 3,830 (0.285); of those: a true member is argmax below t 0.761, a true member is a candidate 0.918, a candidate but not argmax 0.157, no true member among candidates 0.082
